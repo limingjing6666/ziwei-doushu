@@ -12,7 +12,7 @@ import { SITE_TITLE, SITE_SLOGAN } from "@/lib/brand";
 export const metadata: Metadata = {
   title: SITE_TITLE,
   description:
-    "三合四化 · 古法排盘 · AI 解读。基于传统三合派紫微斗数，结合四化飞星，分层阅读星宫结构与运限主题，仅供文化学习参考。",
+    "天机盘 · AI 紫微命盘。三合四化 · 古法排盘 · AI 解读，分层阅读星宫结构与运限主题，仅供文化学习参考。",
   keywords:
     "天机盘, 紫微斗数, 三合四化, 紫微斗数全集, 紫微斗数全书, 骨髓赋, 命盘, 命理, 14主星, 12宫位",
   metadataBase: new URL(SITE_URL),
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: SITE_TITLE,
     description:
-      "三合四化 · 古法排盘 · AI 解读。基于传统三合派紫微斗数，结合四化飞星，分层阅读星宫结构与运限主题，仅供文化学习参考。",
+      "天机盘 · AI 紫微命盘。三合四化 · 古法排盘 · AI 解读，分层阅读星宫结构与运限主题，仅供文化学习参考。",
     url: SITE_URL,
     siteName: SITE_TITLE,
     locale: "zh_CN",
@@ -89,8 +89,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           <MobileTabBar />
         </ThemeProvider>
-        <Analytics />
-        <SpeedInsights />
+        {process.env.VERCEL === '1' && <><Analytics /><SpeedInsights /></>}
       </body>
     </html>
   );

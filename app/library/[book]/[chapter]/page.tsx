@@ -7,6 +7,7 @@
  */
 
 import Link from "next/link";
+import TermText from '@/components/TermText';
 import { notFound } from "next/navigation";
 import type { Book } from "@/lib/classics/types";
 import { ALL_BOOKS, getChapter } from "@/lib/classics";
@@ -210,7 +211,7 @@ export default async function ChapterPage({
                   {paragraph.translation ? (
                     <div className="mt-3 rounded-sm bg-surface-2 px-3.5 py-2.5 text-[13px] leading-relaxed text-ink-2 sm:ml-9">
                       <span className="mr-2 font-medium text-ink-3">白话</span>
-                      {paragraph.translation}
+                      <TermText text={paragraph.translation} />
                     </div>
                   ) : null}
 
@@ -219,7 +220,7 @@ export default async function ChapterPage({
                       <span className="mr-2 font-medium text-ochre">
                         阅读提示
                       </span>
-                      {paragraph.readingNote}
+                      <TermText text={paragraph.readingNote} />
                     </div>
                   ) : null}
                 </section>

@@ -1,8 +1,8 @@
 "use client";
 
-import { Field, Select } from "@/components/ui/Field";
+import { Field, Input, Select } from "@/components/ui/Field";
 import { cn } from "@/lib/ui/cn";
-import { DAY_OPTIONS, MONTH_OPTIONS, YEAR_OPTIONS } from "./birth-utils";
+import { DAY_OPTIONS, MONTH_OPTIONS } from "./birth-utils";
 
 export interface BirthDateErrors {
   year?: string;
@@ -18,6 +18,7 @@ export default function BirthDateFields({
   errors,
   onChange,
   compact = false,
+  lunar = false,
 }: {
   idPrefix: string;
   year: string;
@@ -26,6 +27,7 @@ export default function BirthDateFields({
   errors: BirthDateErrors;
   onChange: (patch: { year?: string; month?: string; day?: string }) => void;
   compact?: boolean;
+  lunar?: boolean;
 }) {
   const yearId = `${idPrefix}-year`;
   const monthId = `${idPrefix}-month`;
@@ -34,26 +36,12 @@ export default function BirthDateFields({
   // 错误文案由 ui/Field 渲染为 `${id}-error`，这里通过 aria-describedby 关联。
   return (
     <fieldset className="m-0 min-w-0 border-0 p-0">
-      <legend className="sr-only">出生日期（公历）</legend>
+      <legend className="sr-only">出生日期</legend>
       <div
         className={cn("grid grid-cols-3", compact ? "gap-2" : "gap-2 sm:gap-3")}
       >
         <Field id={yearId} label="年" error={errors.year}>
-          <Select
-            id={yearId}
-            value={year}
-            required
-            invalid={Boolean(errors.year)}
-            aria-describedby={errors.year ? `${yearId}-error` : undefined}
-            onChange={(event) => onChange({ year: event.target.value })}
-          >
-            <option value="">年份</option>
-            {YEAR_OPTIONS.map((option) => (
-              <option key={option} value={String(option)}>
-                {option}
-              </option>
-            ))}
-          </Select>
+          <Input id={yearId} type="number" inputMode="numeric" placeholder="如 1990" min={lunar ? 1899 : 1900} max={new Date().getFullYear()} value={year} required invalid={Boolean(errors.year)} aria-describedby={errors.year ? `${yearId}-error` : undefined} onChange={event => onChange({ year: event.target.value })} className="min-w-0 px-2" />
         </Field>
 
         <Field id={monthId} label="月" error={errors.month}>
@@ -84,7 +72,7 @@ export default function BirthDateFields({
             onChange={(event) => onChange({ day: event.target.value })}
           >
             <option value="">日期</option>
-            {DAY_OPTIONS.map((option) => (
+            {DAY_OPTIONS.filter(day => !lunar || day <= 30).map((option) => (
               <option key={option} value={String(option)}>
                 {option} 日
               </option>

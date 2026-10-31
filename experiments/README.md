@@ -10,10 +10,10 @@
 | `FamousPersonCard.tsx` | `components/FamousPersonCard.tsx` | 名人命盘卡（含真实公众人物估算生辰，权利风险，未接线） |
 | `famous.ts` | `lib/ziwei/famous.ts` | 名人命盘数据（同上） |
 | `ChatPanel.tsx` | `components/ChatPanel.tsx` | 与 InsightPanel 重复的 AI 聊天实现（未接线） |
-| `ChartSummary.tsx` | `components/ChartSummary.tsx` | 命格摘要 / 格局卡（商业版组件，未接线） |
 | `PatternsCard.tsx` | `components/PatternsCard.tsx` | 格局识别卡（未接线） |
-| `StarDetailPanel.tsx` | `components/StarDetailPanel.tsx` | 星曜详情抽屉（未接线） |
 | `ShareModal.tsx` / `ShareCardCanvas.tsx` | `components/` | 命盘分享弹窗与分享卡截图（未接线） |
+
+`ChartSummary.tsx` 与 `StarDetailPanel.tsx` 已移回 `components/`，使用宣纸设计系统，并在 `components/chart/ResultPage.tsx` 接线、纳入生产类型检查。
 
 ## 恢复方式
 

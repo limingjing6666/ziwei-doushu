@@ -1,188 +1,44 @@
 "use client";
-
-import type { Palace, Star } from "@/lib/ziwei/types";
-import { BRANCHES, STEMS } from "@/lib/ziwei/constants";
-import { SiHuaBadge } from "@/components/ui/Badge";
-import { cn } from "@/lib/ui/cn";
+import type { Palace, Star } from '@/lib/ziwei/types';
+import { BRANCHES, STEMS } from '@/lib/ziwei/constants';
+import { SiHuaBadge } from '@/components/ui/Badge';
+import { cn } from '@/lib/ui/cn';
+import Term from './Term';
 
 export interface PalaceCellProps {
   palace: Palace;
   onClick?: () => void;
-  /** 保留星曜点击契约（本轮不接星曜详情）。 */
   onStarClick?: (star: Star) => void;
   isSelected?: boolean;
   isSanFang?: boolean;
-  /** 叠加四化：星名 → 四化类型（'禄'/'权'/'科'/'忌'） */
   overlayStarSiHua?: Record<string, string>;
-  /** 叠加标签：'年'（流年）或 '限'（大限） */
   overlayLabel?: string;
-  /** 保留四化点击契约（本轮不接四化钻取）。 */
   onSiHuaClick?: (starName: string, siHua: string) => void;
 }
-
-function brightnessTone(brightness?: Star["brightness"]): string {
-  if (brightness === "bright") return "text-ink";
-  if (brightness === "dim") return "text-ink-3";
-  return "text-ink-2";
-}
-
-/**
- * 单个宫位：印刷表格质感——细线分隔、无大圆角、无阴影。
- * 整宫是一个 <button>，宫名 + 主星 + 四化写进 aria-label。
- */
-export default function PalaceCell({
-  palace,
-  onClick,
-  isSelected = false,
-  isSanFang = false,
-  overlayStarSiHua,
-  overlayLabel,
-}: PalaceCellProps) {
+/** #9 印刷宫格；交互分为独立按钮，避免 Term 与星曜按钮嵌套。 */
+export default function PalaceCell({ palace, onClick, onStarClick, isSelected = false, isSanFang = false, overlayStarSiHua, overlayLabel, onSiHuaClick }: PalaceCellProps) {
   const { branch, stem, name, stars, daXianAge, isCurrentDaXian, isMingGong, isShenGong } = palace;
-  const ganzhi = `${STEMS[stem] ?? ""}${BRANCHES[branch] ?? ""}`;
-
-  const majorStars = stars.filter((star) => star.type === "major");
-  const luckyStars = stars.filter((star) => star.type === "lucky");
-  const shaStars = stars.filter((star) => star.type === "sha");
-
-  const ariaParts = [name];
-  if (isShenGong) ariaParts.push("身宫在此");
-  ariaParts.push(`干支${ganzhi}`);
-  if (majorStars.length > 0) {
-    ariaParts.push(
-      `主星${majorStars
-        .map((star) => `${star.name}${star.brightnessRaw ?? ""}${star.siHua ? `化${star.siHua}` : ""}`)
-        .join("、")}`,
-    );
-  } else {
-    ariaParts.push("空宫");
-  }
-  if (isCurrentDaXian && daXianAge) {
-    ariaParts.push(`当前大限 ${daXianAge[0]} 至 ${daXianAge[1]} 岁`);
-  }
-  if (isSelected) ariaParts.push("已选中，显示三方四正");
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={ariaParts.join("，")}
-      aria-pressed={isSelected}
-      data-palace-branch={branch}
-      className={cn(
-        "relative flex h-full w-full flex-col gap-1 bg-paper p-1.5 text-left transition-colors duration-150 sm:p-2",
-        "hover:bg-surface-2/70",
-        isSelected
-          ? "bg-cinnabar/[0.04] outline outline-1 -outline-offset-1 outline-cinnabar/60"
-          : isSanFang
-            ? "bg-cinnabar/[0.03] outline outline-1 -outline-offset-1 outline-dashed outline-cinnabar/35"
-            : null,
-      )}
-    >
-      {/* 宫名 / 命身标记 / 大限年龄 */}
-      <span className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-1 gap-y-0.5">
-        <span className="flex min-w-0 flex-wrap items-baseline gap-1">
-          <span
-            className={cn(
-              "font-serif text-[12px] font-semibold tracking-[0.06em]",
-              isMingGong ? "text-cinnabar" : "text-ink-2",
-            )}
-          >
-            {name}
-          </span>
-          {isShenGong ? (
-            <span className="border border-line/25 px-0.5 text-[12px] leading-none text-ink-3">
-              身
-            </span>
-          ) : null}
-        </span>
-        {daXianAge ? (
-          <span
-            className={cn(
-              "font-mono text-[12px] leading-none tabular-nums",
-              isCurrentDaXian ? "font-medium text-cinnabar" : "text-ink-3",
-            )}
-          >
-            {daXianAge[0]}–{daXianAge[1]}
-          </span>
-        ) : null}
+  const majorStars = stars.filter(s => s.type === 'major');
+  const renderStar = (star: Star, major: boolean) => {
+    const overlay = overlayStarSiHua?.[star.name];
+    return <span key={star.name} className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5">
+      <button type="button" onClick={e => { e.stopPropagation(); onStarClick?.(star); }} className={cn('min-h-9 max-w-full break-words font-serif leading-tight', major ? 'text-[15px] font-semibold' : 'text-[12px]', star.brightness === 'bright' ? 'text-ink' : star.brightness === 'dim' ? 'text-ink-3' : 'text-ink-2')}>{star.name}</button>
+      {major && star.brightnessRaw && <span className="text-[12px] text-ink-2"><Term name="庙旺利陷">{star.brightnessRaw}</Term></span>}
+      {star.siHua && <Term name={`化${star.siHua}`}><SiHuaBadge siHua={star.siHua} /></Term>}
+      {overlay && <button type="button" className="min-h-9" aria-label={`${star.name}${overlayLabel}化${overlay}`} onClick={e => { e.stopPropagation(); onSiHuaClick?.(star.name, overlay); }}><SiHuaBadge siHua={overlay} overlay label={overlayLabel} /></button>}
+    </span>;
+  };
+  return <div role="group" aria-label={`${name}，${majorStars.map(s => s.name).join('、') || '空宫'}`} data-palace-branch={branch} onClick={onClick} className={cn('relative flex h-full min-w-0 w-full flex-col gap-1 bg-paper p-1.5 text-left transition-colors sm:p-2 hover:bg-surface-2/70', isSelected ? 'bg-cinnabar/[0.04] outline outline-1 -outline-offset-1 outline-cinnabar/60' : isSanFang ? 'bg-cinnabar/[0.03] outline outline-1 -outline-offset-1 outline-dashed outline-cinnabar/35' : null)}>
+    <span className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-1 gap-y-0.5">
+      <span className="flex min-w-0 flex-wrap items-baseline gap-1">
+        <button type="button" aria-label={`选择${name}`} aria-pressed={isSelected} onClick={e => { e.stopPropagation(); onClick?.(); }} className={cn('min-h-9 font-serif text-[12px] font-semibold tracking-[0.06em]', isMingGong ? 'text-cinnabar' : 'text-ink-2')}>{name}</button>
+        {isShenGong && <span className="border border-line/25 px-0.5 text-[12px] leading-none text-ink-3">身</span>}
       </span>
-
-      {/* 干支 */}
-      <span className="font-mono text-[12px] leading-none tabular-nums text-ink-3">{ganzhi}</span>
-
-      {/* 主星 + 四化 */}
-      <span className="flex min-w-0 flex-col gap-0.5">
-        {majorStars.length === 0 ? (
-          <span className="font-serif text-[12px] leading-snug text-ink-3">空宫</span>
-        ) : (
-          majorStars.map((star) => {
-            const overlaySiHua = overlayStarSiHua?.[star.name];
-            return (
-              <span key={star.name} className="flex flex-wrap items-center gap-x-1 gap-y-0.5">
-                <span
-                  className={cn(
-                    "font-serif text-[15px] font-semibold leading-tight",
-                    brightnessTone(star.brightness),
-                  )}
-                >
-                  {star.name}
-                </span>
-                {star.brightnessRaw ? (
-                  <span
-                    className={cn(
-                      "text-[12px] leading-none",
-                      star.brightness === "dim" ? "text-ink-3" : "text-ink-2",
-                    )}
-                  >
-                    {star.brightnessRaw}
-                  </span>
-                ) : null}
-                {star.siHua ? <SiHuaBadge siHua={star.siHua} /> : null}
-                {overlaySiHua ? (
-                  <SiHuaBadge siHua={overlaySiHua} overlay label={overlayLabel} />
-                ) : null}
-              </span>
-            );
-          })
-        )}
-      </span>
-
-      {/* 吉星（辅星）：<640px 隐藏，优先保证宫格紧凑可读 */}
-      {luckyStars.length > 0 ? (
-        <span className="hidden flex-wrap gap-x-1.5 gap-y-0.5 text-[12px] leading-snug text-ink-3 sm:flex">
-          {luckyStars.map((star) => {
-            const overlaySiHua = overlayStarSiHua?.[star.name];
-            return (
-              <span key={star.name} className="inline-flex items-center gap-0.5">
-                {star.name}
-                {star.siHua ? <SiHuaBadge siHua={star.siHua} /> : null}
-                {overlaySiHua ? (
-                  <SiHuaBadge siHua={overlaySiHua} overlay label={overlayLabel} />
-                ) : null}
-              </span>
-            );
-          })}
-        </span>
-      ) : null}
-
-      {/* 煞星：<640px 隐藏，优先保证宫格紧凑可读 */}
-      {shaStars.length > 0 ? (
-        <span className="hidden flex-wrap gap-x-1.5 gap-y-0.5 text-[12px] leading-snug text-ink-2/90 sm:flex">
-          {shaStars.map((star) => {
-            const overlaySiHua = overlayStarSiHua?.[star.name];
-            return (
-              <span key={star.name} className="inline-flex items-center gap-0.5">
-                {star.name}
-                {star.siHua ? <SiHuaBadge siHua={star.siHua} /> : null}
-                {overlaySiHua ? (
-                  <SiHuaBadge siHua={overlaySiHua} overlay label={overlayLabel} />
-                ) : null}
-              </span>
-            );
-          })}
-        </span>
-      ) : null}
-    </button>
-  );
+      {daXianAge && <span className={cn('font-mono text-[12px] leading-none tabular-nums', isCurrentDaXian ? 'font-medium text-cinnabar' : 'text-ink-3')}>{daXianAge[0]}–{daXianAge[1]}</span>}
+    </span>
+    <span className="flex flex-wrap items-center gap-1 font-mono text-[12px] leading-snug text-ink-3">{STEMS[stem]}{BRANCHES[branch]} <Term name={name}>简介</Term></span>
+    <span className="flex min-w-0 flex-col gap-0.5">{majorStars.length ? majorStars.map(s => renderStar(s, true)) : <span className="text-[12px] text-ink-3"><Term name="空宫借星">空宫</Term></span>}</span>
+    <span className="hidden min-w-0 flex-wrap gap-x-1.5 text-[12px] text-ink-3 sm:flex">{stars.filter(s => s.type === 'lucky').map(s => renderStar(s, false))}</span>
+    <span className="hidden min-w-0 flex-wrap gap-x-1.5 text-[12px] text-ink-2 sm:flex">{stars.filter(s => s.type === 'sha').map(s => renderStar(s, false))}</span>
+  </div>;
 }

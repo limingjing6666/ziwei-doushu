@@ -4,12 +4,12 @@ import type { BirthInfo } from "@/lib/ziwei/types";
 import { Card } from "@/components/ui/Card";
 import { Disclosure } from "@/components/ui/Disclosure";
 import { IconInfo } from "@/components/icons";
-import BirthForm from "./BirthForm";
+import BirthForm, { type BirthFormState } from "./BirthForm";
 
 const STEPS = [
   {
     title: "出生日期",
-    detail: "按公历填写年、月、日，日期会与时辰一起决定命宫位置。",
+    detail: "按公历或农历填写年、月、日，日期会与时辰一起决定命宫位置。",
   },
   {
     title: "时刻与地点",
@@ -41,13 +41,15 @@ const FAQS = [
 
 export interface BirthPageProps {
   onStart: (info: BirthInfo) => void;
+  initialData?: Partial<BirthFormState>;
+  onFormSave?: (form: BirthFormState) => void;
 }
 
 /**
  * 起盘信息填写页：桌面左栏说明 + 右栏表单，移动端单列且表单在前。
  * 页面级 header / footer 由 app/layout.tsx 的 AppShell 提供，这里不重复渲染。
  */
-export default function BirthPage({ onStart }: BirthPageProps) {
+export default function BirthPage({ onStart, initialData, onFormSave }: BirthPageProps) {
   return (
     <section aria-labelledby="birth-page-title" className="bg-paper">
       <div className="container-page py-8 md:py-12 lg:py-14">
@@ -64,7 +66,7 @@ export default function BirthPage({ onStart }: BirthPageProps) {
               先补齐生辰，再读命盘
             </h1>
             <p className="mt-4 max-w-[40ch] text-[15px] leading-[1.85] text-ink-2">
-              填写公历出生日期、北京时间与出生地点，按三合四化起盘，并按经度换算真太阳时。
+              填写公历或农历出生日期、北京时间与出生地点，按三合四化起盘，并按经度换算真太阳时。
             </p>
 
             <div className="mt-8">
@@ -125,10 +127,10 @@ export default function BirthPage({ onStart }: BirthPageProps) {
                   出生信息
                 </h2>
                 <span className="shrink-0 text-[12px] text-ink-3">
-                  公历 · 北京时间
+                  双历 · 北京时间
                 </span>
               </div>
-              <BirthForm onSubmit={onStart} />
+              <BirthForm onSubmit={onStart} initialData={initialData} onFormSave={onFormSave} />
             </Card>
           </div>
         </div>

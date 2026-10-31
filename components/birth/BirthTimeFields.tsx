@@ -15,6 +15,8 @@ export default function BirthTimeFields({
   onMinuteChange,
   onUnknownTimeChange,
   compact = false,
+  errors = {},
+  useTrueSolar = true,
 }: {
   idPrefix: string;
   clockHour: string;
@@ -26,6 +28,8 @@ export default function BirthTimeFields({
   onMinuteChange: (minute: string) => void;
   onUnknownTimeChange: (unknown: boolean) => void;
   compact?: boolean;
+  errors?: Record<string, string>;
+  useTrueSolar?: boolean;
 }) {
   const hourId = `${idPrefix}-clock-hour`;
   const minuteId = `${idPrefix}-clock-minute`;
@@ -43,12 +47,14 @@ export default function BirthTimeFields({
         <legend className="sr-only">出生时间（北京时间）</legend>
 
         <div className="grid grid-cols-2 gap-2 sm:gap-3">
-          <Field id={hourId} label="时">
+          <Field id={hourId} label="时" error={errors.clockHour}>
             <Select
               id={hourId}
+              invalid={!!errors.clockHour}
               value={clockHour}
               onChange={(event) => onHourChange(event.target.value)}
             >
+              <option value="">小时</option>
               {Array.from({ length: 24 }, (_, index) => index).map((hour) => (
                 <option key={hour} value={String(hour)}>
                   {String(hour).padStart(2, "0")} 时
@@ -57,12 +63,14 @@ export default function BirthTimeFields({
             </Select>
           </Field>
 
-          <Field id={minuteId} label="分">
+          <Field id={minuteId} label="分" error={errors.clockMinute}>
             <Select
               id={minuteId}
+              invalid={!!errors.clockMinute}
               value={clockMinute}
               onChange={(event) => onMinuteChange(event.target.value)}
             >
+              <option value="">分钟</option>
               {Array.from({ length: 60 }, (_, index) => index).map((minute) => (
                 <option key={minute} value={String(minute)}>
                   {String(minute).padStart(2, "0")} 分
@@ -77,9 +85,9 @@ export default function BirthTimeFields({
             <p className="text-[12.5px] leading-relaxed text-ink-3">
               时辰不详，按子时（23:00–01:00）起盘
             </p>
-          ) : (
+          ) : clockHour === '' || clockMinute === '' ? <p className="text-xs text-ink-3">请选择出生时间，或明确勾选未知。</p> : (
             <p className="text-[13px] text-ink-2" aria-live="polite">
-              真太阳时{" "}
+              {useTrueSolar ? '真太阳时' : '钟表时间'}{" "}
               <span className="font-serif text-[18px] font-semibold tracking-[0.03em] text-ink">
                 {shichen.name}
               </span>

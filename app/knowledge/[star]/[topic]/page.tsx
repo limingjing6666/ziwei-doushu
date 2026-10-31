@@ -14,6 +14,7 @@
  */
 
 import Link from "next/link";
+import TermText from '@/components/TermText';
 import { notFound } from "next/navigation";
 import type { TopicKey } from "@/lib/ziwei/db-analysis";
 import {
@@ -202,14 +203,14 @@ export default async function KnowledgePage({
               {data.parsed.lundian ? (
                 <section id="lundian" className="scroll-mt-24">
                   <h2>核心论断</h2>
-                  <div className="whitespace-pre-wrap">{data.parsed.lundian}</div>
+                  <div className="whitespace-pre-wrap"><TermText text={data.parsed.lundian} /></div>
                 </section>
               ) : null}
 
               {data.parsed.yiju ? (
                 <section id="yiju" className="scroll-mt-24">
                   <h2>命盘依据</h2>
-                  <div className="whitespace-pre-wrap">{data.parsed.yiju}</div>
+                  <div className="whitespace-pre-wrap"><TermText text={data.parsed.yiju} /></div>
                 </section>
               ) : null}
 

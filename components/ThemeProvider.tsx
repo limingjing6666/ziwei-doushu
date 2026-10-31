@@ -15,16 +15,8 @@ const ThemeContext = createContext<ThemeContextValue>({
   setTheme: () => {},
 });
 
-function readDomTheme(): Theme {
-  if (typeof document !== "undefined") {
-    const attr = document.documentElement.getAttribute("data-theme");
-    if (attr === "light" || attr === "dark") return attr;
-  }
-  return "light";
-}
-
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(readDomTheme);
+  const [theme, setThemeState] = useState<Theme>('light');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

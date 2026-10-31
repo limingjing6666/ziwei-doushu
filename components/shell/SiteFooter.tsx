@@ -10,6 +10,7 @@ const PRODUCT_LINKS = [
 ];
 
 const LEGAL_LINKS = [
+  { href: "/glossary", label: "术语表" },
   { href: "/terms", label: "服务条款" },
   { href: "/privacy", label: "隐私政策" },
 ];

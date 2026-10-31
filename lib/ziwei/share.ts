@@ -1,5 +1,7 @@
 import type { BirthFormState } from '@/components/BirthForm';
 import type { BirthInfo } from './types';
+import { formSolarDate, validateBirthForm } from '@/lib/birth-form';
+import { BRANCHES } from './constants';
 
 /** 根据北京时间 + 经度计算真太阳时时辰支 (0-11) */
 export function calcTrueSolarBranch(clockHour: number, clockMinute: number, longitude: number): number {
@@ -17,15 +19,15 @@ export function calcTrueSolarBranch(clockHour: number, clockMinute: number, long
  * · 00:00-00:59 = 早子时，按本日排盘
  * 这与「时辰支同为子(0)」并不冲突——子时分早晚两段，需要在日期上区分。
  */
-export function formToBirthInfo(form: BirthFormState): BirthInfo {
-  let y = parseInt(form.year) || 0;
-  let m = parseInt(form.month) || 0;
-  let d = parseInt(form.day) || 0;
+export function formToBirthInfo(form: BirthFormState, lateZishiRule: 'next-day' | 'current-day' = 'next-day'): BirthInfo {
+  if (Object.keys(validateBirthForm(form)).length || !form.gender) throw new Error('请检查出生信息');
+  const solar = formSolarDate(form)!;
+  let { year: y, month: m, day: d } = solar;
 
   // 晚子时（23:00-23:59）按次日处理：用 Date 对象自动处理月末/年末进位
   if (!form.unknownTime) {
     const clockHour = parseInt(form.clockHour) || 0;
-    if (clockHour === 23 && y > 0 && m > 0 && d > 0) {
+    if (lateZishiRule === 'next-day' && clockHour === 23 && y > 0 && m > 0 && d > 0) {
       const next = new Date(y, m - 1, d + 1);
       y = next.getFullYear();
       m = next.getMonth() + 1;
@@ -35,11 +37,15 @@ export function formToBirthInfo(form: BirthFormState): BirthInfo {
 
   const hour = form.unknownTime
     ? 0
-    : calcTrueSolarBranch(parseInt(form.clockHour) || 0, parseInt(form.clockMinute) || 0, form.longitude);
+    : calcTrueSolarBranch(parseInt(form.clockHour) || 0, parseInt(form.clockMinute) || 0, form.useTrueSolar === false ? 120 : form.longitude);
   return {
     year: y, month: m, day: d,
     hour,
     gender: form.gender,
+    birthTimeKnown: !form.unknownTime,
+    timeCorrectionNotice: !form.unknownTime && hour !== calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120)
+      ? `按真太阳时校正后，出生时辰由「${BRANCHES[calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120)]}时」变为「${BRANCHES[hour]}时」` : undefined,
+    origInput: form.unknownTime ? undefined : { ...solar, clockHour: Number(form.clockHour), clockMinute: Number(form.clockMinute) },
     name: form.name || undefined,
     province: form.province || undefined,
     city: form.city || undefined,
@@ -51,9 +57,11 @@ export function formToBirthInfo(form: BirthFormState): BirthInfo {
 export function formToSearchParams(form: BirthFormState): URLSearchParams {
   const p = new URLSearchParams();
   if (form.name) p.set('n', form.name);
-  p.set('y', form.year);
-  p.set('m', form.month);
-  p.set('d', form.day);
+  const solar = formSolarDate(form);
+  p.set('y', solar ? String(solar.year) : form.year);
+  p.set('m', solar ? String(solar.month) : form.month);
+  p.set('d', solar ? String(solar.day) : form.day);
+  if (form.useTrueSolar === false) p.set('ts', '0');
   if (form.unknownTime) {
     p.set('u', '1');
   } else {
@@ -79,6 +87,8 @@ export function searchParamsToForm(params: URLSearchParams): Partial<BirthFormSt
     month,
     day,
     unknownTime: params.get('u') === '1',
+    useTrueSolar: params.get('ts') !== '0',
+    calendar: 'solar',
     clockHour: params.get('h') || '8',
     clockMinute: params.get('mi') || '0',
     province: params.get('p') || '',

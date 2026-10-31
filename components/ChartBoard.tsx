@@ -10,10 +10,13 @@ import { cn } from "@/lib/ui/cn";
 
 export interface ChartBoardProps {
   chart: ZiweiChart;
-  /** 保留星曜点击契约（本轮不接星曜详情）。 */
+  /** 点击星曜查看本地详情。 */
   onStarSelect?: (star: Star, palace: Palace) => void;
   onPalaceSelect?: (palace: Palace) => void;
-  /** 保留四化点击契约（本轮不接四化钻取）。 */
+  timeView?: TimeView;
+  liunianYear?: number;
+  onViewChange?: (view: TimeView) => void;
+  onYearChange?: (year: number) => void;
   onSiHuaClick?: (starName: string, siHua: string, view: TimeView) => void;
 }
 
@@ -63,10 +66,14 @@ interface CenterPoint {
  * 命盘区：运限切换 + 4×4 印刷表格宫格 + 三方四正 SVG 连线 + 图例。
  * 宫位选中状态在本组件内维护，选中时通过 onPalaceSelect 通知上层（联动 AI 解读）。
  */
-export default function ChartBoard({ chart, onPalaceSelect }: ChartBoardProps) {
+export default function ChartBoard({ chart, onPalaceSelect, onStarSelect, onSiHuaClick, timeView: controlledView, liunianYear: controlledYear, onViewChange, onYearChange }: ChartBoardProps) {
   const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
-  const [timeView, setTimeView] = useState<TimeView>("mingpan");
-  const [liunianYear, setLiunianYear] = useState<number>(new Date().getFullYear());
+  const [localView, setLocalView] = useState<TimeView>('mingpan');
+  const [localYear, setLocalYear] = useState(new Date().getFullYear());
+  const timeView = controlledView ?? localView;
+  const liunianYear = controlledYear ?? localYear;
+  const setTimeView = (view: TimeView) => { setLocalView(view); onViewChange?.(view); };
+  const setLiunianYear = (year: number) => { setLocalYear(year); onYearChange?.(year); };
 
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [centers, setCenters] = useState<Record<number, CenterPoint>>({});
@@ -129,12 +136,9 @@ export default function ChartBoard({ chart, onPalaceSelect }: ChartBoardProps) {
   }, [chart, timeView, liunianYear, overlayActive]);
 
   const handlePalaceClick = (branch: number) => {
-    const isDeselecting = selectedBranch === branch;
-    setSelectedBranch(isDeselecting ? null : branch);
-    if (!isDeselecting) {
-      const palace = palaceMap[branch];
-      if (palace) onPalaceSelect?.(palace);
-    }
+    setSelectedBranch(branch);
+    const palace = palaceMap[branch];
+    if (palace) onPalaceSelect?.(palace);
   };
 
   const sanFang = selectedBranch !== null ? getSanFangSiZheng(selectedBranch) : null;
@@ -167,13 +171,15 @@ export default function ChartBoard({ chart, onPalaceSelect }: ChartBoardProps) {
               <div
                 key={branch}
                 className={cn(
-                  "flex min-h-[112px] bg-paper sm:min-h-[128px]",
+                  "flex min-w-0 min-h-[112px] bg-paper sm:min-h-[128px]",
                   GRID_POS_CLASS[`${row}-${col}`],
                 )}
               >
                 <PalaceCell
                   palace={palace}
                   onClick={() => handlePalaceClick(branch)}
+                  onStarClick={star => { setSelectedBranch(branch); onStarSelect?.(star, palace); }}
+                  onSiHuaClick={(starName, siHua) => { setSelectedBranch(branch); onPalaceSelect?.(palace); onSiHuaClick?.(starName, siHua, timeView); }}
                   isSelected={selectedBranch === branch}
                   isSanFang={!!(sanFangSet?.has(branch) && selectedBranch !== branch)}
                   overlayStarSiHua={overlayActive ? overlay.data : undefined}

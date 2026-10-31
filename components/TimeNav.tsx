@@ -1,5 +1,7 @@
 "use client";
 
+import type { AiView } from '@/lib/ai/input';
+import Term from './Term';
 import { STEMS, SI_HUA_TABLE } from "@/lib/ziwei/constants";
 import type { ZiweiChart } from "@/lib/ziwei/types";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
@@ -7,6 +9,14 @@ import type { SegmentedOption } from "@/components/ui/SegmentedControl";
 import { IconButton } from "@/components/ui/IconButton";
 import { SiHuaBadge } from "@/components/ui/Badge";
 import { IconChevronLeft, IconChevronRight } from "@/components/icons";
+
+export function buildAiView(chart: ZiweiChart, view: TimeView, year: number): AiView & { transformations: Record<string, unknown> } {
+  const dx = chart.daXians[chart.currentDaXianIndex];
+  const p = dx && chart.palaces.find(p => p.branch === dx.palaceBranch);
+  return { type: view === 'mingpan' ? 'natal' : view === 'daxian' ? 'decadal' : 'yearly', year,
+    decadal: dx && p ? { startAge: dx.startAge, endAge: dx.endAge, palaceName: dx.palaceName, stem: p.stem } : undefined,
+    transformations: { natal: chart.palaces.flatMap(p => p.stars.filter(s => s.siHua).map(s => ({ star: s.name, siHua: s.siHua, palace: p.name }))), decadal: p ? buildSiHuaOverlay(p.stem) : {}, yearly: buildSiHuaOverlay(getYearStemIndex(year)) } };
+}
 
 export type TimeView = "mingpan" | "daxian" | "liunian";
 
@@ -77,12 +87,13 @@ export default function TimeNav({
   })();
 
   const stepYear = (delta: number) => {
-    onYearChange(liunianYear + delta);
+    onYearChange(Math.max(1900, Math.min(2100, liunianYear + delta)));
     if (view !== "liunian") onViewChange("liunian");
   };
 
   return (
-    <div className="mb-3">
+    <div className="mb-3 min-w-0">
+      <div className="mb-2 flex flex-wrap gap-3 text-xs text-ink-3"><span>概念：</span><Term name="本命" /><Term name="大限" /><Term name="流年" /><Term name="四化" /></div>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div className="flex min-w-0 items-center gap-2">
           <span className="hidden text-[12px] tracking-[0.16em] text-ink-3 sm:inline">运限</span>
@@ -124,7 +135,7 @@ export default function TimeNav({
             return (
               <span key={siHua} className="inline-flex items-center gap-1 text-ink-2">
                 {starName}
-                <SiHuaBadge siHua={siHua} overlay label={view === "daxian" ? "限" : "年"} />
+                <Term name={`化${siHua}`}><SiHuaBadge siHua={siHua} overlay label={view === "daxian" ? "限" : "年"} /></Term>
               </span>
             );
           })}

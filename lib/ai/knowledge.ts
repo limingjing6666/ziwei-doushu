@@ -8,7 +8,7 @@ import { retrieveMethod } from '@/lib/ziwei/method/retrieve';
 // Defense in depth for existing knowledge modules too. Never feed retired quotation fields or raw methodology.
 export function safeReference(value: string): string {
   // Drop the whole paragraph when restricted: a quotation may contain sentence punctuation.
-  return value.split(/\n\s*\n/).filter(s => !/\u5929\u7eaa|\u502a\u5e08|\u502a\u6d77\u53a6|\u502a\u5148\u751f|B\s*站|bilibili|BV\w+|\d{1,2}[:：]\d{2}|第\s*\d+\s*[集讲]|[pP]\d{2}|同集|死别|埋尸|坟|冢|夭|必离|离婚|刑克|克夫|克妻|重大灾|残疾|前世欠债/i.test(s)).join('\n').replace(/�/g, '');
+  return value.split(/\n\s*\n/).filter(s => !/\u5929\u7eaa|\u502a\u5e08|\u502a\u6d77\u53a6|\u502a\u5148\u751f|B\s*站|bilibili|BV\w+|\d{1,2}[:：]\d{2}|第\s*\d+\s*[集讲]|[pP]\d{2}|同集|死别|埋尸|坟|冢|刑克|克夫|克妻|重大灾|前世欠债/i.test(s)).join('\n').replace(/�/g, '');
 }
 const PALACES: [string, keyof StarProfile][] = [
   ['命宫', 'mingGong'], ['夫妻', 'fuQi'], ['福德', 'fuDe'], ['财帛', 'caiBo'],

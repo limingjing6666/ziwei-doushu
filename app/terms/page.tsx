@@ -11,7 +11,6 @@ const SECTIONS: LegalSection[] = [
   { id: "disclaimer", title: "4. 免责声明" },
   { id: "changes", title: "5. 服务变更与终止" },
   { id: "law", title: "6. 法律适用与争议解决" },
-  { id: "contact", title: "7. 联系方式" },
 ];
 
 export default function TermsPage() {
@@ -76,7 +75,7 @@ export default function TermsPage() {
       <p>
         本平台命理内容基于传统星宫规则的独立整理，
         <strong>不保证 100% 准确</strong>
-        。命运受天、地、人三才共同影响，本平台输出仅作为认识自我的参考，使用者应理性看待，不应过度依赖任何单一命理判断。
+        。个人经历受到环境、资源和选择等多种因素影响，使用者应理性看待，不应过度依赖任何单一命理判断。
       </p>
       <p>
         因使用本平台内容产生的任何后果（包括但不限于决策失误、心理影响、关系变化等），本平台不承担法律责任。
@@ -86,7 +85,7 @@ export default function TermsPage() {
         5. 服务变更与终止
       </h2>
       <p>
-        本平台保留随时调整、暂停或终止部分或全部服务的权利。重大变更将以站内公告或邮件方式通知用户。
+        本平台保留随时调整、暂停或终止部分或全部服务的权利。重大变更将在站内说明。
       </p>
 
       <h2 id="law" className="scroll-mt-24">
@@ -96,10 +95,6 @@ export default function TermsPage() {
         本条款适用中华人民共和国法律。若发生争议，双方应友好协商；协商不成的，提交本平台运营主体所在地有管辖权的人民法院诉讼解决。
       </p>
 
-      <h2 id="contact" className="scroll-mt-24">
-        7. 联系方式
-      </h2>
-      <p>如有疑问，请通过本平台公布的客服微信 / 邮箱联系。</p>
     </LegalLayout>
   );
 }

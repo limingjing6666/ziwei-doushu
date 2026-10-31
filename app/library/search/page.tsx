@@ -6,6 +6,7 @@
  */
 
 import Link from "next/link";
+import { redirect } from 'next/navigation';
 import { searchClassics, getParagraphById } from "@/lib/classics";
 import { CLASSICS_NOTICE } from "@/lib/classics/types";
 import { pageMetadata } from "@/lib/brand";
@@ -52,7 +53,8 @@ export default async function SearchPage({
 }) {
   const sp = await searchParams;
   const q = sp.q?.trim() || "";
-  const hits = q ? searchClassics(q, 50) : [];
+  if (!q) redirect('/library');
+  const hits = searchClassics(q, 50);
 
   return (
     <div className="container-page py-8 lg:py-12">

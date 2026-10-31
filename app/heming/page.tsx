@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import BirthForm, { type BirthFormState } from '@/components/birth/BirthForm';
 import { Seal } from '@/components/brand';
 import { IconCompatibility, IconInfo } from '@/components/icons';
@@ -11,10 +11,13 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Spinner } from '@/components/ui/Skeleton';
-import { consumeAiResponse } from '@/lib/ai/client';
+import { requestAi, classifyAiError, type AiClientError } from '@/lib/ai/client';
+import { AiErrorNotice, AiLoading } from '@/components/AiStatus';
+import { validateBirthForm } from '@/lib/birth-form';
+import { buildAiView } from '@/components/TimeNav';
 import { generateChart as buildChart } from '@/lib/ziwei/algorithm';
 import { formToBirthInfo } from '@/lib/ziwei/share';
-import type { BirthInfo, ZiweiChart } from '@/lib/ziwei/types';
+import type { ZiweiChart } from '@/lib/ziwei/types';
 
 /** 分析完成后的快捷追问（沿用原有 5 个问题，只改视觉） */
 const FOLLOW_UP_QUESTIONS = [
@@ -27,14 +30,7 @@ const FOLLOW_UP_QUESTIONS = [
 
 /** 表单是否填齐：性别 + 年月日 + 出生时间（或勾选「时辰不详」） */
 function isFormReady(form: BirthFormState | null): boolean {
-  return !!(
-    form &&
-    form.year &&
-    form.month &&
-    form.day &&
-    form.gender &&
-    (form.unknownTime || (form.clockHour !== '' && form.clockMinute !== ''))
-  );
+  return !!form && Object.keys(validateBirthForm(form)).length === 0;
 }
 
 /** 甲 / 乙 单方出生信息卡：只负责外框、标签与完成度提示，表单本体由 BirthForm compact 变体提供。 */
@@ -70,6 +66,7 @@ function BirthSideCard({
       <div className="flex-1 p-4 sm:p-5">
         <BirthForm
           variant="compact"
+          lateZishiRule="next-day"
           hideSubmit
           onSubmit={() => {}}
           onFormSave={onFormSave}
@@ -88,90 +85,63 @@ export default function HemingPage() {
   const [analysis, setAnalysis] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [question, setQuestion] = useState('');
-  const [analysisError, setAnalysisError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [error, setError] = useState<AiClientError | null>(null);
+  const [charts, setCharts] = useState<{ chartA: ZiweiChart; chartB: ZiweiChart } | null>(null);
+  const [turns, setTurns] = useState<{ question: string; answer: string }[]>([]);
+  const last = useRef<{ payload: Record<string, unknown>; index: number } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   const analysisRef = useRef<HTMLElement>(null);
   const requestRef = useRef<AbortController | null>(null);
+  const startingRef = useRef(false);
   useEffect(() => () => requestRef.current?.abort(), []);
 
-  // ─── 起盘（单次调用，返回 chart 给统一流程使用）──────────────────
-  const generateChart = useCallback(
-    async (info: BirthInfo): Promise<ZiweiChart | null> => {
-      try {
-        return buildChart(info);
-      } catch {
-        return null;
-      }
-    },
-    [],
-  );
-
-  // ─── 统一入口：起盘 + 合盘分析（含追问）─────────────────────────
-  const runAnalysis = useCallback(
-    async (q?: string) => {
-      if (requestRef.current && !requestRef.current.signal.aborted) return;
-      setFormError(null);
-      if (!isFormReady(formA) || !isFormReady(formB)) {
-        setFormError('请先填写双方完整出生信息');
-        return;
-      }
-      const abort = new AbortController();
-      requestRef.current = abort;
-      setAnalyzing(true);
-      setAnalysis('');
-      setAnalysisError(false);
-      setErrorMessage('');
-
-      try {
-        // 每次分析都按当前表单重新起盘，避免编辑后沿用旧盘。
-        const [cA, cB] = await Promise.all([
-          generateChart(formToBirthInfo(formA!)),
-          generateChart(formToBirthInfo(formB!)),
-        ]);
-        if (abort.signal.aborted) return;
-        if (!cA || !cB) {
-          setAnalysisError(true);
-          setAnalyzing(false);
-          return;
-        }
-        const res = await fetch('/api/heming', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chartA: cA, chartB: cB, question: q ?? undefined }),
-          signal: abort.signal,
-        });
-        await consumeAiResponse(res, setAnalysis);
-        // 分析结束后滚动到分析区顶部
-        setTimeout(
-          () =>
-            analysisRef.current?.scrollIntoView({
-              behavior: 'smooth',
-              block: 'start',
-            }),
-          100,
-        );
-      } catch (error) {
-        if (abort.signal.aborted) return;
-        setErrorMessage(
-          error instanceof Error ? error.message : '分析暂时不可用，请重试。',
-        );
-        setAnalysisError(true);
-      } finally {
-        if (requestRef.current === abort) {
-          requestRef.current = null;
-          if (!abort.signal.aborted) setAnalyzing(false);
-        }
-      }
-    },
-    [formA, formB, generateChart],
-  );
+  const execute = async (payload: Record<string, unknown>, index: number) => {
+    if (requestRef.current) return;
+    const controller = new AbortController(); requestRef.current = controller;
+    last.current = { payload, index }; setAnalyzing(true); setError(null);
+    try {
+      await requestAi('/api/heming', payload, text => {
+        if (index === -1) setAnalysis(text);
+        else setTurns(prev => prev.map((turn, i) => i === index ? { ...turn, answer: text } : turn));
+      }, controller.signal);
+    } catch (e) { if (!controller.signal.aborted) setError(classifyAiError(e)); }
+    finally { if (requestRef.current === controller) { requestRef.current = null; if (!controller.signal.aborted) setAnalyzing(false); } }
+  };
+  const runAnalysis = async (q?: string) => {
+    if (requestRef.current || analyzing || startingRef.current) return;
+    if (q?.trim() && charts) {
+      const index = turns.length;
+      setTurns(prev => [...prev, { question: q, answer: '' }]); setQuestion('');
+      const year = new Date().getFullYear();
+      await execute({ ...charts, question: q, mode: 'followup', reportSummary: analysis.slice(0, 1600),
+        messages: turns.slice(-6).flatMap(t => [{ role: 'user', content: t.question.slice(0, 2000) }, { role: 'assistant', content: t.answer.slice(0, 2000) }]),
+        viewA: buildAiView(charts.chartA, 'mingpan', year), viewB: buildAiView(charts.chartB, 'mingpan', year) }, index);
+      return;
+    }
+    setFormError(null);
+    const invalid = [formA, formB].findIndex(f => !isFormReady(f));
+    if (invalid >= 0) {
+      setFormError(`请检查${invalid === 0 ? '甲' : '乙'}方的出生信息`);
+      document.querySelectorAll<HTMLFormElement>('form')[invalid]?.requestSubmit();
+      return;
+    }
+    startingRef.current = true;
+    setAnalyzing(true); setError(null);
+    await new Promise(resolve => setTimeout(resolve, 32));
+    try {
+      const pair = { chartA: buildChart(formToBirthInfo(formA!)), chartB: buildChart(formToBirthInfo(formB!)) };
+      setCharts(pair); setAnalysis(''); setTurns([]);
+      const year = new Date().getFullYear();
+      await execute({ ...pair, viewA: buildAiView(pair.chartA, 'mingpan', year), viewB: buildAiView(pair.chartB, 'mingpan', year), mode: 'overview' }, -1);
+    } catch { setFormError('排盘未完成，请检查双方出生信息后重试'); setAnalyzing(false); }
+    finally { startingRef.current = false; }
+  };
 
   const handleFollowUp = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (analyzing) return;
-    void runAnalysis(question || undefined);
+    if (question.trim()) void runAnalysis(question);
   };
 
   return (
@@ -288,22 +258,10 @@ export default function HemingPage() {
               </div>
             ) : null}
 
-            {analysis ? <AiProse text={analysis} streaming={analyzing} /> : null}
-
-            {analysisError ? (
-              <div
-                role="alert"
-                className="mt-5 flex items-start gap-3 rounded-sm border border-cinnabar/30 bg-cinnabar/5 px-4 py-3"
-              >
-                <IconInfo size={18} className="mt-0.5 shrink-0 text-cinnabar" />
-                <div className="min-w-0 text-[14px] leading-relaxed text-ink-2">
-                  <p className="font-medium text-ink">分析未能完成</p>
-                  <p className="mt-1">
-                    {errorMessage || '分析暂时不可用，请稍后重试。'}
-                  </p>
-                </div>
-              </div>
-            ) : null}
+            {charts && [charts.chartA, charts.chartB].map((c, i) => <div key={i}>{c.birthInfo.birthTimeKnown === false && <p className="ux-notice my-3">{i === 0 ? '甲方' : '乙方'}出生时辰未知，命宫、身宫与各宫排布不可靠，结果仅供参考。</p>}{c.birthInfo.timeCorrectionNotice && <p className="ux-notice my-3">{i === 0 ? '甲方' : '乙方'}：{c.birthInfo.timeCorrectionNotice}。可在表单改按钟表时间后重新合盘。</p>}</div>)}
+            {analysis ? <div aria-label="原始合盘报告"><AiProse text={analysis} streaming={analyzing && last.current?.index === -1} /></div> : null}
+            {analyzing && <AiLoading />}
+            <AiErrorNotice error={error} loading={analyzing} retry={() => { if (last.current) void execute(last.current.payload, last.current.index); }} />
           </div>
 
           {/* ─── 分析完成后的追问区（沿用原有行为）──────────────── */}
@@ -313,9 +271,11 @@ export default function HemingPage() {
                 继续追问
               </h3>
               <p className="mt-1 text-[13px] text-ink-3">
-                基于本次合盘结果继续提问。
+                基于本次合盘结果继续提问，原报告保持不变。
               </p>
 
+              <div className="mt-4 space-y-4" aria-label="合盘追问对话">{turns.map((turn, i) => <Card key={i} className="p-3"><p className="mb-3 rounded-sm bg-surface-2 p-3 text-sm text-ink-2">{turn.question}</p><AiProse text={turn.answer} streaming={analyzing && last.current?.index === i} /></Card>)}</div>
+              <Button variant="secondary" className="mt-4" disabled={analyzing} onClick={() => void runAnalysis()}>用当前表单重新合盘</Button>
               <div className="mt-4 flex flex-wrap gap-2">
                 {FOLLOW_UP_QUESTIONS.map((item) => (
                   <Button
@@ -348,7 +308,7 @@ export default function HemingPage() {
                   disabled={analyzing}
                   className="min-w-0 flex-1 disabled:opacity-50"
                 />
-                <Button type="submit" disabled={analyzing} className="shrink-0">
+                <Button type="submit" disabled={analyzing || !question.trim()} className="shrink-0">
                   {analyzing ? '分析中…' : '发送'}
                 </Button>
               </form>

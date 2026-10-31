@@ -21,7 +21,7 @@ export default function GenderSegment({
 }: {
   /** radio name，同一页多个表单需唯一 */
   name: string;
-  value: "male" | "female";
+  value: "male" | "female" | "";
   onChange: (gender: "male" | "female") => void;
 }) {
   return (

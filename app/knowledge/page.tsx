@@ -67,7 +67,7 @@ export default function KnowledgeHomePage() {
   ).slice(0, 6);
 
   return (
-    <div className="container-page py-10 lg:py-14">
+    <div className="knowledge-page container-page py-10 lg:py-14">
       <PageHeader
         eyebrow="星曜知识"
         title="紫微斗数知识库"
