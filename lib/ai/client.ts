@@ -46,8 +46,9 @@ export async function consumeAiResponse(response: Response, onText: (text: strin
 // Session-memory only: no birth data or conversation is written to browser storage.
 const cache = new Map<string, string>();
 export async function requestAi(endpoint: string, body: Record<string, unknown>, onText: (text: string) => void, signal: AbortSignal): Promise<void> {
-  const messages = Array.isArray(body.messages) ? body.messages as { role: string; content: string }[] : [];
-  const key = JSON.stringify({ ...body, messages: messages.filter(m => m.role === 'user').slice(-1), endpoint });
+  // Follow-ups depend on the complete conversation, not just the final question.
+  // Explicit topics/details send a standalone message, so repeated topics still hit.
+  const key = JSON.stringify({ endpoint, ...body });
   if (cache.has(key)) { onText(cache.get(key)!); return; }
   let result = '';
   try {

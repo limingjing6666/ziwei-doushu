@@ -7,6 +7,9 @@ export const isObject = (x: unknown): x is Record<string, unknown> => !!x && typ
 export const text = (x: unknown, max = 100) => typeof x === 'string' ? x.slice(0, max) : '';
 const num = (x: unknown, fallback = -1) => typeof x === 'number' && Number.isFinite(x) ? x : fallback;
 const index = (x: unknown, max: number) => Number.isInteger(x) && num(x) >= 0 && num(x) < max ? num(x) : -1;
+const palaceNames = new Set(['命', '兄弟', '夫妻', '子女', '财帛', '疾厄', '迁移', '交友', '仆役', '官禄', '田宅', '福德', '父母']);
+const palaceName = (x: unknown) => typeof x === 'string' && palaceNames.has(x.replace(/宫$/, '')) ? x : '未知宫';
+const age = (x: unknown) => Number.isInteger(x) && num(x) >= 0 && num(x) <= 150;
 const list = (x: unknown, max: number) => Array.isArray(x) ? x.slice(0, max).filter(isObject) : [];
 const sihua = (x: unknown) => ['禄', '权', '科', '忌'].includes(text(x)) ? x as Star['siHua'] : undefined;
 
@@ -16,7 +19,7 @@ export function normalizeChart(raw: unknown): ZiweiChart & { liunianYear?: numbe
   const birth = isObject(raw.birthInfo) ? raw.birthInfo : {};
   const lunar = isObject(raw.lunarInfo) ? raw.lunarInfo : {};
   const palaces: Palace[] = list(raw.palaces, 12).map(p => ({
-    name: text(p.name, 20), branch: index(p.branch, 12), stem: index(p.stem, 10),
+    name: palaceName(p.name), branch: index(p.branch, 12), stem: index(p.stem, 10),
     stars: list(p.stars, 60).map(s => ({
       name: text(s.name, 20),
       type: ['major', 'lucky', 'sha', 'minor'].includes(text(s.type)) ? s.type as Star['type'] : 'minor',
@@ -42,7 +45,7 @@ export function normalizeChart(raw: unknown): ZiweiChart & { liunianYear?: numbe
     ziweiPos: index(raw.ziweiPos, 12), palaces,
     liunianYear: typeof raw.liunianYear === 'number' && Number.isInteger(raw.liunianYear) && raw.liunianYear >= 1800 && raw.liunianYear <= 2200 ? raw.liunianYear : undefined,
     currentAge: num(raw.currentAge), currentDaXianIndex: index(raw.currentDaXianIndex, 12),
-    daXians: list(raw.daXians, 12).map(d => ({ startAge: num(d.startAge), endAge: num(d.endAge), palaceBranch: index(d.palaceBranch, 12), palaceName: text(d.palaceName, 20) })),
+    daXians: list(raw.daXians, 12).map(d => ({ startAge: num(d.startAge), endAge: num(d.endAge), palaceBranch: index(d.palaceBranch, 12), palaceName: palaceName(d.palaceName) })),
   };
   return chart as ZiweiChart;
 }
@@ -60,9 +63,9 @@ export function normalizeView(raw: unknown, chart: ZiweiChart, currentYear = new
   const current = chart.daXians[chart.currentDaXianIndex];
   const stem = current ? chart.palaces.find(p => p.branch === current.palaceBranch)?.stem : undefined;
   return { type: ['natal', 'decadal', 'yearly'].includes(text(v.type)) ? v.type as AiView['type'] : 'yearly', year,
-    decadal: dx && num(dx.startAge) >= 0 && num(dx.endAge) >= num(dx.startAge) && num(dx.endAge) <= 150 && index(dx.stem, 10) >= 0
-      ? { startAge: num(dx.startAge), endAge: num(dx.endAge), palaceName: text(dx.palaceName, 20), stem: index(dx.stem, 10) }
-      : current && stem !== undefined ? { startAge: current.startAge, endAge: current.endAge, palaceName: current.palaceName, stem } : undefined };
+    decadal: dx && age(dx.startAge) && age(dx.endAge) && num(dx.endAge) >= num(dx.startAge) && index(dx.stem, 10) >= 0 && palaceName(dx.palaceName) !== '未知宫'
+      ? { startAge: num(dx.startAge), endAge: num(dx.endAge), palaceName: palaceName(dx.palaceName), stem: index(dx.stem, 10) }
+      : current && age(current.startAge) && age(current.endAge) && current.endAge >= current.startAge && index(stem, 10) >= 0 ? { startAge: current.startAge, endAge: current.endAge, palaceName: palaceName(current.palaceName), stem: stem! } : undefined };
 }
 
 export interface ChatMessage { role: 'user' | 'assistant'; content: string }

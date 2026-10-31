@@ -63,7 +63,7 @@ export default function HemingPage() {
     setTurns(prev => [...prev, { question: q, answer: '' }]); setQuestion('');
     const year = new Date().getFullYear();
     void execute({ ...charts, question: q, mode: 'followup', reportSummary: report.slice(0, 1600),
-      messages: turns.flatMap(t => [{ role: 'user', content: t.question }, { role: 'assistant', content: t.answer }]),
+      messages: turns.slice(-6).flatMap(t => [{ role: 'user', content: t.question.slice(0, 2000) }, { role: 'assistant', content: t.answer.slice(0, 2000) }]),
       viewA: buildAiView(charts.chartA, 'mingpan', year), viewB: buildAiView(charts.chartB, 'mingpan', year) }, index);
   };
   return <main className="max-w-6xl mx-auto p-4 sm:p-6 py-8">
@@ -87,7 +87,7 @@ export default function HemingPage() {
     {report && <section className="mt-6" aria-label="合盘追问对话"><h2 className="text-lg mb-4">继续追问（原报告保持不变）</h2>
       <div className="space-y-4">{turns.map((turn, i) => <div key={i} className="card rounded-xl p-4"><p className="text-sm rounded-xl p-3 ml-5 mb-3" style={{ background: 'var(--ac-bg)' }}>{turn.question}</p><Markdown text={turn.answer} streaming={loading && last.current?.index === i} />{loading && last.current?.index === i && <AiLoading />}{last.current?.index === i && <AiErrorNotice error={error} loading={loading} retry={() => { if (last.current) void execute(last.current.payload, i); }} />}</div>)}</div>
       <div className="flex flex-wrap gap-2 my-4">{['我们怎样沟通更舒服？', '适合怎样分工合作？', '分歧时可以怎么处理？'].map(q => <button className="ux-button text-sm" disabled={loading} key={q} onClick={() => follow(q)}>{q}</button>)}</div>
-      <form className="flex gap-2" onSubmit={e => { e.preventDefault(); follow(question); }}><input aria-label="合盘追问" className="input-base flex-1 min-w-0" value={question} onChange={e => setQuestion(e.target.value)} placeholder="如：怎样减少沟通中的误会？" disabled={loading} /><button className="ux-button shrink-0" disabled={loading || !question.trim()}>{loading ? '解读中…' : '追问'}</button></form>
+      <form className="flex gap-2" onSubmit={e => { e.preventDefault(); follow(question); }}><input aria-label="合盘追问" className="input-base flex-1 min-w-0" maxLength={1000} value={question} onChange={e => setQuestion(e.target.value)} placeholder="如：怎样减少沟通中的误会？" disabled={loading} /><button className="ux-button shrink-0" disabled={loading || !question.trim()}>{loading ? '解读中…' : '追问'}</button></form>
     </section>}
   </main>;
 }

@@ -40,11 +40,11 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
     } catch (e) { if (!controller.signal.aborted) setError(classifyAiError(e)); }
     finally { if (request.current === controller) { request.current = null; if (!controller.signal.aborted) setLoading(false); } }
   };
-  const send = (question: string, mode: 'overview' | 'detail' | 'followup' = 'followup') => {
+  const send = (question: string, mode: 'overview' | 'detail' | 'followup' = 'followup', standalone = false) => {
     if (!question.trim() || request.current) return;
     const next: ChatMessage[] = [...messages, { role: 'user', content: question }];
     setMessages([...next, { role: 'assistant', content: '' }]); setInput('');
-    void execute({ chart, messages: next, view: view ?? { type: 'yearly', year: new Date().getFullYear() }, birthTimeKnown: chart.birthInfo.birthTimeKnown !== false, mode }, next.length);
+    void execute({ chart, messages: (standalone ? next.slice(-1) : next.slice(-12)).map(m => ({ ...m, content: m.content.slice(0, 2000) })), view: view ?? { type: 'yearly', year: new Date().getFullYear() }, birthTimeKnown: chart.birthInfo.birthTimeKnown !== false, mode }, next.length);
   };
   const localQuestion = selectedStar ? `请简要解读${selectedPalace?.name ?? ''}的${selectedStar.name}，先说白话结论。`
     : selectedSiHua ? `请简要解读当前所选视图的${selectedSiHua.starName}化${selectedSiHua.siHua}。`
@@ -57,14 +57,14 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
       {selectedPalace && <><h3><Term name={selectedPalace.name} /></h3><p className="my-2">{termDescription(selectedPalace.name)}</p><p>主星：{selectedPalace.stars.filter(s => s.type === 'major').map(s => s.name).join('、') || '空宫，可参考对宫主星'}</p></>}
       {selectedStar && <p className="my-2"><Term name={selectedStar.name} />：{termDescription(selectedStar.name)}</p>}
       {selectedSiHua && <p><Term name={`化${selectedSiHua.siHua}`} />：{termDescription(`化${selectedSiHua.siHua}`)}</p>}
-      <button className="ux-button mt-3" disabled={loading} onClick={() => send(localQuestion, 'detail')}>{loading ? '解读中…' : selectedStar ? '让 AI 解读这颗星' : selectedSiHua ? '让 AI 解读这一四化' : '让 AI 解读这一宫'}</button>
+      <button className="ux-button mt-3" disabled={loading} onClick={() => send(localQuestion, 'detail', true)}>{loading ? '解读中…' : selectedStar ? '让 AI 解读这颗星' : selectedSiHua ? '让 AI 解读这一四化' : '让 AI 解读这一宫'}</button>
     </div>}
     <p className="text-xs mb-2" style={{ color: 'var(--tx-2)' }}>以下话题会请求 AI；点盘面只看简介。</p>
-    <div className="grid grid-cols-3 gap-2 mb-5">{TOPICS.map(([key, label, question]) => <button key={key} className="ux-button text-sm px-1" disabled={loading} onClick={() => send(question, key === 'overview' ? 'overview' : 'followup')}>{label}</button>)}</div>
+    <div className="grid grid-cols-3 gap-2 mb-5">{TOPICS.map(([key, label, question]) => <button key={key} className="ux-button text-sm px-1" disabled={loading} onClick={() => send(question, key === 'overview' ? 'overview' : 'followup', true)}>{label}</button>)}</div>
     {messages.length === 0 && <p className="text-sm my-6" style={{ color: 'var(--tx-2)' }}>命盘已生成。先看看宫位简介，再选一个想了解的话题。</p>}
     <div className="space-y-4" aria-live="polite">{messages.map((m, i) => <div key={i} className={m.role === 'user' ? 'rounded-xl p-3 ml-6 text-sm' : 'py-2'} style={m.role === 'user' ? { background: 'var(--ac-bg)', border: '1px solid var(--ac-bdr)' } : undefined}>{m.role === 'assistant' ? <Markdown text={m.content} streaming={loading && i === messages.length - 1} /> : m.content}</div>)}</div>
     {loading && <AiLoading />}
     <AiErrorNotice error={error} loading={loading} retry={() => { if (last.current) void execute(last.current.payload, last.current.index); }} />
-    <form className="flex gap-2 mt-4" onSubmit={e => { e.preventDefault(); send(input); }}><input aria-label="向 AI 提问" className="input-base min-w-0 flex-1" value={input} onChange={e => setInput(e.target.value)} placeholder="今年适合换工作吗？" disabled={loading} /><button className="ux-button shrink-0" disabled={loading || !input.trim()}>{loading ? '解读中…' : '提问'}</button></form>
+    <form className="flex gap-2 mt-4" onSubmit={e => { e.preventDefault(); send(input); }}><input aria-label="向 AI 提问" className="input-base min-w-0 flex-1" maxLength={2000} value={input} onChange={e => setInput(e.target.value)} placeholder="今年适合换工作吗？" disabled={loading} /><button className="ux-button shrink-0" disabled={loading || !input.trim()}>{loading ? '解读中…' : '提问'}</button></form>
   </section>;
 }
