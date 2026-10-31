@@ -46,7 +46,7 @@ for (const preserved of ['大限优先是依据分析的层次', '不推算死�
 }
 assert.doesNotMatch(INTERPRET_SYSTEM, /但不是医学诊断|缺项或流派差异须明示/);
 assert.ok(HEMING_SYSTEM.includes('大限优先'));
-assert.ok(HEMING_SYSTEM.includes('最多1200字'));
+assert.ok(HEMING_SYSTEM.includes('硬上限1100字'));
 assert.ok(HEMING_SYSTEM.includes('保留完整结尾'));
 assert.ok(RULE_INDEX.star.get('紫微')?.length);
 assert.ok(RULE_INDEX.palace.get('夫妻')?.length);

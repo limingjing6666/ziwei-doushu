@@ -16,7 +16,7 @@ import { ALL_STARS, getKnowledge } from '../../lib/seo/knowledge';
 import { STAR_DB } from '../../lib/ziwei/db-analysis';
 import { streamDeepSeek } from '../../lib/ai/deepseek';
 import { retrieveKnowledge, safeReference } from '../../lib/ai/knowledge';
-import { INTERPRET_SYSTEM, HEMING_SYSTEM } from '../../lib/ai/prompts';
+import { INTERPRET_SYSTEM, HEMING_SYSTEM, UNKNOWN_TIME_RULE } from '../../lib/ai/prompts';
 import { POST as interpret } from '../../app/api/interpret/route';
 import { POST as heming } from '../../app/api/heming/route';
 
@@ -130,16 +130,16 @@ async function main() {
     process.env.AI_MINUTE_LIMIT = '100'; process.env.AI_DAILY_LIMIT = '100';
     delete process.env.UPSTASH_REDIS_REST_URL; delete process.env.UPSTASH_REDIS_REST_TOKEN;
     const post = (value: unknown) => new Request('http://localhost/api/interpret', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-real-ip': 'round3-fixture' }, body: JSON.stringify(value) });
-    const endingRule = '第一句直接回答（时辰未知固定首句优先），术语首次出现括号解释；接近上限主动收束，在最后一条依据或建议处自然结束，全文及结尾不得写免责、提醒或无法判断等元话语。';
+    const endingRule = '第一句直接回答（时辰未知固定首句优先），术语首次出现括号解释，每个括号解释≤12字，同类术语只解释一次；接近上限主动收束，在最后一条依据或建议处自然结束，全文及结尾不得写免责、提醒或无法判断等元话语。';
     for (const [mode, expected] of [['overview', 2400], ['detail', 1800], ['followup', 2200]] as const) {
       globalThis.fetch = async (_url, init) => {
         const payload = JSON.parse(init!.body as string);
         assert.equal(payload.max_tokens, expected);
         const lengthRule = (mode === 'overview'
-          ? '整盘总览700–1000汉字（含括号解释，不含标题），硬上限1200字，写到上限前收束；独立健康/感情/婚姻/事业专题600–1000字，详细给出宫位星曜依据和数据支持的时间点。'
+          ? '整盘总览全文（含小标题与括号解释）800–950汉字，硬上限1100字，写到上限前收束；独立健康/感情/婚姻/事业专题600–1000字，详细给出宫位星曜依据和数据支持的时间点。'
           : mode === 'detail' ? '单项解读目标400–700汉字，充分展开所选宫位/星曜/四化的依据与建议。'
             : '追问目标400–800汉字，充分回答当前问题并给足依据。') + endingRule;
-        assert.equal(payload.messages[0].content, `${INTERPRET_SYSTEM}\n【本次篇幅硬约束】${lengthRule}`);
+        assert.equal(payload.messages[0].content, `${INTERPRET_SYSTEM}\n【本次篇幅硬约束】${lengthRule}\n${UNKNOWN_TIME_RULE}`);
         assert.match(payload.messages[0].content, /不超过40字/);
         assert.match(payload.messages[1].content, /2030年/);
         assert.match(payload.messages[1].content, /birthTimeKnown: false/);
@@ -160,7 +160,7 @@ async function main() {
     globalThis.fetch = async (_url, init) => {
       const payload = JSON.parse(init!.body as string);
       assert.equal(payload.max_tokens, 2400);
-      assert.equal(payload.messages[0].content, `${HEMING_SYSTEM}\n【本次篇幅硬约束】合盘总览目标700–1000汉字，最多1200字。${endingRule}`);
+      assert.equal(payload.messages[0].content, `${HEMING_SYSTEM}\n【本次篇幅硬约束】合盘总览全文（含小标题与括号解释）800–950汉字，硬上限1100字。${endingRule}`);
       const context = JSON.parse(payload.messages[1].content.split('\n')[1]);
       assert.match(context.chartA, /2031/); assert.match(context.selectedViewA, /所选流年：2031年/);
       assert.match(context.chartB, /2040/); assert.match(context.selectedViewB, /所选流年：2040年/);
