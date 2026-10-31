@@ -8,7 +8,6 @@ export class AiTelemetry {
   private upstreamStart = Date.now();
   private upstreamMs = 0;
   private usage: Required<Usage> = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0, prompt_cache_hit_tokens: 0, prompt_cache_miss_tokens: 0 };
-  repaired = false;
   truncated = false;
   private finishReason?: string;
   private requested = false;
@@ -45,7 +44,7 @@ export class AiTelemetry {
         for (const line of lines) if (line.startsWith('data: ')) { try { const data = JSON.parse(line.slice(6)); const content = data.delta?.text; if (typeof content === 'string') outputChars += content.length; if (data.error) telemetry.error(new Error('stream failed')); } catch {} }
         controller.enqueue(chunk);
       },
-      flush() { syslog('info', 'ai.done', { requestId: telemetry.requestId, route: telemetry.route, status: 200, durationMs: Date.now() - telemetry.start, ttfbMs: telemetry.first ? telemetry.first - telemetry.start : null, upstreamMs: telemetry.upstreamMs, promptTokens: telemetry.usage.prompt_tokens, completionTokens: telemetry.usage.completion_tokens, totalTokens: telemetry.usage.total_tokens, cacheHitTokens: telemetry.usage.prompt_cache_hit_tokens, cacheMissTokens: telemetry.usage.prompt_cache_miss_tokens, outputChars, repaired: telemetry.repaired, truncated: telemetry.truncated, finishReason: telemetry.finishReason }); },
+      flush() { syslog('info', 'ai.done', { requestId: telemetry.requestId, route: telemetry.route, status: 200, durationMs: Date.now() - telemetry.start, ttfbMs: telemetry.first ? telemetry.first - telemetry.start : null, upstreamMs: telemetry.upstreamMs, promptTokens: telemetry.usage.prompt_tokens, completionTokens: telemetry.usage.completion_tokens, totalTokens: telemetry.usage.total_tokens, cacheHitTokens: telemetry.usage.prompt_cache_hit_tokens, cacheMissTokens: telemetry.usage.prompt_cache_miss_tokens, outputChars, truncated: telemetry.truncated, finishReason: telemetry.finishReason }); },
     });
     return new Response(response.body.pipeThrough(counter), { status: response.status, headers });
   }
