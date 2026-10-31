@@ -32,9 +32,9 @@ export async function consumeAiResponse(response: Response, onText: (text: strin
       let parsed;
       try { parsed = JSON.parse(data); } catch { throw interrupted(); }
       if (!parsed || typeof parsed !== 'object') throw interrupted();
-      if (parsed.finish_reason === 'length') throw new AiClientError('内容较长已截断，可在输入框追问「继续」', 'length');
       if (typeof parsed.error === 'string') throw interrupted();
       if (typeof parsed.delta?.text === 'string') { text += parsed.delta.text; onText(text); }
+      if (parsed.finish_reason === 'length') throw new AiClientError('内容较长已截断，可在输入框追问「继续」', 'length');
     }
   } catch (e) {
     if (e instanceof AiClientError || (e instanceof Error && e.name === 'AbortError')) throw e;

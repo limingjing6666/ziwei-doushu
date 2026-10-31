@@ -53,18 +53,19 @@ export async function streamDeepSeek(request: Request, system: string, messages:
           const chunk = JSON.parse(value);
           if (chunk.error) throw new Error('upstream stream error');
           const reason = chunk.choices?.[0]?.finish_reason;
-          if (reason === 'length') {
-            controller.enqueue(encoder.encode('data: {"finish_reason":"length"}\n\ndata: [DONE]\n\n'));
-            controller.close(); cleanup(); await source.return(undefined).catch(() => {}); return;
-          }
-          if (reason && reason !== 'stop') throw new Error('upstream response incomplete');
-          // Only visible content: reasoning_content is deliberately ignored.
+          if (reason && reason !== 'stop' && reason !== 'length') throw new Error('upstream response incomplete');
+          // Some providers include the final visible delta and finish_reason together.
           const content = chunk.choices?.[0]?.delta?.content;
           if (typeof content === 'string' && content) {
             hasContent = true;
             controller.enqueue(encoder.encode(encodeDelta(content)));
-            return;
           }
+          if (reason === 'length') {
+            controller.enqueue(encoder.encode('data: {"finish_reason":"length"}\n\ndata: [DONE]\n\n'));
+            controller.close(); cleanup(); await source.return(undefined).catch(() => {}); return;
+          }
+          // Only visible content: reasoning_content is deliberately ignored.
+          if (typeof content === 'string' && content) return;
         }
       } catch {
         if (!cancelled && !request.signal.aborted) {

@@ -13,8 +13,10 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     const a = normalizeChart(mode === 'interpret' ? body.chart : body.chartA);
     const b = mode === 'heming' ? normalizeChart(body.chartB) : undefined;
     if (body.birthTimeKnown === false) a.birthInfo.birthTimeKnown = false;
-    a.liunianYear = normalizeView(body.view ?? body.viewA ?? (a.liunianYear ? { year: a.liunianYear } : undefined), a).year;
-    if (b) b.liunianYear = normalizeView(body.viewB, b).year;
+    const viewA = normalizeView(body.view ?? body.viewA ?? (a.liunianYear ? { year: a.liunianYear } : undefined), a);
+    const viewB = b ? normalizeView(body.viewB ?? (b.liunianYear ? { year: b.liunianYear } : undefined), b) : undefined;
+    a.liunianYear = viewA.year;
+    if (b) b.liunianYear = viewB!.year;
     const messages = normalizeMessages(body.messages);
     const scenario = b ? (body.mode === 'followup' ? 'followup' : 'overview') : body.mode === 'detail' ? 'detail' : body.mode === 'overview' ? 'overview' : 'followup';
     const maxTokens = scenario === 'overview' ? 1600 : scenario === 'detail' ? 500 : 600;
@@ -23,8 +25,8 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     await checkRateLimit(request);
     // Place client-provided chart/reference data in a user message, never interpolate into system instructions.
     const context = b
-      ? `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chartA: chartToText(a), chartB: chartToText(b), selectedViewA: viewToText(body.viewA, a), selectedViewB: viewToText(body.viewB, b), reportSummary: text(body.reportSummary, 1600), crossTransformations: crossTransformations(a, b), references: retrieveKnowledge(a, b) })}`
-      : `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chart: chartToText(a), selectedView: viewToText(body.view ?? (a.liunianYear ? { year: a.liunianYear } : undefined), a), references: retrieveKnowledge(a) })}`;
+      ? `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chartA: chartToText(a), chartB: chartToText(b), selectedViewA: viewToText(viewA, a), selectedViewB: viewToText(viewB, b), reportSummary: text(body.reportSummary, 1600), crossTransformations: crossTransformations(a, b), references: retrieveKnowledge(a, b) })}`
+      : `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chart: chartToText(a), selectedView: viewToText(viewA, a), references: retrieveKnowledge(a) })}`;
     return await streamDeepSeek(request, `${b ? HEMING_SYSTEM : INTERPRET_SYSTEM}\n【本次篇幅硬约束】${lengthRule}`, [
       { role: 'user', content: context },
       ...(b ? [...messages, { role: 'user' as const, content: text(body.question, 1000) || '请分析双方的相处模式与建议。' }] : messages.length ? messages : [{ role: 'user' as const, content: '请解读这张命盘的核心特点和实际建议。' }]),
