@@ -6,7 +6,8 @@ import { INTERPRET_SYSTEM, HEMING_SYSTEM } from './prompts';
 import { checkOrigin, checkRateLimit } from './rate-limit';
 
 export async function handleAi(request: Request, mode: 'interpret' | 'heming'): Promise<Response> {
-  const deadline = Date.now() + 55000;
+  // Leave 3 seconds before the routes' 60-second limit for stream cleanup/errors.
+  const deadline = Date.now() + 57000;
   try {
     checkOrigin(request);
     const body = await readBody(request);
@@ -19,8 +20,12 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     if (b) b.liunianYear = viewB!.year;
     const messages = normalizeMessages(body.messages);
     const scenario = b ? (body.mode === 'followup' ? 'followup' : 'overview') : body.mode === 'detail' ? 'detail' : body.mode === 'overview' ? 'overview' : 'followup';
-    const maxTokens = scenario === 'overview' ? 1600 : scenario === 'detail' ? 500 : 600;
-    const lengthRule = scenario === 'overview' ? '整份解读不超过1000字，主动收束并写完整结尾。' : '本次只简答当前问题，200–300字，不重写总览或原报告。';
+    const maxTokens = scenario === 'overview' ? 3200 : scenario === 'detail' ? 1800 : 2200;
+    const lengthRule = (scenario === 'overview'
+      ? b ? '合盘总览目标700–1000汉字，最多1200字。' : '整盘总览目标700–1200汉字，最多1400字；独立健康/感情/婚姻/事业专题600–1000字，详细给出宫位星曜依据和数据支持的时间点。'
+      : scenario === 'detail' ? '单项解读目标400–700汉字，充分展开所选宫位/星曜/四化的依据与建议。'
+        : `追问目标400–800汉字，充分回答当前问题并给足依据${b ? '，不重写原报告' : ''}。`)
+      + '第一句直接回答（时辰未知固定首句优先），术语首次出现括号解释；接近上限主动收束并写完整结尾，优先保证最后一行恰好一句轻提示再停笔。';
     if (!process.env.DEEPSEEK_API_KEY) throw new AiError(500, 'AI 解读服务尚未配置，请稍后再试。');
     await checkRateLimit(request);
     // Place client-provided chart/reference data in a user message, never interpolate into system instructions.
