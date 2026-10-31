@@ -78,12 +78,9 @@ export default function ChartBoard({ chart, onStarSelect, onPalaceSelect, onSiHu
   const overlayLabel = timeView === 'daxian' ? '限' : timeView === 'liunian' ? '年' : undefined;
 
   const handlePalaceClick = (branch: number) => {
-    const isDeselecting = selectedBranch === branch;
-    setSelectedBranch(prev => prev === branch ? null : branch);
-    if (!isDeselecting) {
-      const palace = palaceMap[branch];
-      if (palace) onPalaceSelect?.(palace);
-    }
+    setSelectedBranch(branch);
+    const palace = palaceMap[branch];
+    if (palace) onPalaceSelect?.(palace);
   };
 
   // 三方四正

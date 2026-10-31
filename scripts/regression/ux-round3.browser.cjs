@@ -90,7 +90,10 @@ async function noOverflow(page, label) {
       await page.mouse.move(0, 0); await page.waitForTimeout(800); await page.keyboard.press('Escape');
       await noOverflow(page, prefix + ' result');
       await shot(page, `${prefix}-chart-result`);
+      await page.screenshot({ path: `${OUT}/${prefix}-chart-result-top.png` });
       await page.getByRole('button', { name: '选择命宫', exact: true }).click();
+      await page.getByRole('button', { name: '选择命宫', exact: true }).click();
+      assert.equal(await page.locator('.palace-cell.selected').count(), 1, 'reselect keeps highlight aligned with the local panel');
       await page.locator('.major-star').first().click();
       assert.equal(requests.length, 0, 'palace/star click is local only');
       assert.equal(await page.locator('.palace-cell.selected').count(), 1);
