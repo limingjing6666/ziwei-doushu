@@ -24,9 +24,9 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     if (b) b.liunianYear = viewB!.year;
     const messages = normalizeMessages(body.messages);
     const scenario = b ? (body.mode === 'followup' ? 'followup' : 'overview') : body.mode === 'detail' ? 'detail' : body.mode === 'overview' ? 'overview' : 'followup';
-    const maxTokens = scenario === 'overview' ? 3200 : scenario === 'detail' ? 1800 : 2200;
+    const maxTokens = scenario === 'overview' ? 2400 : scenario === 'detail' ? 1800 : 2200;
     const lengthRule = (scenario === 'overview'
-      ? b ? '合盘总览目标700–1000汉字，最多1200字。' : '整盘总览目标700–1200汉字，最多1400字；独立健康/感情/婚姻/事业专题600–1000字，详细给出宫位星曜依据和数据支持的时间点。'
+      ? b ? '合盘总览目标700–1000汉字，最多1200字。' : '整盘总览700–1000汉字（含括号解释，不含标题），硬上限1200字，写到上限前收束；独立健康/感情/婚姻/事业专题600–1000字，详细给出宫位星曜依据和数据支持的时间点。'
       : scenario === 'detail' ? '单项解读目标400–700汉字，充分展开所选宫位/星曜/四化的依据与建议。'
         : `追问目标400–800汉字，充分回答当前问题并给足依据${b ? '，不重写原报告' : ''}。`)
       + '第一句直接回答（时辰未知固定首句优先），术语首次出现括号解释；接近上限主动收束，在最后一条依据或建议处自然结束，全文及结尾不得写免责、提醒或无法判断等元话语。';

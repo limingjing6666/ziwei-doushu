@@ -95,3 +95,14 @@ export function createSentenceWindow(transform: (text: string) => string, tailCh
   };
   return { push(chunk: string) { raw += chunk; return drain(false); }, finish() { return drain(true); } };
 }
+
+/** Internal fact-block vocabulary must never reach readers; say the years/range plainly. */
+export function scrubInternalTerms(text: string): string {
+  // Keep the sentence recognisably about marriage timing so the numeric validator still sees it.
+  return text
+    .replace(/candidate\s*set/gi, '')
+    .replace(/(?:婚期)?(?:候选包络|候选集合?|候选范围|包络)/g, '婚期范围')
+    .replace(/(?:婚期)?候选(?:年份|年)/g, '婚期年份')
+    .replace(/婚期候选/g, '婚期')
+    .replace(/候选/g, '婚期');
+}

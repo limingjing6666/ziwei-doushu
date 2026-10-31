@@ -6,7 +6,7 @@ import { compatibilityFacts } from '../../lib/ai/facts';
 import { normalizeChart } from '../../lib/ai/input';
 import { fillPlaceholders, createPlaceholderBuffer } from '../../lib/ai/postprocess';
 import { validateAnswer, numericReferences } from '../../lib/ai/validate';
-import { disclaimerSpans, filterDisclaimers } from '../../lib/ai/disclaimer';
+import { disclaimerSpans, filterDisclaimers, scrubInternalTerms } from '../../lib/ai/disclaimer';
 import { codeRepair, planRepairs, repairAnswer, REWRITE_RESERVE_MS } from '../../lib/ai/repair';
 import { deepSeekRewriter } from '../../lib/ai/deepseek';
 import { consistencyStream, BUFFER_HEARTBEAT_MS } from '../../lib/ai/consistency-stream';
@@ -408,6 +408,12 @@ async function main() {
     assert.match(prompt, /第一句不得出现任何命理术语/); assert.match(prompt, /所有年龄均为虚岁/);
     assert.match(prompt, /不得自行用出生年推算或换算年龄/); assert.match(prompt, /年份区间含首尾/);
   }
+  // 内部词不外露：事实区块不含内部术语，输出中若出现则替换为平实说法。
+  const marriageText = chartToText(chart, { facts, question: '什么时候能结婚' });
+  assert.ok(!/包络|候选集|candidate/i.test(marriageText), '事实区块不得含内部词');
+  assert.equal(scrubInternalTerms('婚期候选包络落在虚岁39–53，候选年份是2030年。'), '婚期范围落在虚岁39–53，婚期年份是2030年。');
+  assert.equal(scrubInternalTerms('该candidate set不含2031年。'), '该不含2031年。');
+  assert.ok(!/包络|候选/.test(codeRepair({ text: '婚期候选包络落在{{MARRIAGE_RANGE}}。', mode: 'followup', facts, question: '什么时候能结婚' })));
   console.log('✓ AI consistency: 12支公式、稳定候选/虚岁/页面优先、唯一事实、分片占位符、校验误报、局部mock修复/预算降级、真实handler即时流式、SSE兼容、术语');
 }
 main().catch(e => { console.error(e); process.exitCode = 1; });

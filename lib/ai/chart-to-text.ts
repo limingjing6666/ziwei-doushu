@@ -16,9 +16,9 @@ export function ageFactsToText(f: AgeFacts, question = ''): string {
     selected ? `所选流年：${selected.year}年；虚岁 ${selected.nominalAge}；流年干${STEMS[((selected.year - 4) % 10 + 10) % 10]}四化：${selected.transformations.map(t => `${t.star}化${t.mark}落本命${t.palace}`).join('、')}\n流年十二宫：${selected.palaceNames.join('；')}` : '所选流年数据未提供，不自行推算。',
     `birthTimeKnown: ${f.birthTimeKnown}。${f.birthTimeKnown ? '出生时辰已提供。' : '因出生时辰未知，命宫/身宫/宫位排布不可靠。只写不依赖宫位的内容。'}`];
   if (isMarriageQuestion(question)) {
-    if (f.marriage.unavailable) lines.push('婚期候选 unavailable：不使用婚期占位符，不写具体年份，只就可断部分直接作答，不复述缺项。');
-    else lines.push(`婚期仅允许 {{MARRIAGE_RANGE}} = ${f.marriage.rangeText}；具体候选仅允许 {{MARRIAGE_YEARS}} = ${f.marriage.years.join('、')} 年。范围为候选包络；具体判断使用列出的候选年份，不把中间每年视作同等有利。`,
-      ...f.marriage.candidates.map(c => `候选 ${c.year}年，虚岁 ${c.nominalAge}；流年夫妻落本命${c.marriagePalace}；第${c.decadal?.index ?? '?'}大限（本命${c.decadal?.palace ?? '未知'}）；分数${c.score}；${c.reasons.join('；')}`));
+    if (f.marriage.unavailable) lines.push('婚期年份缺失：不使用婚期占位符，不写具体年份，只就可断部分直接作答，不复述缺项。');
+    else lines.push(`婚期仅允许 {{MARRIAGE_RANGE}} = ${f.marriage.rangeText}；具体年份仅允许 {{MARRIAGE_YEARS}} = ${f.marriage.years.join('、')} 年。回答里直接写年份和虚岁，最有力的年份放前面，不把范围内每年视作同等有利；行文只说年份与虚岁，不用任何内部归类术语。`,
+      ...f.marriage.candidates.map(c => `婚期年 ${c.year}年，虚岁 ${c.nominalAge}；流年夫妻落本命${c.marriagePalace}；第${c.decadal?.index ?? '?'}大限（本命${c.decadal?.palace ?? '未知'}）；分数${c.score}；${c.reasons.join('；')}`));
   }
   if (isHealthQuestion(question)) lines.push(f.health.years.length ? `健康关键年份仅允许 {{HEALTH_YEARS}} = ${f.health.entries.map(e => `${e.year}年（虚岁 ${e.nominalAge}）：${e.reasons.join('、')}`).join('；')}` : '健康关键年份 unavailable：不使用健康占位符，不写具体年份，只就可断部分直接作答，不复述缺项。');
   lines.push('【大限一览表】\n序号｜本命宫位｜虚岁起止｜公历年起止', ...f.decadals.map(d => `${d.index}｜${d.palace}｜虚岁 ${d.startAge}–${d.endAge}｜公历 ${d.startYear}–${d.endYear}`),
