@@ -2,13 +2,11 @@ import { referenceFacts, type AnswerFacts } from './facts';
 import { isHealthQuestion, isMarriageQuestion, isMarriageTimingQuestion } from './intent';
 import { firstSentence, firstSentenceJargon, UNKNOWN_TIME_OPENING } from './jargon';
 
-export const NORMAL_CLOSING = '命理只是参考，具体选择还看你自己的实际情况。';
-export const HEALTH_CLOSING = '命理只作参考，身体不适请及时就医。';
-export const closingPattern = () => /命理(?:只是|只作|仅作|仅供|仅是|仅为|只供)参考[^。！？\n]*[。！？]?/g;
-export type IssueType = 'first-sentence-jargon' | 'age-not-in-facts' | 'marriage-no-candidate' | 'closing-line' | 'placeholder-left';
+import { disclaimerSpans } from './disclaimer';
+
+export type IssueType = 'first-sentence-jargon' | 'age-not-in-facts' | 'marriage-no-candidate' | 'disclaimer' | 'placeholder-left';
 export interface AnswerIssue { type: IssueType; start: number; end: number; paragraphIndex: number; explanation: string }
 export interface ValidationInput { text: string; mode: string; facts: AnswerFacts; question: string }
-export const closingFor = (text: string, question: string) => isHealthQuestion(question + text) ? HEALTH_CLOSING : NORMAL_CLOSING;
 /** Separate statements, not question-wide permissions (especially for health years). */
 function referenceClause(text: string, start: number, end: number) {
   const before = [...text.slice(0, start).matchAll(/[。！？\n；;，,]/g)].at(-1);
@@ -70,8 +68,7 @@ export function validateAnswer({ text, facts, question }: ValidationInput): Answ
   }
   const hasMarriage = /\{\{MARRIAGE_(?:RANGE|YEARS)\}\}/.test(text) || refs.some(r => r.year ? years.includes(r.lo) && years.includes(r.hi) : cs.some(c => c.nominalAge === r.lo) && cs.some(c => c.nominalAge === r.hi));
   if (isMarriageTimingQuestion(question) && !facts.marriage.unavailable && !hasMarriage) add('marriage-no-candidate', 0, first.length, '婚期问题未使用任何固定候选，请用婚期占位符补充');
-  const closings = [...text.matchAll(closingPattern())];
-  if (closings.length !== 1 || !text.trimEnd().endsWith(closings[0]?.[0] ?? '\0') || closings[0]?.[0] !== closingFor(text, question)) add('closing-line', text.length, text.length, '全文需在末尾恰好一句对应轻提示');
+  for (const span of disclaimerSpans(text)) add('disclaimer', span.start, span.end, '免责、对冲、提醒或元话语句须整句删除');
   for (const m of text.matchAll(/\{\{[^{}]*(?:\}\}|$)/g)) add('placeholder-left', m.index!, m.index! + m[0].length, '残留占位符');
   return issues;
 }

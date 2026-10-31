@@ -130,7 +130,7 @@ async function main() {
     process.env.AI_MINUTE_LIMIT = '100'; process.env.AI_DAILY_LIMIT = '100';
     delete process.env.UPSTASH_REDIS_REST_URL; delete process.env.UPSTASH_REDIS_REST_TOKEN;
     const post = (value: unknown) => new Request('http://localhost/api/interpret', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-real-ip': 'round3-fixture' }, body: JSON.stringify(value) });
-    const endingRule = '第一句直接回答（时辰未知固定首句优先），术语首次出现括号解释；接近上限主动收束并写完整结尾，优先保证最后一行恰好一句轻提示再停笔。';
+    const endingRule = '第一句直接回答（时辰未知固定首句优先），术语首次出现括号解释；接近上限主动收束，在最后一条依据或建议处自然结束，全文及结尾不得写免责、提醒或无法判断等元话语。';
     for (const [mode, expected] of [['overview', 3200], ['detail', 1800], ['followup', 2200]] as const) {
       globalThis.fetch = async (_url, init) => {
         const payload = JSON.parse(init!.body as string);

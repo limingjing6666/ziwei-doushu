@@ -5,7 +5,8 @@ import { chartToText, isNumericSensitive } from '../../lib/ai/chart-to-text';
 import { compatibilityFacts } from '../../lib/ai/facts';
 import { normalizeChart } from '../../lib/ai/input';
 import { fillPlaceholders, createPlaceholderBuffer } from '../../lib/ai/postprocess';
-import { NORMAL_CLOSING, HEALTH_CLOSING, validateAnswer, numericReferences } from '../../lib/ai/validate';
+import { validateAnswer, numericReferences } from '../../lib/ai/validate';
+import { disclaimerSpans, filterDisclaimers } from '../../lib/ai/disclaimer';
 import { codeRepair, planRepairs, repairAnswer, REWRITE_RESERVE_MS } from '../../lib/ai/repair';
 import { deepSeekRewriter } from '../../lib/ai/deepseek';
 import { consistencyStream, BUFFER_HEARTBEAT_MS } from '../../lib/ai/consistency-stream';
@@ -25,7 +26,9 @@ const encoder = new TextEncoder();
 const wire = (s: string) => new Response(new ReadableStream<Uint8Array>({ start(c) { c.enqueue(encoder.encode(s)); c.close(); } }), { headers: { 'Content-Type': 'text/event-stream' } });
 const input = (text: string, question = '什么时候能结婚') => ({ text, facts, mode: 'followup', question });
 const types = (text: string, question?: string) => validateAnswer(input(text, question)).map(i => i.type);
-const ending = (text: string) => `${text}\n\n${NORMAL_CLOSING}`;
+const legacyReminder = '命理只是参考，具体选择还看你自己的实际情况。';
+const legacyHealthReminder = '命理只作参考，身体不适请及时就医。';
+const ending = (text: string) => text;
 
 async function fixRegressions() {
   // R1: preserve identities for basic ages, selected ages, birth years and health placeholders.
@@ -46,16 +49,18 @@ async function fixRegressions() {
     const value = pairInput(text);
     assert.ok(validateAnswer(value).some(i => i.type === 'age-not-in-facts'), text);
     const repaired = codeRepair(value);
-    assert.match(repaired, /这一点目前无法确定/);
+    assert.doesNotMatch(repaired, /999|目前无法确定|无法判断|(?:甲方|乙方|B方)：\s*$/);
     assert.ok(!repaired.includes(pair.marriage.rangeText), 'never substitute a marriage range for an age');
     assert.ok(!validateAnswer({ ...value, text: repaired }).some(i => i.type === 'age-not-in-facts'));
   }
   const scopedHealth = fillPlaceholders('乙方：{{HEALTH_YEARS}}', pair);
-  assert.equal(scopedHealth, `乙方：${factsB.health.entries.map(e => `${e.year}年（虚岁 ${e.nominalAge}）`).join('、') || '目前无法确定'}`);
+  assert.equal(scopedHealth, `乙方：${factsB.health.entries.map(e => `${e.year}年（虚岁 ${e.nominalAge}）`).join('、')}`);
   assert.match(fillPlaceholders('{{HEALTH_YEARS}}', pair), /甲方：.*乙方：/);
   assert.match(fillPlaceholders('{{HEALTH_YEARS_B}}', pair), /^乙方：/);
   assert.ok(validateAnswer(pairInput('乙方当前虚岁 27岁适合结婚。', '婚期')).some(i => i.type === 'age-not-in-facts'));
-  assert.match(codeRepair(pairInput('甲方当前虚岁37。乙方当前虚岁999。当前虚岁27。')), /乙方：这一点目前无法确定。当前虚岁27/);
+  const removedAge = codeRepair(pairInput('甲方当前虚岁37。乙方当前虚岁999。当前虚岁27。'));
+  assert.equal(removedAge, '甲方当前虚岁37。乙方：当前虚岁27。');
+  assert.ok(!validateAnswer(pairInput(removedAge)).some(i => i.type === 'age-not-in-facts'));
   for (let split = 0; split <= '乙方：{{HEALTH_YEARS}}'.length; split++) {
     const buffer = createPlaceholderBuffer(pair);
     const source = '乙方：{{HEALTH_YEARS}}';
@@ -71,7 +76,7 @@ async function fixRegressions() {
   const question = '请结合所选大限流年讲健康';
   const decade = facts.decadals.find(d => d.startYear <= 2099 && d.endYear >= 2099)!;
   const decadeText = `大限范围是虚岁 ${decade.startAge}–${decade.endAge}（公历 ${decade.startYear}–${decade.endYear}）。`;
-  const healthInput = (text: string) => ({ ...input(text, question), text: `可以多留意。${text}\n\n${HEALTH_CLOSING}` });
+  const healthInput = (text: string) => ({ ...input(text, question), text: `可以多留意。${text}` });
   assert.ok(!validateAnswer(healthInput(decadeText)).some(i => i.type === 'age-not-in-facts'));
   assert.ok(!validateAnswer(healthInput(`大限开始于${decade.startYear}年。`)).some(i => i.type === 'age-not-in-facts'));
   for (const text of ['2099年需要关注身体。', '大限中2099年需要关注身体。', `${decadeText}2099年需要关注身体。`, '大限开始于2095年需要关注身体。', '大限2095–2104年是健康关键年份。']) {
@@ -129,12 +134,13 @@ async function fixRegressions() {
     globalThis.fetch = async (_url, init) => {
       assert.equal(JSON.parse(init!.body as string).stream, true, 'valid answers need no rewrite');
       return new Response(new ReadableStream<Uint8Array>({ start(c) {
-        c.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: sensitive ? '可以先做准备。999岁。' : '可以先做准备。2030年供参考。' } }] })}\n\n`));
+        c.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: sensitive ? '可以先做准备。999岁。' : '可以先做准备。' + '工作宜有条理，主先立计划再行动。'.repeat(12) } }] })}\n\n`));
         finish = () => { c.enqueue(encoder.encode((sensitive ? 'data: {"choices":[{"finish_reason":"length"}]}\n\n' : '') + 'data: [DONE]\n\n')); c.close(); };
       } }));
     };
     // Use a terminal length frame for sensitive tests: it also proves handler failure paths are safe, with no rewrite fetch.
     const response = await handleAi(request(q, q === '总览' ? 'overview' : q === '伴侣' ? 'detail' : 'followup'), 'interpret');
+    assert.equal(response.status, 200, q);
     const reader = response.body!.getReader();
     const first = reader.read();
     const state = await Promise.race([first.then(() => 'early'), new Promise<string>(resolve => setTimeout(() => resolve('waiting'), 10))]);
@@ -186,6 +192,28 @@ async function fixRegressions() {
 }
 
 async function main() {
+  for (const reminder of [legacyReminder, legacyHealthReminder, '命理仅供参考。', '仅供参考。', '不构成医疗建议。', '以上分析不构成投资建议。', '不构成法律建议。', '身体不适请就医。', '身体不适请及时就医。', '请咨询专业医生。', '请咨询医师。', '建议咨询医生。', '具体选择看你自己。', '具体选择还看你自己。', '结合你的实际情况再决定。', '结合实际情况判断。', '请结合现实。', '理性看待。', '理性对待。', '切勿迷信。', '传统象义用作生活观察，不是科学事实或命运保证。', '不是医学诊断。', '这不是医学诊断。', '健康解读只是传统倾向，不是医学诊断。', '以上仅供参考。', '仅作观察线索。', '此为倾向非定论。', '此为倾向，非定论。', '传统疾厄倾向不是医学诊断，不能当作已患病的事实。', '古籍的富贵等说法是传统象义，不是收益保证。', '以上判断只是传统倾向，并非定论。', '感情上可能有争执。', '建议你咨询医生。', '这一点目前无法确定。', '目前无法确定。', '无法判断。', '暂无法断定。', '资料不足。', '可能会有变动。', '你或许会换工作。']) {
+    assert.equal(disclaimerSpans(reminder).length, 1, reminder);
+    assert.equal(filterDisclaimers(`主做事认真。${reminder}因此，宜先定计划。`), '主做事认真。宜先定计划。', reminder);
+    assert.equal(filterDisclaimers(`主做事认真。\n\n${reminder}\n\n另外，宜先定计划。`), '主做事认真。\n\n宜先定计划。', reminder);
+  }
+  for (const normal of ['参考断语须核对星曜组合。', '引用“参考断语”来核验本宫。', '医院工作主细致严谨。', '就医记录体现旧疾反复。', '你在医院任职，宜重文书管理。', '感情判断不可能四化组合时须核对。', '命宫（代表你本人和性格底色）主稳重。', `${UNKNOWN_TIME_OPENING}。`]) {
+    assert.equal(filterDisclaimers(normal), normal, normal);
+    assert.equal(disclaimerSpans(normal).length, 0, normal);
+  }
+  const emptyHealth = { ...facts, health: { years: [], entries: [] } };
+  for (const token of ['{{UNKNOWN}}', '{{HEALTH_YEARS}}', '{{HEALTH_YEARS_A}}', '{{DANGLING']) {
+    assert.equal(fillPlaceholders(`保留断语。\n\n甲方：${token}`, emptyHealth), '保留断语。');
+  }
+  assert.equal(fillPlaceholders('关键为{{HEALTH_YEARS}}。所以，主劳心。', emptyHealth), '主劳心。');
+  const missingPair = compatibilityFacts(emptyHealth, emptyHealth);
+  assert.equal(fillPlaceholders('甲方：{{HEALTH_YEARS}}。乙方：{{HEALTH_YEARS_B}}。', missingPair), '');
+  const partiallyAvailable = compatibilityFacts(emptyHealth, facts);
+  assert.equal(fillPlaceholders('甲方：关键{{HEALTH_YEARS}}。', partiallyAvailable), '');
+  assert.ok(!fillPlaceholders('{{HEALTH_YEARS}}。', partiallyAvailable).includes('甲方：'));
+  assert.equal(fillPlaceholders('甲方主稳重。乙方{{UNKNOWN}}。关键{{HEALTH_YEARS}}。', partiallyAvailable), `甲方主稳重。乙方：关键${facts.health.entries.map(e => `${e.year}年（虚岁 ${e.nominalAge}）`).join('、')}。`);
+  assert.equal(codeRepair(input('主做事认真。\n\n甲方：999岁。\n\n因此，同时，另外，宜先定计划。', '事业')), '主做事认真。\n\n宜先定计划。');
+  assert.equal(await repairAnswer(input('做事认真。\n\n999岁宜创业。\n\n因此，宜先定计划。', '事业'), { deadline: Date.now() + 20000, rewrite: async () => [''] }), '做事认真。\n\n宜先定计划。');
   for (let i = 0; i < 12; i++) assert.deepEqual(annualRomanceStars(i), { hongluan: (15 - i) % 12, tianxi: (21 - i) % 12 });
   assert.throws(() => annualRomanceStars(12), RangeError);
   const c = getMarriageCandidates(chart, opts);
@@ -231,7 +259,7 @@ async function main() {
   assert.doesNotMatch(chartToText(chart, { facts, question: '事业' }), /MARRIAGE|婚期仅允许/);
   assert.doesNotMatch(chartToText(unknown, { facts: buildAgeFacts(unknown, opts), question: '婚期' }), /\{\{MARRIAGE/);
   let removed = 0;
-  assert.equal(fillPlaceholders('A{{MARRIAGE_RANGE}}B{{MARRIAGE_YEARS}}{{UNKNOWN}}', facts, () => removed++), `A${c.rangeText}B${c.years.join('、')} 年`);
+  assert.equal(fillPlaceholders('A{{MARRIAGE_RANGE}}B{{MARRIAGE_YEARS}}。{{UNKNOWN}}', facts, () => removed++), `A${c.rangeText}B${c.years.join('、')} 年。`);
   assert.equal(removed, 1);
   for (const source of ['A{{MARRIAGE_RANGE}}B{{MARRIAGE_YEARS}}C', 'x{{HEALTH_YEARS}}y{{UNKNOWN}}']) {
     for (let split = 0; split <= source.length; split++) {
@@ -242,8 +270,8 @@ async function main() {
     assert.equal([...source].map(ch => b.push(ch)).join('') + b.finish(), fillPlaceholders(source, facts));
   }
   const dangling = createPlaceholderBuffer(facts);
-  assert.equal(dangling.push('你好{{MARR'), '你好'); assert.equal(dangling.finish(), '');
-  const overlong = createPlaceholderBuffer(facts); assert.equal(overlong.push('{{' + 'x'.repeat(41)).length, 43);
+  assert.equal(dangling.push('你好{{MARR'), ''); assert.equal(dangling.finish(), '');
+  const overlong = createPlaceholderBuffer(facts); assert.equal(overlong.push('{{' + 'x'.repeat(41)), ''); assert.equal(overlong.finish(), '');
   const valid = ending(`可以积极经营关系。\n\n候选范围是${c.rangeText}，重点是${c.years.join('、')} 年。`);
   assert.deepEqual(types(valid), []);
   for (const first of ['你是火六局，建议结婚。', '命宫化忌，需要等待。', '紫微在庙，适合。', '宫干丙，适合。', '机月同梁，适合。']) assert.ok(types(ending(first)).includes('first-sentence-jargon'));
@@ -251,16 +279,16 @@ async function main() {
   assert.ok(!validateAnswer({ ...input(`${UNKNOWN_TIME_OPENING}。`), facts: buildAgeFacts(unknown, opts) }).some(i => i.type === 'first-sentence-jargon'));
   for (const number of ['999岁', '虚岁 39–44', '106–115岁', '2095–2104年', '2027年', '虚岁 36–45', '虚岁 41–43', '2030–2032年']) assert.ok(types(ending(`可以主动争取。\n\n婚期${number}。`)).includes('age-not-in-facts'), number);
   assert.ok(types(ending('可以争取。')).includes('marriage-no-candidate'));
-  assert.ok(types('可以争取。').includes('closing-line'));
-  assert.ok(types(`${valid}\n${NORMAL_CLOSING}`).includes('closing-line'));
-  assert.ok(types(`${NORMAL_CLOSING}\n${valid}`).includes('closing-line'));
-  assert.ok(types(`${valid}\n后文。`).includes('closing-line'));
+  assert.ok(!types('可以争取。').includes('disclaimer'));
+  assert.ok(types(`${valid}\n${legacyReminder}`).includes('disclaimer'));
+  assert.ok(types(`${legacyReminder}\n${valid}`).includes('disclaimer'));
+  assert.ok(!types(`${valid}\n后文。`).includes('disclaimer'));
   assert.ok(types(ending('{{MARRIAGE_RANGE}}')).includes('placeholder-left'));
   assert.equal(numericReferences('一岁、万年、多年、去年、今年').length, 0);
   assert.deepEqual(types(ending('这几年可以多沟通。'), '事业'), []);
   const hf = facts.health.entries[0];
-  if (hf) assert.deepEqual(types(`建议多留意身体。\n\n${hf.year}年（虚岁 ${hf.nominalAge}）多留意。\n\n${HEALTH_CLOSING}`, '健康'), []);
-  const pure = codeRepair(input(`可以争取。\n\n婚期是106–115岁，或2095年。\n\n保留其它分析。{{WHAT}}\n${NORMAL_CLOSING}\n${NORMAL_CLOSING}`));
+  if (hf) assert.deepEqual(types(`建议多留意身体。\n\n${hf.year}年（虚岁 ${hf.nominalAge}）多留意。`, '健康'), []);
+  const pure = codeRepair(input(`可以争取。\n\n婚期是106–115岁，或2095年。\n\n保留其它分析。{{WHAT}}\n${legacyReminder}\n${legacyReminder}`));
   assert.ok(pure.includes('保留其它分析。')); assert.deepEqual(types(pure), []);
   const before = ending(`火六局，机会较好。\n\n婚期106–115岁，依据需要核对，沟通和现实准备同样重要。\n\n这段无需修改。`);
   const targets = planRepairs(before, validateAnswer(input(before)));
@@ -303,7 +331,7 @@ async function main() {
     process.env.AI_MINUTE_LIMIT = '100'; process.env.AI_DAILY_LIMIT = '100';
     let finish!: () => void;
     globalThis.fetch = async () => new Response(new ReadableStream<Uint8Array>({ start(controller) {
-      controller.enqueue(encoder.encode('data: {"choices":[{"delta":{"content":"可以先准备作品。"}}]}\n\n'));
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: '可以先准备作品。' + '工作宜有条理，主先立计划再行动。'.repeat(12) } }] })}\n\n`));
       finish = () => { controller.enqueue(encoder.encode('data: [DONE]\n\n')); controller.close(); };
     } }));
     const request = (q: string) => new Request('http://localhost/api/interpret', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-real-ip': 'consistency-fixture' }, body: JSON.stringify({ chart, messages: [{ role: 'user', content: q }] }) });
@@ -314,7 +342,7 @@ async function main() {
     while (!(await reader.read()).done) { /* drain */ }
     // Real sensitive handler waits for completion; it does not leak raw deltas.
     globalThis.fetch = async () => new Response(new ReadableStream<Uint8Array>({ start(controller) {
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: `可以积极经营关系。\\n\\n候选{{MARRIAGE_RANGE}}。\\n\\n${NORMAL_CLOSING}` } }] })}\n\n`));
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: `可以积极经营关系。\\n\\n候选{{MARRIAGE_RANGE}}。\\n\\n${legacyReminder}` } }] })}\n\n`));
       finish = () => { controller.enqueue(encoder.encode('data: [DONE]\n\n')); controller.close(); };
     } }));
     const sensitive = await handleAi(request('什么时候能结婚'), 'interpret');
@@ -332,8 +360,35 @@ async function main() {
     const splitWire = consistencyStream(wire(encodeDelta('可考虑{') + encodeDelta('{MARRIAGE_') + encodeDelta('YEARS}}。') + 'data: [DONE]\n\n'), { facts, mode: 'followup', question: '事业' }, { buffered: false, deadline: 0, rewrite: async () => [] });
     await consumeAiResponse(splitWire, s => { streamText = s; }); assert.equal(streamText, `可考虑${c.years.join('、')} 年。`);
     const partial = consistencyStream(wire(encodeDelta('保留部分。') + 'data: {"error":"解读暂时中断"}\n\ndata: [DONE]\n\n'), { facts, mode: 'followup', question: '健康' }, { buffered: true, deadline: 0, rewrite: async () => [] });
-    await assert.rejects(consumeAiResponse(partial, s => { emitted = s; }), /中断/); assert.equal(emitted, `保留部分。\n\n${HEALTH_CLOSING}`);
+    await assert.rejects(consumeAiResponse(partial, s => { emitted = s; }), /中断/); assert.equal(emitted, '保留部分。');
     await fixRegressions();
+    // Real handler and consistency wrapper: sentence policy survives arbitrary chunking,
+    // both buffering modes, normal DONE, truncation, upstream errors and missing DONE.
+    const retained = '宜先定计划，做事主有条理。'.repeat(14);
+    const raw = `可以主动争取。${legacyReminder}这一点目前无法确定。甲方：999岁。\n\n因此，${retained}\n\n${legacyHealthReminder}`;
+    for (const buffered of [false, true]) {
+      for (const suffix of ['data: [DONE]\n\n', 'data: {"finish_reason":"length"}\n\ndata: [DONE]\n\n', 'data: {"error":"中断"}\n\ndata: [DONE]\n\n', '']) {
+        let result = '';
+        const response = consistencyStream(wire([...raw].map(encodeDelta).join('') + suffix), input('', '事业'), { buffered, deadline: 0, rewrite: async () => { throw new Error('no real model'); } });
+        await consumeAiResponse(response, text => { result = text; }).catch(() => {});
+        assert.equal(result, `可以主动争取。\n\n${retained}`);
+        assert.doesNotMatch(result, /参考|就医|无法|999|因此|同时|另外|甲方：/);
+      }
+    }
+    for (const question of ['工作特点', '健康如何']) {
+      globalThis.fetch = async (_url, init) => {
+        assert.equal(JSON.parse(init!.body as string).stream, true);
+        return wire([...raw].map(ch => `data: ${JSON.stringify({ choices: [{ delta: { content: ch } }] })}\n\n`).join('') + 'data: [DONE]\n\n');
+      };
+      let final = '';
+      await consumeAiResponse(await handleAi(request(question), 'interpret'), text => { final = text; });
+      assert.equal(final, `可以主动争取。\n\n${retained}`);
+      assert.doesNotMatch(final, /参考|就医|无法|999|因此|同时|另外|甲方：/);
+    }
+    const noTimeFacts = buildAgeFacts(unknown, opts);
+    const unknownText = chartToText(unknown, { facts: noTimeFacts, question: '婚期和健康' });
+    assert.doesNotMatch(unknownText, /目前无法确定|无法判断|下面只作参考/);
+    assert.equal(codeRepair({ ...input(`${UNKNOWN_TIME_OPENING}。主做事认真。婚期{{MARRIAGE_YEARS}}。健康{{HEALTH_YEARS}}。`), facts: noTimeFacts }), `${UNKNOWN_TIME_OPENING}。主做事认真。`);
     // Keep unknown/malformed upstream framing errors out of user content.
     const frames: string[] = [];
     for await (const f of readSseData(wire(': ping\n\n' + encodeDelta('正常') + 'data: [DONE]\n\n').body!)) frames.push(f);

@@ -1,4 +1,4 @@
-import { createPlaceholderBuffer } from './postprocess';
+import { createSentenceWindow } from './disclaimer';
 import { encodeDelta, readSseData } from './sse';
 import { codeRepair, repairAnswer, type Rewriter } from './repair';
 import { logIssues, validateAnswer, type ValidationInput } from './validate';
@@ -17,8 +17,7 @@ export function consistencyStream(upstream: Response, input: Omit<ValidationInpu
     async start(controller) {
       const send = (wire: string) => { if (!cancelled && !signal.aborted) controller.enqueue(encoder.encode(wire)); };
       const delta = (text: string) => { if (text) send(encodeDelta(text)); };
-      let unknown = 0;
-      const buffer = createPlaceholderBuffer(input.facts, () => { unknown++; });
+      const buffer = createSentenceWindow(text => codeRepair({ ...input, text }));
       if (options.buffered) timer = setInterval(() => send(': ping\n\n'), BUFFER_HEARTBEAT_MS);
       let terminal: string | undefined;
       try {
@@ -29,27 +28,29 @@ export function consistencyStream(upstream: Response, input: Omit<ValidationInpu
               const result = terminal ? codeRepair({ ...input, text: full }) : await repairAnswer({ ...input, text: full }, { deadline: options.deadline, rewrite: options.rewrite, signal });
               for (let i = 0; i < result.length; i += OUTPUT_CHUNK_CHARS) delta(result.slice(i, i + OUTPUT_CHUNK_CHARS));
             } else {
-              const tail = buffer.finish(); delta(tail); full += tail;
-              logIssues(validateAnswer({ ...input, text: full }));
+              delta(buffer.finish());
+              logIssues(validateAnswer({ ...input, text: codeRepair({ ...input, text: full }) }));
             }
-            if (unknown) console.warn('[ai-consistency]', { 'placeholder-left': unknown });
             if (terminal && options.buffered) send(`data: ${terminal}\n\n`);
             send('data: [DONE]\n\n'); return;
           }
           const event = JSON.parse(frame);
           if (typeof event.delta?.text === 'string') {
-            if (options.buffered) full += event.delta.text;
-            else { const text = buffer.push(event.delta.text); full += text; delta(text); }
+            full += event.delta.text;
+            if (!options.buffered) delta(buffer.push(event.delta.text));
           }
           if (event.error || event.finish_reason) {
             terminal = JSON.stringify(event);
-            if (!options.buffered) { const tail = buffer.finish(); full += tail; delta(tail); send(`data: ${terminal}\n\n`); }
+            if (!options.buffered) { delta(buffer.finish()); send(`data: ${terminal}\n\n`); }
           }
         }
         throw new Error('missing terminal frame');
       } catch {
         if (!signal.aborted) {
-          if (options.buffered && full) delta(codeRepair({ ...input, text: full }));
+          if (full) {
+            if (options.buffered) delta(codeRepair({ ...input, text: full }));
+            else delta(buffer.finish());
+          }
           send(`data: ${options.buffered && terminal ? terminal : '{"error":"解读暂时中断，请稍后重试。"}'}\n\ndata: [DONE]\n\n`);
         }
       } finally {

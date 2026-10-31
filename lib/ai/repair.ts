@@ -1,7 +1,8 @@
-import { repairFactsToText, subjectAt } from './facts';
+import { repairFactsToText } from './facts';
+import { deleteSentences, filterDisclaimers } from './disclaimer';
 import { fillPlaceholders } from './postprocess';
 import { firstSentence } from './jargon';
-import { closingFor, closingPattern, logIssues, validateAnswer, type AnswerIssue, type ValidationInput } from './validate';
+import { logIssues, validateAnswer, type AnswerIssue, type ValidationInput } from './validate';
 
 export const REWRITE_RESERVE_MS = 15000;
 export interface RepairTarget { start: number; end: number; text: string; types: string[] }
@@ -27,39 +28,31 @@ export function planRepairs(text: string, issues: AnswerIssue[]): RepairTarget[]
   return merged;
 }
 export function replaceTargets(text: string, targets: RepairTarget[], replacements: string[]) {
-  for (let i = targets.length - 1; i >= 0; i--) {
-    const value = replacements[i];
-    if (typeof value === 'string' && value.trim() && value.length <= targets[i].text.length) text = text.slice(0, targets[i].start) + value.trim() + text.slice(targets[i].end);
+  let result = '', cursor = 0;
+  const deletions: { start: number; end: number }[] = [];
+  for (let i = 0; i < targets.length; i++) {
+    const target = targets[i], value = replacements[i];
+    result += text.slice(cursor, target.start);
+    const valid = typeof value === 'string' && value.length <= target.text.length;
+    if (valid && !value.trim()) deletions.push({ start: result.length, end: result.length + target.text.length });
+    result += valid && value.trim() ? value.trim() : target.text;
+    cursor = target.end;
   }
-  return text;
+  return deleteSentences(result + text.slice(cursor), deletions);
 }
 export function codeRepair(input: ValidationInput, numericFallback = true): string {
-  let text = fillPlaceholders(input.text, input.facts).replace(/\{\{[^{}]*(?:\}\}|$)/g, '');
+  let text = filterDisclaimers(fillPlaceholders(input.text, input.facts));
   if (numericFallback) {
     const issues = validateAnswer({ ...input, text });
     // Never splice a marriage/health envelope into a person's basic age. Drop the untrusted
     // sentence as a unit, leaving neighbouring analysis intact; coalesce multiple bad references.
-    const spans: { start: number; end: number }[] = [];
-    for (const issue of issues.filter(i => i.type === 'age-not-in-facts')) {
-      const before = [...text.slice(0, issue.start).matchAll(/[。！？\n]/g)].at(-1);
-      const after = /[。！？\n]/.exec(text.slice(issue.end));
-      const span = { start: before ? before.index! + 1 : 0, end: after ? issue.end + after.index + 1 : text.length };
-      const last = spans.at(-1);
-      if (last && span.start < last.end) last.end = Math.max(last.end, span.end);
-      else spans.push(span);
-    }
-    for (const span of spans.reverse()) {
-      const sentence = text.slice(span.start, span.end);
-      const subject = input.facts.subjects && subjectAt(sentence, sentence.length);
-      const label = subject ? subject === 'A' ? '甲方：' : '乙方：' : '';
-      text = text.slice(0, span.start) + label + '这一点目前无法确定。' + text.slice(span.end);
-    }
+    text = deleteSentences(text, issues.filter(i => i.type === 'age-not-in-facts'));
     if (validateAnswer({ ...input, text }).some(i => i.type === 'marriage-no-candidate')) {
-      text += `\n\n可重点观察的候选范围：${input.facts.subjects ? '甲方' : ''}${input.facts.marriage.rangeText}。`;
+      text += `\n\n婚期以${input.facts.subjects ? '甲方' : ''}${input.facts.marriage.rangeText}为主，重点在${input.facts.marriage.years.join('、')}年。`;
     }
   }
-  const closing = closingFor(text, input.question);
-  return `${text.replace(closingPattern(), '').trim()}\n\n${closing}`;
+  // Final insurance also applies after placeholders, rewrites, and deterministic additions.
+  return filterDisclaimers(text);
 }
 export type Rewriter = (targets: RepairTarget[], factsText: string, timeoutMs: number, signal?: AbortSignal) => Promise<string[]>;
 /** One batch call max, never regenerate the whole answer. Insufficient time => deterministic fallback. */
@@ -68,7 +61,6 @@ export async function repairAnswer(input: ValidationInput, options: { deadline: 
   const clean = (raw: string) => {
     let unknown = 0;
     const filled = fillPlaceholders(raw, input.facts, () => { unknown++; });
-    unknown += (filled.match(/\{\{[^{}]*$/g) ?? []).length;
     if (unknown) console.warn('[ai-consistency]', { 'placeholder-left': unknown });
     return codeRepair({ ...input, text: filled }, false);
   };
