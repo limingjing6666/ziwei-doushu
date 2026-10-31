@@ -33,7 +33,7 @@ export function validateAnswer({ text, facts, question }: ValidationInput): Answ
     let valid = r.lo <= r.hi && (single ? (r.year ? w.years : w.ages).includes(r.lo) : false);
     if (marriage && !explicitDecadal) {
       valid = valid && (r.year ? [...years, ...(health ? facts.health.years : []), facts.currentYear, facts.selected?.year, facts.birthYear].includes(r.lo) : [...cs.map(c => c.nominalAge), ...(health ? facts.health.entries.map(e => e.nominalAge) : []), facts.currentAge, facts.selected?.nominalAge].includes(r.lo));
-      if (!single) valid = inside(r.lo, r.hi, r.year ? candidateRange : candidateAges);
+      if (!single) valid = (r.year ? candidateRange : candidateAges).some(([lo, hi]) => r.lo === lo && r.hi === hi);
     } else if (health && !explicitDecadal) {
       valid = valid && (r.year ? [...facts.health.years, facts.currentYear, facts.selected?.year].includes(r.lo) : [...facts.health.entries.map(e => e.nominalAge), facts.currentAge, facts.selected?.nominalAge].includes(r.lo));
     } else valid ||= inside(r.lo, r.hi, r.year ? w.yearRanges : w.ageRanges);

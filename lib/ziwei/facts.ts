@@ -65,7 +65,8 @@ function engine(chart: ZiweiChart, opts: FactOptions) {
         return { star, mark: ['禄', '权', '科', '忌'][i], palace: p?.name ?? '未知', branch: p?.branch ?? -1 };
       }) };
   };
-  return { a, currentYear, ageAt, base, decadals, yearFact, at };
+  const currentAge = opts.currentDate ? a.horoscope(opts.currentDate).age.nominalAge : ageAt(currentYear);
+  return { a, currentYear, currentAge, ageAt, base, decadals, yearFact, at };
 }
 const unavailable = (reason: string): MarriageFacts => ({ unavailable: true, reason, rangeText: '', years: [], candidates: [] });
 /** Transparent heuristic, NOT a prediction probability:
@@ -81,7 +82,7 @@ export function getMarriageCandidates(chart: ZiweiChart, opts: FactOptions = {})
     const e = engine(chart, opts), spouse = chart.palaces.find(p => name(p.name) === '夫妻');
     if (!spouse || chart.palaces.length !== 12) return unavailable('命盘资料不完整，目前无法确定');
     const candidates: MarriageCandidate[] = [];
-    for (let year = Math.max(e.currentYear - 2, e.base); e.ageAt(year) <= 55; year++) {
+    for (let year = Math.max(e.base + e.currentAge - 3, e.base); e.ageAt(year) <= 55; year++) {
       const f = e.yearFact(year), h = e.at(year), reasons: string[] = []; let score = 0;
       const add = (n: number, why: string) => { score += n; reasons.push(`${why}（${n > 0 ? '+' : ''}${n}）`); };
       const branchFor = (n: string) => BRANCHES.indexOf(e.a.palaces[h.yearly.palaceNames.findIndex(p => name(p) === n)]?.earthlyBranch ?? '');
@@ -123,7 +124,7 @@ export function buildAgeFacts(chart: ZiweiChart, opts: FactOptions = {}): AgeFac
     whitelist: { ages: [], years: [], ageRanges: [], yearRanges: [] }, discrepancies: [] };
   try {
     const e = engine(chart, opts);
-    facts.currentAge = opts.currentDate ? e.a.horoscope(opts.currentDate).age.nominalAge : e.ageAt(e.currentYear);
+    facts.currentAge = e.currentAge;
     facts.selected = e.yearFact(opts.selectedYear ?? e.currentYear);
     facts.decadals = e.decadals;
     facts.currentDecadal = e.decadals.find(d => facts.currentAge! >= d.startAge && facts.currentAge! <= d.endAge);

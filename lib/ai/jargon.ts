@@ -6,5 +6,5 @@ export const JARGON_TERMS = ['命宫', '身宫', '宫干', '化禄', '化权', '
 export const UNKNOWN_TIME_OPENING = '因出生时辰未知，命宫/身宫/宫位排布不可靠，下面只作参考';
 export function firstSentence(text: string) { return text.match(/^[^。！？!?\n]{0,60}[。！？!?\n]?/)?.[0] ?? ''; }
 export function firstSentenceJargon(text: string): boolean {
-  return JARGON_TERMS.some(t => text.includes(t)) || /[水木金土火][二三四五六\d]局|[（(【\s][庙旺陷][）)】\s]|庙旺|入庙|落陷|得旺|[星曜]陷|[星曜]旺|(?:^|[，：；])局(?:[，：；]|$)/.test(text);
+  return JARGON_TERMS.some(t => text.includes(t)) || /[水木金土火][二三四五六\d]局|(?:^|[（(【\s，、：；])[庙旺陷](?=[）)】\s，、：；。]|$)|庙旺|入庙|落陷|得旺|[为星曜][庙旺陷]|(?:^|[，：；])局(?:[，：；]|$)/.test(text);
 }

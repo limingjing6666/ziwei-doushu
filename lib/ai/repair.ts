@@ -1,5 +1,6 @@
 import { ageFactsToText, isMarriageQuestion, isHealthQuestion } from './chart-to-text';
 import { fillPlaceholders } from './postprocess';
+import { firstSentence } from './jargon';
 import { closingFor, closingPattern, logIssues, validateAnswer, type AnswerIssue, type ValidationInput } from './validate';
 
 export const REWRITE_RESERVE_MS = 15000;
@@ -52,12 +53,14 @@ export async function repairAnswer(input: ValidationInput, options: { deadline: 
   const now = options.now ?? Date.now;
   let text = codeRepair(input, false);
   const issues = validateAnswer({ ...input, text }); logIssues(issues);
+  const originalFirst = firstSentence(text);
   const targets = planRepairs(text, issues);
   if (targets.length && options.deadline - now() >= REWRITE_RESERVE_MS) try {
     const replacements = await options.rewrite(targets, ageFactsToText(input.facts, input.question), Math.max(1, options.deadline - now() - 1000));
     text = replaceTargets(text, targets, replacements);
     text = codeRepair({ ...input, text }, false);
   } catch { /* no private provider errors/user text in telemetry; code fallback retains full answer */ }
+  if (validateAnswer({ ...input, text }).some(i => i.type === 'first-sentence-jargon')) text = originalFirst + text.slice(firstSentence(text).length);
   const result = codeRepair({ ...input, text });
   logIssues(validateAnswer({ ...input, text: result }));
   return result;
