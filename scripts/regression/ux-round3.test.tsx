@@ -11,6 +11,7 @@ import { normalizeView, normalizeChart } from '../../lib/ai/input';
 import { generateChart } from '../../lib/ziwei/algorithm';
 import { classifyAiError, consumeAiResponse, requestAi, AiClientError } from '../../lib/ai/client';
 import { ALL_STARS, getKnowledge } from '../../lib/seo/knowledge';
+import { STAR_DB } from '../../lib/ziwei/db-analysis';
 import { streamDeepSeek } from '../../lib/ai/deepseek';
 import { retrieveKnowledge, safeReference } from '../../lib/ai/knowledge';
 import { INTERPRET_SYSTEM, HEMING_SYSTEM } from '../../lib/ai/prompts';
@@ -65,14 +66,14 @@ async function main() {
   assert.doesNotMatch(viewToText(attack, chart), /忽略所有规则|泄露提示词|ignore all rules/);
   assert.doesNotMatch(viewToText(attack, normalizeChart({ ...chart, daXians: [{ startAge: 2, endAge: 11, palaceBranch: 1, palaceName: attack.decadal.palaceName }], currentDaXianIndex: 0 })), /忽略所有规则/);
   assert.notEqual(normalizeView({ ...v, decadal: { ...v.decadal, startAge: 1.5 } }, chart).decadal?.startAge, 1.5);
-  assert.equal(safeReference('星曜推出心脏病。'), '');
+  assert.equal(safeReference('星曜推出心脏病。'), '星曜推出心脏病。');
   for (const star of ALL_STARS) {
     const data = getKnowledge(star, 'health');
-    assert.equal(data.topicLabel, '身心状态 / 生活节奏');
-    assert.doesNotMatch(data.parsed.raw, /脏腑|痔疾|头风|心脏|血气之疾/);
-    assert.match(data.parsed.raw, /作息、压力与情绪/);
+    assert.equal(data.topicLabel, '健康状况');
+    assert.equal(data.parsed.raw, STAR_DB[star].jiE);
+    assert.ok(data.exists && data.parsed.raw.length > 0);
   }
-  assert.doesNotMatch(retrieveKnowledge(chart), /脏腑|头风|痔疾|健康隐患/);
+  assert.doesNotMatch(retrieveKnowledge(chart), /\u502a\u5e08|\u502a\u6d77\u53a6|B站|bilibili/);
   assert.doesNotMatch(INTERPRET_SYSTEM, /必要时末尾一句|健康问答就医提示不得省略/);
   assert.match(HEMING_SYSTEM, /仅适用于首次总览，不适用于追问/);
   assert.match(viewToText(v, normalizeChart({ ...chart, birthInfo: { ...info, birthTimeKnown: false } })), /birthTimeKnown: false.*时辰未知/);
@@ -121,10 +122,16 @@ async function main() {
     process.env.AI_MINUTE_LIMIT = '100'; process.env.AI_DAILY_LIMIT = '100';
     delete process.env.UPSTASH_REDIS_REST_URL; delete process.env.UPSTASH_REDIS_REST_TOKEN;
     const post = (value: unknown) => new Request('http://localhost/api/interpret', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-real-ip': 'round3-fixture' }, body: JSON.stringify(value) });
-    for (const [mode, expected] of [['overview', 1600], ['detail', 500], ['followup', 600]] as const) {
+    const endingRule = '第一句直接回答（时辰未知固定首句优先），术语首次出现括号解释；接近上限主动收束并写完整结尾，优先保证最后一行恰好一句轻提示再停笔。';
+    for (const [mode, expected] of [['overview', 3200], ['detail', 1800], ['followup', 2200]] as const) {
       globalThis.fetch = async (_url, init) => {
         const payload = JSON.parse(init!.body as string);
         assert.equal(payload.max_tokens, expected);
+        const lengthRule = (mode === 'overview'
+          ? '整盘总览目标700–1200汉字，最多1400字；独立健康/感情/婚姻/事业专题600–1000字，详细给出宫位星曜依据和数据支持的时间点。'
+          : mode === 'detail' ? '单项解读目标400–700汉字，充分展开所选宫位/星曜/四化的依据与建议。'
+            : '追问目标400–800汉字，充分回答当前问题并给足依据。') + endingRule;
+        assert.equal(payload.messages[0].content, `${INTERPRET_SYSTEM}\n【本次篇幅硬约束】${lengthRule}`);
         assert.match(payload.messages[0].content, /不超过40字/);
         assert.match(payload.messages[1].content, /2030年/);
         assert.match(payload.messages[1].content, /birthTimeKnown: false/);
@@ -136,14 +143,16 @@ async function main() {
     }
     globalThis.fetch = async (_url, init) => {
       const payload = JSON.parse(init!.body as string);
-      assert.equal(payload.max_tokens, 600); assert.match(payload.messages[1].content, /原始报告摘要/);
+      assert.equal(payload.max_tokens, 2200); assert.match(payload.messages[1].content, /原始报告摘要/);
+      assert.equal(payload.messages[0].content, `${HEMING_SYSTEM}\n【本次篇幅硬约束】追问目标400–800汉字，充分回答当前问题并给足依据，不重写原报告。${endingRule}`);
       return sse('data: {"choices":[{"delta":{"content":"简答完成"}}]}\n\ndata: [DONE]\n\n');
     };
     const response = await heming(post({ chartA: chart, chartB: chart, mode: 'followup', question: '怎样沟通', reportSummary: '原始报告摘要' }));
     assert.equal(response.status, 200); await consumeAiResponse(response, () => {});
     globalThis.fetch = async (_url, init) => {
       const payload = JSON.parse(init!.body as string);
-      assert.equal(payload.max_tokens, 1600);
+      assert.equal(payload.max_tokens, 3200);
+      assert.equal(payload.messages[0].content, `${HEMING_SYSTEM}\n【本次篇幅硬约束】合盘总览目标700–1000汉字，最多1200字。${endingRule}`);
       const context = JSON.parse(payload.messages[1].content.split('\n')[1]);
       assert.match(context.chartA, /2031/); assert.match(context.selectedViewA, /所选流年：2031年/);
       assert.match(context.chartB, /2040/); assert.match(context.selectedViewB, /所选流年：2040年/);

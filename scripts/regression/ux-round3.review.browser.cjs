@@ -76,6 +76,7 @@ async function chart(page) { await page.getByRole('button', { name: '开始排�
       const topic = page.getByRole('button', { name: '事业', exact: true });
       await topic.dblclick(); await page.locator('.ai-markdown').filter({ hasText: '[x](javascript:alert(1))' }).first().waitFor();
       assert.equal(requests.length, 1, 'rapid clicks send once');
+      assert.equal(requests[0].mode, 'overview', 'standalone career topic gets the full overview budget');
       assert.equal(await page.locator('.ai-markdown img, .ai-markdown a, .ai-markdown script').count(), 0);
       assert.equal(await page.evaluate(() => window.__xss), undefined); await overflow(page);
       await page.locator('.ai-panel').scrollIntoViewIfNeeded(); await screenshot(page, `${prefix}-malicious-markdown`);
@@ -102,6 +103,10 @@ async function chart(page) { await page.getByRole('button', { name: '开始排�
       await page.goto(BASE + '/chart'); await fill(page, { year: '1990', month: '4', day: '21', lunar: true, unknown: true });
       await page.getByText(/公历 1990-05-15.*四月廿一/).waitFor(); await chart(page);
       await page.getByRole('button', { name: '性格', exact: true }).click(); await page.waitForTimeout(350);
+      assert.equal(requests.at(-1).birthTimeKnown, false);
+      await page.getByRole('button', { name: '健康', exact: true }).click(); await page.waitForTimeout(350);
+      assert.equal(requests.at(-1).mode, 'overview', 'standalone health topic gets the full overview budget');
+      assert.match(requests.at(-1).messages[0].content, /疾厄宫.*年份/);
       assert.equal(requests.at(-1).birthTimeKnown, false); await overflow(page);
       await page.goto(BASE); await page.getByRole('button', { name: '切换亮色主题', exact: true }).click();
       await page.waitForTimeout(1800); await screenshot(page, `${prefix}-home-light`);
@@ -110,7 +115,11 @@ async function chart(page) { await page.getByRole('button', { name: '开始排�
       await page.getByRole('link', { name: '了解更多 →', exact: true }).first().click();
       await page.waitForURL(BASE + '/knowledge');
       await page.goto(BASE + '/knowledge/taiyang/health');
-      assert.doesNotMatch(await page.locator('body').innerText(), /头风|脏腑|心脏/);
+      const healthPage = await page.locator('body').innerText();
+      assert.match(healthPage, /健康状况/);
+      assert.match(healthPage, /头风/);
+      assert.match(healthPage, /脏腑/);
+      assert.doesNotMatch(healthPage, /不用星曜判断身体状况/);
       await screenshot(page, `${prefix}-knowledge-light`, true); await overflow(page);
       assert.equal(await page.locator('footer').count(), 1, 'one shared attribution/disclaimer footer');
       await page.goto(BASE); await page.getByRole('button', { name: '切换暗色主题', exact: true }).click();

@@ -37,7 +37,7 @@ for (const packet of manifest.packets) assert.ok(packet.source_ids.length >= 20 
 for (const model of MENTAL_MODELS) assert.ok(model.rules.every(id => rules.some(r => r.id === id)));
 assert.ok(INTERPRET_SYSTEM.includes(METHOD_PROMPT));
 assert.ok(HEMING_SYSTEM.includes('大限优先'));
-assert.ok(HEMING_SYSTEM.includes('最多1000字'));
+assert.ok(HEMING_SYSTEM.includes('最多1200字'));
 assert.ok(HEMING_SYSTEM.includes('保留完整结尾'));
 assert.ok(RULE_INDEX.star.get('紫微')?.length);
 assert.ok(RULE_INDEX.palace.get('夫妻')?.length);
