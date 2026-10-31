@@ -13,7 +13,7 @@
 | `PatternsCard.tsx` | `components/PatternsCard.tsx` | 格局识别卡（未接线） |
 | `ShareModal.tsx` / `ShareCardCanvas.tsx` | `components/` | 命盘分享弹窗与分享卡截图（未接线） |
 
-`ChartSummary.tsx` 与 `StarDetailPanel.tsx` 已移回 `components/`，使用宣纸设计系统，并在 `components/chart/ResultPage.tsx` 接线、纳入生产类型检查。
+`StarDetailPanel.tsx` 已移回 `components/`，使用宣纸设计系统，并在 `components/chart/ResultPage.tsx` 接线、纳入生产类型检查。
 
 ## 恢复方式
 
