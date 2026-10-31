@@ -16,11 +16,11 @@ interface Props {
   view?: AiView;
 }
 const TOPICS = [
-  ['overview', '整盘', '请用大白话先总结核心倾向，再给简明依据与三条建议。'],
-  ['love', '感情', '请分析关系期待、沟通方式与相处建议，不断言婚期或结局。'],
+  ['overview', '整盘', '请第一句用大白话总结核心倾向，再给充实的具体依据与三条可执行建议。'],
+  ['love', '感情', '请详细分析感情婚姻、关系期待与相处建议，并给出容易遇到对象、结婚或感情变动的大限/流年及具体依据。'],
   ['career', '事业', '请分析工作方式与当前所选年份的事业主题，先给结论，再说明依据与建议。'],
   ['wealth', '财运', '请分析收入方式、预算与资源安排，不推荐投资标的或交易时机。'],
-  ['rhythm', '身心状态', '只谈作息、压力、情绪与生活节奏，不涉及疾病、器官、医疗建议或健康关键年份。'],
+  ['health', '健康', '请结合疾厄宫、福德宫、命宫及所选大限流年，按传统断法详细讲我的体质倾向、易患疾病类别、需要留意的身体系统和年份，并说明依据。'],
   ['personality', '性格', '请说明性格观察线索和可尝试的小行动，不给人贴好坏标签。'],
 ];
 export default function InsightPanel({ chart, selectedPalace, selectedStar, selectedSiHua, view }: Props) {
@@ -46,9 +46,9 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
     setMessages([...next, { role: 'assistant', content: '' }]); setInput('');
     void execute({ chart, messages: (standalone ? next.slice(-1) : next.slice(-12)).map(m => ({ ...m, content: m.content.slice(0, 2000) })), view: view ?? { type: 'yearly', year: new Date().getFullYear() }, birthTimeKnown: chart.birthInfo.birthTimeKnown !== false, mode }, next.length);
   };
-  const localQuestion = selectedStar ? `请简要解读${selectedPalace?.name ?? ''}的${selectedStar.name}，先说白话结论。`
-    : selectedSiHua ? `请简要解读当前所选视图的${selectedSiHua.starName}化${selectedSiHua.siHua}。`
-    : selectedPalace ? `请简要解读${selectedPalace.name}，先说白话结论。` : '';
+  const localQuestion = selectedStar ? `请解读${selectedPalace?.name ?? ''}的${selectedStar.name}，第一句给白话结论，再充分说明依据与建议。`
+    : selectedSiHua ? `请解读当前所选视图的${selectedSiHua.starName}化${selectedSiHua.siHua}，第一句给白话结论，再充分说明依据与建议。`
+    : selectedPalace ? `请解读${selectedPalace.name}，第一句给白话结论，再充分说明依据与建议。` : '';
   return <section className="ai-panel card-glass rounded-xl p-4 min-w-0" aria-label="AI 解读">
     <h2 className="text-lg mb-2" style={{ color: 'var(--ac)' }}>AI 解读</h2>
     <p className="text-sm mb-3"><Link href="/glossary" className="underline">看不懂术语？点这里查术语表</Link></p>
@@ -60,7 +60,7 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
       <button className="ux-button mt-3" disabled={loading} onClick={() => send(localQuestion, 'detail', true)}>{loading ? '解读中…' : selectedStar ? '让 AI 解读这颗星' : selectedSiHua ? '让 AI 解读这一四化' : '让 AI 解读这一宫'}</button>
     </div>}
     <p className="text-xs mb-2" style={{ color: 'var(--tx-2)' }}>以下话题会请求 AI；点盘面只看简介。</p>
-    <div className="grid grid-cols-3 gap-2 mb-5">{TOPICS.map(([key, label, question]) => <button key={key} className="ux-button text-sm px-1" disabled={loading} onClick={() => send(question, key === 'overview' ? 'overview' : 'followup', true)}>{label}</button>)}</div>
+    <div className="grid grid-cols-3 gap-2 mb-5">{TOPICS.map(([key, label, question]) => <button key={key} className="ux-button text-sm px-1" disabled={loading} onClick={() => send(question, ['overview', 'love', 'career', 'health'].includes(key) ? 'overview' : 'followup', true)}>{label}</button>)}</div>
     {messages.length === 0 && <p className="text-sm my-6" style={{ color: 'var(--tx-2)' }}>命盘已生成。先看看宫位简介，再选一个想了解的话题。</p>}
     <div className="space-y-4" aria-live="polite">{messages.map((m, i) => <div key={i} className={m.role === 'user' ? 'rounded-xl p-3 ml-6 text-sm' : 'py-2'} style={m.role === 'user' ? { background: 'var(--ac-bg)', border: '1px solid var(--ac-bdr)' } : undefined}>{m.role === 'assistant' ? <Markdown text={m.content} streaming={loading && i === messages.length - 1} /> : m.content}</div>)}</div>
     {loading && <AiLoading />}
