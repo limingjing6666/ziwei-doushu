@@ -60,8 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <Footer />
         </ThemeProvider>
-        <Analytics />
-        <SpeedInsights />
+        {process.env.VERCEL === '1' && <><Analytics /><SpeedInsights /></>}
       </body>
     </html>
   );
