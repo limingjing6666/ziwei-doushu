@@ -1,0 +1,867 @@
+{
+  "sources": [
+    {
+      "file": "q_卷一.txt",
+      "sha256": "9beb8038a8b82154d15d81c8ff822423d4f0c7c006f536a86552adeaa594818a"
+    },
+    {
+      "file": "q_卷二.txt",
+      "sha256": "1e255c6ae99e6f89ae124ab342554ef1347fc8e68fb8908cba7290d1a38cbb72"
+    },
+    {
+      "file": "q_卷三.txt",
+      "sha256": "ed327a68253a89a6e8b2962932a16f75546826ffcdd2e9e4ac419ad0f389b03b"
+    }
+  ],
+  "chapters": 89,
+  "paragraphs": 411,
+  "wordCount": 53441,
+  "wordCountRule": "CJK ideographs only; excludes headings, punctuation, whitespace and table placeholders",
+  "conversionFixes": {},
+  "terms": [
+    {
+      "original": "紫微",
+      "simplified": "紫微",
+      "originalCount": 182,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 182
+    },
+    {
+      "original": "天機",
+      "simplified": "天机",
+      "originalCount": 13,
+      "alreadySimplifiedCount": 99,
+      "outputCount": 112
+    },
+    {
+      "original": "太陽",
+      "simplified": "太阳",
+      "originalCount": 14,
+      "alreadySimplifiedCount": 100,
+      "outputCount": 114
+    },
+    {
+      "original": "武曲",
+      "simplified": "武曲",
+      "originalCount": 169,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 169
+    },
+    {
+      "original": "天同",
+      "simplified": "天同",
+      "originalCount": 102,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 102
+    },
+    {
+      "original": "廉貞",
+      "simplified": "廉贞",
+      "originalCount": 14,
+      "alreadySimplifiedCount": 145,
+      "outputCount": 159
+    },
+    {
+      "original": "天府",
+      "simplified": "天府",
+      "originalCount": 104,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 104
+    },
+    {
+      "original": "太陰",
+      "simplified": "太阴",
+      "originalCount": 14,
+      "alreadySimplifiedCount": 122,
+      "outputCount": 136
+    },
+    {
+      "original": "貪狼",
+      "simplified": "贪狼",
+      "originalCount": 19,
+      "alreadySimplifiedCount": 127,
+      "outputCount": 146
+    },
+    {
+      "original": "巨門",
+      "simplified": "巨门",
+      "originalCount": 17,
+      "alreadySimplifiedCount": 106,
+      "outputCount": 123
+    },
+    {
+      "original": "天相",
+      "simplified": "天相",
+      "originalCount": 106,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 106
+    },
+    {
+      "original": "天梁",
+      "simplified": "天梁",
+      "originalCount": 105,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 105
+    },
+    {
+      "original": "七殺",
+      "simplified": "七杀",
+      "originalCount": 25,
+      "alreadySimplifiedCount": 126,
+      "outputCount": 151
+    },
+    {
+      "original": "破軍",
+      "simplified": "破军",
+      "originalCount": 23,
+      "alreadySimplifiedCount": 117,
+      "outputCount": 140
+    },
+    {
+      "original": "文昌",
+      "simplified": "文昌",
+      "originalCount": 76,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 76
+    },
+    {
+      "original": "文曲",
+      "simplified": "文曲",
+      "originalCount": 64,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 64
+    },
+    {
+      "original": "左輔",
+      "simplified": "左辅",
+      "originalCount": 2,
+      "alreadySimplifiedCount": 39,
+      "outputCount": 41
+    },
+    {
+      "original": "右弼",
+      "simplified": "右弼",
+      "originalCount": 41,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 41
+    },
+    {
+      "original": "天魁",
+      "simplified": "天魁",
+      "originalCount": 10,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 10
+    },
+    {
+      "original": "天鉞",
+      "simplified": "天钺",
+      "originalCount": 1,
+      "alreadySimplifiedCount": 7,
+      "outputCount": 8
+    },
+    {
+      "original": "天馬",
+      "simplified": "天马",
+      "originalCount": 1,
+      "alreadySimplifiedCount": 16,
+      "outputCount": 17
+    },
+    {
+      "original": "祿存",
+      "simplified": "禄存",
+      "originalCount": 16,
+      "alreadySimplifiedCount": 84,
+      "outputCount": 100
+    },
+    {
+      "original": "擎羊",
+      "simplified": "擎羊",
+      "originalCount": 91,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 91
+    },
+    {
+      "original": "陀羅",
+      "simplified": "陀罗",
+      "originalCount": 3,
+      "alreadySimplifiedCount": 40,
+      "outputCount": 43
+    },
+    {
+      "original": "化祿",
+      "simplified": "化禄",
+      "originalCount": 5,
+      "alreadySimplifiedCount": 21,
+      "outputCount": 26
+    },
+    {
+      "original": "化權",
+      "simplified": "化权",
+      "originalCount": 2,
+      "alreadySimplifiedCount": 14,
+      "outputCount": 16
+    },
+    {
+      "original": "化科",
+      "simplified": "化科",
+      "originalCount": 12,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 12
+    },
+    {
+      "original": "化忌",
+      "simplified": "化忌",
+      "originalCount": 44,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 44
+    },
+    {
+      "original": "命宮",
+      "simplified": "命宫",
+      "originalCount": 3,
+      "alreadySimplifiedCount": 31,
+      "outputCount": 34
+    },
+    {
+      "original": "福德",
+      "simplified": "福德",
+      "originalCount": 28,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 28
+    },
+    {
+      "original": "遷移",
+      "simplified": "迁移",
+      "originalCount": 15,
+      "alreadySimplifiedCount": 27,
+      "outputCount": 42
+    },
+    {
+      "original": "疾厄",
+      "simplified": "疾厄",
+      "originalCount": 29,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 29
+    },
+    {
+      "original": "官祿",
+      "simplified": "官禄",
+      "originalCount": 18,
+      "alreadySimplifiedCount": 30,
+      "outputCount": 48
+    },
+    {
+      "original": "田宅",
+      "simplified": "田宅",
+      "originalCount": 34,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 34
+    },
+    {
+      "original": "彀",
+      "simplified": "彀",
+      "originalCount": 1,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 1
+    },
+    {
+      "original": "髓",
+      "simplified": "髓",
+      "originalCount": 2,
+      "alreadySimplifiedCount": 0,
+      "outputCount": 2
+    }
+  ],
+  "ambiguities": [
+    {
+      "original": "丑",
+      "simplified": "丑",
+      "count": 134
+    },
+    {
+      "original": "醜",
+      "simplified": "丑",
+      "count": 2
+    },
+    {
+      "original": "后",
+      "simplified": "后",
+      "count": 69
+    },
+    {
+      "original": "後",
+      "simplified": "后",
+      "count": 13
+    },
+    {
+      "original": "干",
+      "simplified": "干",
+      "count": 9
+    },
+    {
+      "original": "乾",
+      "simplified": "干",
+      "count": 1
+    },
+    {
+      "original": "幹",
+      "simplified": "干",
+      "count": 1
+    },
+    {
+      "original": "历",
+      "simplified": "历",
+      "count": 2
+    },
+    {
+      "original": "歷",
+      "simplified": "历",
+      "count": 3
+    },
+    {
+      "original": "曆",
+      "simplified": "历",
+      "count": 1
+    },
+    {
+      "original": "发",
+      "simplified": "发",
+      "count": 88
+    },
+    {
+      "original": "發",
+      "simplified": "发",
+      "count": 12
+    },
+    {
+      "original": "髮",
+      "simplified": "发",
+      "count": 1
+    },
+    {
+      "original": "系",
+      "simplified": "系",
+      "count": 3
+    },
+    {
+      "original": "係",
+      "simplified": "系",
+      "count": 0
+    },
+    {
+      "original": "繫",
+      "simplified": "系",
+      "count": 0
+    },
+    {
+      "original": "彀",
+      "simplified": "彀",
+      "count": 1
+    },
+    {
+      "original": "髓",
+      "simplified": "髓",
+      "count": 2
+    }
+  ],
+  "tables": [
+    {
+      "volume": "卷二",
+      "chapter": "安身命例",
+      "startLine": 285,
+      "endLine": 309,
+      "label": "水二局"
+    },
+    {
+      "volume": "卷二",
+      "chapter": "安身命例",
+      "startLine": 315,
+      "endLine": 339,
+      "label": "木三局"
+    },
+    {
+      "volume": "卷二",
+      "chapter": "安身命例",
+      "startLine": 345,
+      "endLine": 369,
+      "label": "金四局"
+    },
+    {
+      "volume": "卷二",
+      "chapter": "安身命例",
+      "startLine": 377,
+      "endLine": 401,
+      "label": "土五局"
+    },
+    {
+      "volume": "卷二",
+      "chapter": "安身命例",
+      "startLine": 408,
+      "endLine": 432,
+      "label": "火六局"
+    },
+    {
+      "volume": "卷二",
+      "chapter": "安身命例",
+      "startLine": 435,
+      "endLine": 459,
+      "label": "安天府图"
+    },
+    {
+      "volume": "卷二",
+      "chapter": "安身命例",
+      "startLine": 462,
+      "endLine": 486,
+      "label": "殇使祸福紧慢图"
+    },
+    {
+      "volume": "卷二",
+      "chapter": "安身命例",
+      "startLine": 489,
+      "endLine": 513,
+      "label": "禄权科忌图"
+    },
+    {
+      "volume": "卷二",
+      "chapter": "安身命例",
+      "startLine": 516,
+      "endLine": 566,
+      "label": "诸星庙旺得地利益平和不得地落陷表"
+    }
+  ],
+  "samples": [
+    {
+      "source": "q_卷一.txt:551",
+      "original": "紫微居午无杀凑位至三公，天府临戌有星扶腰金衣紫。",
+      "simplified": "紫微居午无杀凑位至三公，天府临戌有星扶腰金衣紫。"
+    },
+    {
+      "source": "q_卷一.txt:405",
+      "original": "希夷先生答曰：禄存北斗第三星，真人之宿，主人贵爵，掌人寿基。帝相扶之施权，日月得之增辉。天府武曲为厥职，天梁天同共其祥。十二宫中惟身命、田宅、财帛为要，主富。居迁移则佳，与帝星守官禄宜子孙爵秩。若独守命而无吉化，乃看财奴耳。逢吉逞其权，遇恶败其迹。最嫌落于陷空不能为福，更凑火铃空劫，巧艺安身。盖禄爵当得势而享之，守身命主人慈厚信直，通文济楚。女人清淑机巧能干能为，有君子之志。紫府廉同会合，作禄存上局。大抵此星诸宫降福消灾。",
+      "simplified": "希夷先生答曰：禄存北斗第三星，真人之宿，主人贵爵，掌人寿基。帝相扶之施权，日月得之增辉。天府武曲为厥职，天梁天同共其祥。十二宫中惟身命、田宅、财帛为要，主富。居迁移则佳，与帝星守官禄宜子孙爵秩。若独守命而无吉化，乃看财奴耳。逢吉逞其权，遇恶败其迹。最嫌落于陷空不能为福，更凑火铃空劫，巧艺安身。盖禄爵当得势而享之，守身命主人慈厚信直，通文济楚。女人清淑机巧能干能为，有君子之志。紫府廉同会合，作禄存上局。大抵此星诸宫降福消灾。"
+    },
+    {
+      "source": "q_卷一.txt:626",
+      "original": "紫府巳亥相互辅，左右扶持福必生。",
+      "simplified": "紫府巳亥相互辅，左右扶持福必生。"
+    },
+    {
+      "source": "q_卷一.txt:106",
+      "original": "亥水屬文曲破軍之要地，乃文明清高之士，萬里派源之潔，如大川之澤不為焦枯。居於亥位將入天河，是故為妙。破軍水於子旺之鄉，如巨海之浪淜洶湧，可遠觀而不可近倚，破軍是以居焉，若四墓之克，充其瀰漫，必得武曲之金使其源流不絕方為妙矣。",
+      "simplified": "亥水属文曲破军之要地，乃文明清高之士，万里派源之洁，如大川之泽不为焦枯。居于亥位将入天河，是故为妙。破军水于子旺之乡，如巨海之浪淜汹涌，可远观而不可近倚，破军是以居焉，若四墓之克，充其弥漫，必得武曲之金使其源流不绝方为妙矣。"
+    },
+    {
+      "source": "q_卷一.txt:69",
+      "original": "巨門乃是非之曜，在廟敦厚溫良。天相精神，天梁穩重，心事玉潔冰清。",
+      "simplified": "巨门乃是非之曜，在庙敦厚温良。天相精神，天梁稳重，心事玉洁冰清。"
+    },
+    {
+      "source": "q_卷二.txt:710",
+      "original": "天同守命妇人身，性格聪明伶俐人，昌曲更来相会处，悠悠财禄自天伸。",
+      "simplified": "天同守命妇人身，性格聪明伶俐人，昌曲更来相会处，悠悠财禄自天伸。"
+    },
+    {
+      "source": "q_卷二.txt:772",
+      "original": "女人天府命身宫，性格聪明花样容，更得紫微三合照，金冠霞佩受皇封。",
+      "simplified": "女人天府命身宫，性格聪明花样容，更得紫微三合照，金冠霞佩受皇封。"
+    },
+    {
+      "source": "q_卷二.txt:1179",
+      "original": "火铃之星入命来，贪狼相会得和谐，三方无杀诸般美，坐守香闺得遂怀。",
+      "simplified": "火铃之星入命来，贪狼相会得和谐，三方无杀诸般美，坐守香闺得遂怀。"
+    },
+    {
+      "source": "q_卷二.txt:727",
+      "original": "若入庙逢化禄刚烈机巧，清秀，旺夫益子。僧道加吉拱，有师号，此星最喜天相同宫能化其恶。",
+      "simplified": "若入庙逢化禄刚烈机巧，清秀，旺夫益子。僧道加吉拱，有师号，此星最喜天相同宫能化其恶。"
+    },
+    {
+      "source": "q_卷二.txt:1425",
+      "original": "天机同劳心用力发财不多，更改方见成家，加羊陀火铃空劫，先难后易仅足度日。",
+      "simplified": "天机同劳心用力发财不多，更改方见成家，加羊陀火铃空劫，先难后易仅足度日。"
+    },
+    {
+      "source": "q_卷三.txt:179",
+      "original": "寅年太岁并小限到寅宫不入庙化凶",
+      "simplified": "寅年太岁并小限到寅宫不入庙化凶"
+    },
+    {
+      "source": "q_卷三.txt:127",
+      "original": "如命中三合原有七杀守照，而流年又遇流羊流陀冲照凶，七杀重逢二者为祸最毒，入庙灾晦减轻，如陷地逢忌及卯酉遇擎羊为闲宫，午生人不利也。然七杀逢吉曜众亦转凶化吉，不可一概论凶。擎羊陀罗七杀逢紫微天相禄存三合拱照可解。",
+      "simplified": "如命中三合原有七杀守照，而流年又遇流羊流陀冲照凶，七杀重逢二者为祸最毒，入庙灾晦减轻，如陷地逢忌及卯酉遇擎羊为闲宫，午生人不利也。然七杀逢吉曜众亦转凶化吉，不可一概论凶。擎羊陀罗七杀逢紫微天相禄存三合拱照可解。"
+    },
+    {
+      "source": "q_卷三.txt:572",
+      "original": "魁钺昌曲禄存扶刑杀无冲台辅贵  命身妙三方，次见刑杀冲会者平常，只宜僧道。",
+      "simplified": "魁钺昌曲禄存扶刑杀无冲台辅贵  命身妙三方，次见刑杀冲会者平常，只宜僧道。"
+    },
+    {
+      "source": "q_卷三.txt:584",
+      "original": "左右贞羊遭刑盗一左右昌曲逢羊陀当生暗痣",
+      "simplified": "左右贞羊遭刑盗一左右昌曲逢羊陀当生暗痣"
+    },
+    {
+      "source": "q_卷三.txt:24",
+      "original": "若安命星躔陷地，又加凶杀化忌，三方又会羊陀火铃空劫，为下格贫贱，二姓延生，奴仆之命，否则夭折六畜之命。",
+      "simplified": "若安命星躔陷地，又加凶杀化忌，三方又会羊陀火铃空劫，为下格贫贱，二姓延生，奴仆之命，否则夭折六畜之命。"
+    }
+  ],
+  "structure": [
+    {
+      "title": "卷一·罗序",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·太微赋",
+      "paragraphs": 8
+    },
+    {
+      "title": "卷一·形性赋",
+      "paragraphs": 6
+    },
+    {
+      "title": "卷一·星垣论",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·斗数准绳",
+      "paragraphs": 3
+    },
+    {
+      "title": "卷一·斗数发微论",
+      "paragraphs": 4
+    },
+    {
+      "title": "卷一·重补斗数彀率",
+      "paragraphs": 4
+    },
+    {
+      "title": "卷一·增补太微赋",
+      "paragraphs": 6
+    },
+    {
+      "title": "卷一·诸星问答论·问紫微所主若何？",
+      "paragraphs": 5
+    },
+    {
+      "title": "卷一·诸星问答论·问天机所主如何？",
+      "paragraphs": 3
+    },
+    {
+      "title": "卷一·诸星问答论·问太阳所主若何？",
+      "paragraphs": 3
+    },
+    {
+      "title": "卷一·诸星问答论·问武曲星所主为何？",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·诸星问答论·问天同星所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问廉贞所主若何？",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·诸星问答论·问天府所主若何？",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·诸星问答论·问太阴星所主若何？",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·诸星问答论·问贪狼所主若何？",
+      "paragraphs": 3
+    },
+    {
+      "title": "卷一·诸星问答论·问巨门所主若何？",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·诸星问答论·问天相星所主若何？",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·诸星问答论·问天梁星所主若何？",
+      "paragraphs": 3
+    },
+    {
+      "title": "卷一·诸星问答论·问七杀星所主若何？",
+      "paragraphs": 3
+    },
+    {
+      "title": "卷一·诸星问答论·问破军所主若何？",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·诸星问答论·问文昌星所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问文曲星所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问流年昌曲若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问左辅所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问右弼所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问天魁天钺星所主若何？",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·诸星问答论·问禄存星所主若何？",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·诸星问答论·问天马星所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问化禄星所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问化权星所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问化科星所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问化忌星所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问擎羊星所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问陀罗星所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·羊陀二星总论",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·诸星问答论·问火星所主若何？",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·诸星问答论·问铃星所主若何？",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·诸星问答论·羊陀火铃四星总论",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问天空地劫所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问天伤天使所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问天刑星所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问天姚星所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·诸星问答论·问天哭天虚二星所主若何？",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·斗数骨髓赋",
+      "paragraphs": 14
+    },
+    {
+      "title": "卷一·女命骨髓赋",
+      "paragraphs": 12
+    },
+    {
+      "title": "卷一·定富贵贫贱十等论",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·十二宫诸星得地合格诀",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·十二宫诸星失陷破格诀",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·十二宫诸星得地富贵论",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·十二宫诸星失陷贫贱论",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·定富局",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷一·定贵局",
+      "paragraphs": 5
+    },
+    {
+      "title": "卷一·定贫贱局",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷一·定杂局",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷二·安身命例",
+      "paragraphs": 41
+    },
+    {
+      "title": "卷二·一 命宫",
+      "paragraphs": 87
+    },
+    {
+      "title": "卷二·二兄弟",
+      "paragraphs": 4
+    },
+    {
+      "title": "卷二·三妻妾",
+      "paragraphs": 4
+    },
+    {
+      "title": "卷二·四子女",
+      "paragraphs": 6
+    },
+    {
+      "title": "卷二·五财帛",
+      "paragraphs": 5
+    },
+    {
+      "title": "卷二·六疾厄",
+      "paragraphs": 4
+    },
+    {
+      "title": "卷二·七迁移",
+      "paragraphs": 4
+    },
+    {
+      "title": "卷二·八奴仆",
+      "paragraphs": 4
+    },
+    {
+      "title": "卷二·九官禄",
+      "paragraphs": 7
+    },
+    {
+      "title": "卷二·十田宅",
+      "paragraphs": 4
+    },
+    {
+      "title": "卷二·十一福德",
+      "paragraphs": 5
+    },
+    {
+      "title": "卷二·十二父母",
+      "paragraphs": 6
+    },
+    {
+      "title": "卷三·谈星要论",
+      "paragraphs": 3
+    },
+    {
+      "title": "卷三·论人命入格",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷三·论格星数高下",
+      "paragraphs": 3
+    },
+    {
+      "title": "卷三·论男女命同异",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷三·论小儿命",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷三·定小儿生时诀",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷三·论人生时安命吉凶",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷三·论人生时要审的确",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷三·论小儿克亲",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷三·论命先贫后富",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷三·论大限十年祸福何如",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷三·论二限太岁吉凶",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷三·论行限分南北斗",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷三·论流年太岁吉凶星杀",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷三·论阴骘延寿",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷三·论羊陀迭并",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷三·论七杀重逢",
+      "paragraphs": 1
+    },
+    {
+      "title": "卷三·论大小限星辰过十二宫遇十二支所忌诀",
+      "paragraphs": 2
+    },
+    {
+      "title": "卷三·论立命行限宫歌",
+      "paragraphs": 13
+    },
+    {
+      "title": "卷三·论诸星同垣各司所宜分别富贵贫贱夭寿",
+      "paragraphs": 50
+    }
+  ]
+}

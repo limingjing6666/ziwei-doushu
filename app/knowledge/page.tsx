@@ -1,129 +1,221 @@
 /**
- * /knowledge — 知识库主页
- * 列出 14 主星，每星可看其在 13 宫位的解读
+ * /knowledge — 知识库索引
+ *
+ * 十四主星 / 十三主题 / 推荐阅读 / 古籍入口。
+ * 只做索引与导航，卡片进入 /knowledge/[slug]/overview。
  */
 
-import Link from 'next/link';
-import { ALL_STARS, ALL_TOPICS, getKnowledge, STAR_BRIEF_SEO, STAR_TO_SLUG } from '@/lib/seo/knowledge';
-import { TOPIC_LABEL } from '@/lib/ziwei/db-analysis';
-import { pageMetadata } from '@/lib/brand';
+import Link from "next/link";
+import {
+  ALL_STARS,
+  ALL_TOPICS,
+  STAR_BRIEF_SEO,
+  STAR_TO_SLUG,
+  getKnowledge,
+} from "@/lib/seo/knowledge";
+import type { TopicKey } from "@/lib/ziwei/db-analysis";
+import { TOPIC_LABEL, TOPIC_PALACE_NAME } from "@/lib/ziwei/db-analysis";
+import { ALL_BOOKS } from "@/lib/classics";
+import { PageHeader, SectionHeading } from "@/components/ui/PageHeader";
+import { buttonClasses } from "@/components/ui/Button";
+import { IconArrowRight, IconBook } from "@/components/icons";
+import { pageMetadata } from "@/lib/brand";
 
 export const metadata = {
-  ...pageMetadata('紫微斗数知识库 · 14 主星 × 13 专题', '传统星宫知识库，说明触发条件、联动关系与阅读限制。', '/knowledge'),
-  keywords: ['紫微斗数', '天机盘', '三合四化', '紫微斗数全集', '紫微斗数全书', '14 主星', '12 宫位'],
+  ...pageMetadata(
+    "紫微斗数知识库 · 14 主星 × 13 专题",
+    "传统星宫知识库，说明触发条件、联动关系与阅读限制。",
+    "/knowledge",
+  ),
+  keywords: [
+    "紫微斗数",
+    "天机盘",
+    "三合四化",
+    "斗数骨髓赋",
+    "紫微斗数全书",
+    "14 主星",
+    "12 宫位",
+  ],
 };
 
+const ARTICLE_COUNT = ALL_STARS.length * ALL_TOPICS.length;
+
+/** 从「主星简介」里取出星曜属性与一句星性，仅用于索引卡展示。 */
+function starGlance(star: string): { attr: string; nature: string } {
+  const brief = STAR_BRIEF_SEO[star] ?? "";
+  const match = brief.match(/^.+?为(.+?)，(.+?)。/);
+  if (!match) return { attr: "主星", nature: brief };
+  return { attr: match[1], nature: match[2] };
+}
+
+function palaceShort(topic: TopicKey) {
+  return TOPIC_PALACE_NAME[topic].replace(/宫$/, "");
+}
+
+const FEATURED: { star: string; topic: TopicKey }[] = [
+  { star: "紫微", topic: "overview" },
+  { star: "七杀", topic: "overview" },
+  { star: "太阴", topic: "love" },
+  { star: "武曲", topic: "wealth" },
+  { star: "天机", topic: "career" },
+  { star: "廉贞", topic: "personality" },
+];
+
 export default function KnowledgeHomePage() {
-  const STAR_DESCRIPTIONS_QUICK = STAR_BRIEF_SEO;
+  const featured = FEATURED.filter(
+    ({ star, topic }) => getKnowledge(star, topic).exists,
+  ).slice(0, 6);
 
   return (
-    <div style={{ background: 'var(--bg-page)', minHeight: '100vh' }}>
-      {/* 顶栏 */}
-      <div className="px-6 py-4 flex items-center justify-between"
-        style={{ borderBottom: '1px solid rgba(184,146,42,0.15)', background: 'var(--bg-page)' }}>
-        <Link href="/" style={{ fontSize: '12px', color: 'var(--ac)', letterSpacing: '0.3em', textDecoration: 'none' }}>
-          ← 首页
-        </Link>
-        <div style={{ fontSize: '12px', color: 'var(--tx-3)', letterSpacing: '0.2em' }}>
-          传统紫微方法论 · 知识库
-        </div>
-        <Link href="/library" style={{ fontSize: '12px', color: 'var(--ac)', letterSpacing: '0.2em', textDecoration: 'none' }}>
-          古籍 →
-        </Link>
-      </div>
+    <div className="knowledge-page container-page py-10 lg:py-14">
+      <PageHeader
+        eyebrow="星曜知识"
+        title="紫微斗数知识库"
+        description={`十四主星 × 十三主题 = ${ARTICLE_COUNT} 项专题整理。每篇说明星曜落在该宫位时的传统解释、判断依据与阅读限制，传统星宫关系与现代白话解读，含《紫微斗数全书》原文参考（据维基文库繁转简，未逐字校勘）。`}
+        actions={
+          <Link href="/library" className={buttonClasses("secondary", "sm")}>
+            <IconBook size={15} />
+            古籍对读
+          </Link>
+        }
+      />
 
-      {/* Hero */}
-      <div className="text-center px-6 py-14">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <div style={{ height: '1px', width: '48px', background: 'linear-gradient(to right, transparent, rgba(184,146,42,0.4))' }} />
-          <span style={{ fontSize: '11px', color: 'var(--ac)', letterSpacing: '0.4em' }}>KNOWLEDGE BASE</span>
-          <div style={{ height: '1px', width: '48px', background: 'linear-gradient(to left, transparent, rgba(184,146,42,0.4))' }} />
+      <section className="mt-12" aria-labelledby="knowledge-stars">
+        <SectionHeading
+          title="十四主星"
+          description="点开一颗星，先读它在命宫的总览，再按宫位继续。"
+        />
+        <div
+          id="knowledge-stars"
+          className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7"
+        >
+          {ALL_STARS.map((star) => {
+            const { attr, nature } = starGlance(star);
+            return (
+              <Link
+                key={star}
+                href={`/knowledge/${STAR_TO_SLUG[star]}/overview`}
+                className="group flex flex-col items-center justify-between gap-2 rounded-xs border border-line/20 bg-surface px-3 py-4 text-center outline outline-1 outline-offset-[-6px] outline-line/10 transition-colors hover:border-cinnabar/40 hover:bg-surface-2 sm:aspect-square sm:px-4 sm:py-5 xl:px-2.5"
+              >
+                <span className="text-[11px] tracking-[0.12em] text-ink-3 transition-colors group-hover:text-cinnabar">
+                  {attr}
+                </span>
+                <span className="font-serif text-[22px] font-semibold leading-none tracking-[0.14em] text-ink">
+                  {star}
+                </span>
+                <span className="line-clamp-2 text-balance text-[12px] leading-relaxed text-ink-2">
+                  {nature}
+                </span>
+              </Link>
+            );
+          })}
         </div>
-        <h1 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 700, color: 'var(--tx-0)', letterSpacing: '0.15em', marginBottom: '12px' }}>
-          紫微斗数知识库
-        </h1>
-        <p style={{ fontSize: '14px', color: 'var(--tx-2)', letterSpacing: '0.08em', maxWidth: '600px', margin: '0 auto', lineHeight: 1.7 }}>
-          14 主星 × 13 宫位 = <strong style={{ color: 'var(--ac)' }}>{ALL_STARS.length * ALL_TOPICS.length}</strong> 项专题<br />
-          传统星宫关系与独立白话整理 · 含公版古籍参考
-        </p>
-      </div>
+      </section>
 
-      {/* 14 主星卡片 */}
-      <div className="max-w-5xl mx-auto px-6 pb-20">
-        <div style={{ fontSize: '11px', color: 'var(--tx-3)', letterSpacing: '0.3em', textAlign: 'center', marginBottom: '24px' }}>
-          十四主星
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-          {ALL_STARS.map(star => (
+      <section className="mt-14" aria-labelledby="knowledge-palaces">
+        <SectionHeading
+          title="十三宫位"
+          description="按宫位索引，同一颗星在不同人生主题下的侧重并不相同（以紫微主星专题为例）。"
+        />
+        <div id="knowledge-palaces" className="mt-6 flex flex-wrap gap-2">
+          {ALL_TOPICS.map((topic) => (
             <Link
-              key={star}
-              href={`/knowledge/${STAR_TO_SLUG[star]}/overview`}
-              style={{
-                display: 'block',
-                padding: '14px 10px',
-                background: 'var(--bg-card)',
-                border: '1px solid rgba(184,146,42,0.2)',
-                borderRadius: '10px',
-                textDecoration: 'none',
-                textAlign: 'center',
-                transition: 'all 0.2s',
-              }}
-              className="hover:shadow-md hover:border-amber-400"
+              key={topic}
+              href={`/knowledge/${STAR_TO_SLUG["紫微"]}/${topic}`}
+              className="group inline-flex items-baseline gap-2 rounded-full border border-line/20 px-3.5 py-1.5 text-[13px] text-ink-2 transition-colors hover:border-cinnabar/40 hover:bg-surface-2 hover:text-ink"
             >
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--tx-0)', letterSpacing: '0.15em' }}>
-                {star}
-              </div>
+              <span className="font-serif">{palaceShort(topic)}宫</span>
+              <span className="text-[12px] text-ink-3 transition-colors group-hover:text-cinnabar">
+                {TOPIC_LABEL[topic]}
+              </span>
             </Link>
           ))}
         </div>
+      </section>
 
-        {/* 详细列表（每个主星 + 简介 + 进入按钮） */}
-        <div className="mt-14 space-y-4">
-          {ALL_STARS.map(star => (
-            <div key={star} style={{
-              background: 'var(--bg-card)',
-              border: '1px solid rgba(184,146,42,0.18)',
-              borderRadius: '12px',
-              padding: '18px 22px',
-            }}>
-              <div className="flex items-baseline gap-3 mb-2">
-                <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--tx-0)', letterSpacing: '0.1em' }}>
-                  {star}星
+      <section className="mt-14" aria-labelledby="knowledge-featured">
+        <SectionHeading
+          eyebrow="推荐阅读"
+          title="从哪里开始读"
+          description="几篇常被检索的专题，用来熟悉这套星宫写法。"
+        />
+        <div
+          id="knowledge-featured"
+          className="mt-4 grid gap-x-10 border-t border-line/10 md:grid-cols-2"
+        >
+          {featured.map(({ star, topic }, index) => (
+            <Link
+              key={`${star}-${topic}`}
+              href={`/knowledge/${STAR_TO_SLUG[star]}/${topic}`}
+              className="group flex items-baseline gap-4 border-b border-line/10 py-3.5"
+            >
+              <span className="w-6 shrink-0 font-mono text-[12px] tabular-nums text-ink-3">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-serif text-[16px] font-medium tracking-[0.04em] text-ink transition-colors group-hover:text-cinnabar">
+                  {star}入{palaceShort(topic)}宫
                 </span>
-                <span style={{ fontSize: '11px', color: 'var(--tx-3)', letterSpacing: '0.15em' }}>
-                  ZI WEI · 14 STARS
+                <span className="mt-0.5 block text-[12px] text-ink-3">
+                  {TOPIC_LABEL[topic]} · 传统星性参考
                 </span>
-              </div>
-              <p style={{ fontSize: '12px', color: 'var(--tx-2)', lineHeight: 1.7, marginBottom: '12px' }}>
-                {STAR_DESCRIPTIONS_QUICK[star] || ''}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {ALL_TOPICS.map(t => {
-                  const k = getKnowledge(star, t);
-                  if (!k.exists) return null;
-                  return (
-                    <Link
-                      key={t}
-                      href={`/knowledge/${STAR_TO_SLUG[star]}/${t}`}
-                      style={{
-                        fontSize: '11px',
-                        padding: '4px 10px',
-                        background: 'rgba(184,146,42,0.06)',
-                        border: '1px solid rgba(184,146,42,0.15)',
-                        borderRadius: '999px',
-                        color: 'var(--tx-2)',
-                        textDecoration: 'none',
-                      }}
-                    >
-                      入{k.palaceName} · {TOPIC_LABEL[t]}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
+              </span>
+              <IconArrowRight
+                size={15}
+                className="shrink-0 text-ink-3 transition-colors group-hover:text-cinnabar"
+              />
+            </Link>
           ))}
         </div>
-      </div>
+      </section>
+
+      <section className="mt-14" aria-labelledby="knowledge-library">
+        <SectionHeading
+          eyebrow="原典"
+          title="古籍对读"
+          description="知识库里的星性说法，可与《紫微斗数全书》原文（繁转简，未逐字校勘）对照阅读。"
+          action={
+            <Link href="/library" className={buttonClasses("ghost", "sm")}>
+              打开古籍库
+              <IconArrowRight size={14} />
+            </Link>
+          }
+        />
+        <ul
+          id="knowledge-library"
+          className="mt-6 grid gap-3 sm:grid-cols-3"
+        >
+          {ALL_BOOKS.map((book) => {
+            const paragraphs = book.chapters.reduce(
+              (sum, chapter) => sum + chapter.paragraphs.length,
+              0,
+            );
+            return (
+              <li key={book.slug}>
+                <Link
+                  href={`/library/${book.slug}`}
+                  className="group surface-card flex h-full flex-col p-4 transition-colors hover:border-cinnabar/40 hover:bg-surface-2"
+                >
+                  <span className="text-[12px] text-ink-3">
+                    {book.dynasty} · {book.author}
+                  </span>
+                  <span className="mt-1.5 font-serif text-[18px] font-semibold leading-snug tracking-[0.04em] text-ink transition-colors group-hover:text-cinnabar">
+                    《{book.title}》
+                  </span>
+                  <span className="mt-2 line-clamp-2 flex-1 text-[12px] leading-relaxed text-ink-2">
+                    {book.intro}
+                  </span>
+                  <span className="mt-3 flex items-center gap-3 text-[12px] text-ink-3">
+                    <span>{book.chapters.length} 章</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{paragraphs} 段</span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
     </div>
   );
 }

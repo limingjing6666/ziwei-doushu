@@ -1,123 +1,156 @@
 /**
- * /library/search?q=xxx — 搜索结果页
+ * /library/search?q=xxx — 古籍库全文检索结果
+ *
+ * 顶部搜索框预填 q；结果计数；命中列表用 prose-cn 的 mark token 高亮；
+ * 空状态用 EmptyState 给建议词，不再注入页面级 <style>。
  */
 
-import Link from 'next/link';
-import { searchClassics, getParagraphById } from '@/lib/classics';
-import { pageMetadata } from '@/lib/brand';
-import { CLASSICS_NOTICE } from '@/lib/classics/types';
+import Link from "next/link";
+import { redirect } from 'next/navigation';
+import { searchClassics, getParagraphById } from "@/lib/classics";
+import { CLASSICS_NOTICE, CLASSICS_SOURCE } from "@/lib/classics/types";
+import { pageMetadata } from "@/lib/brand";
+import LibrarySearch from "../LibrarySearch";
+import { Breadcrumb } from "@/components/ui/Breadcrumb";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { IconSearch } from "@/components/icons";
 
-export const metadata = pageMetadata('搜索 · 古籍对读库', CLASSICS_NOTICE, '/library/search');
+export const metadata = pageMetadata(
+  "搜索 · 古籍对读库",
+  CLASSICS_NOTICE,
+  "/library/search",
+);
 
-export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+const SUGGESTIONS = [
+  "七杀朝斗",
+  "双禄朝垣",
+  "化忌",
+  "紫微",
+  "命宫",
+  "机月同梁",
+];
+
+function SuggestionLinks() {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      {SUGGESTIONS.map((word) => (
+        <Link
+          key={word}
+          href={`/library/search?q=${encodeURIComponent(word)}`}
+          className="inline-flex items-center rounded-full border border-line/20 px-3 py-1.5 text-[13px] text-ink-2 transition-colors hover:border-cinnabar/40 hover:bg-surface-2 hover:text-cinnabar"
+        >
+          {word}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
   const sp = await searchParams;
-  const q = sp.q?.trim() || '';
-  const hits = q ? searchClassics(q, 50) : [];
+  const q = sp.q?.trim() || "";
+  if (!q) redirect('/library');
+  const hits = searchClassics(q, 50);
 
   return (
-    <div style={{ background: 'var(--bg-page)', minHeight: '100vh' }}>
-      <div className="px-6 py-4 flex items-center justify-between"
-        style={{ borderBottom: '1px solid rgba(184,146,42,0.15)', background: 'var(--bg-page)' }}>
-        <Link href="/library" style={{ fontSize: '12px', color: 'var(--ac)', letterSpacing: '0.3em', textDecoration: 'none' }}>
-          ← 古籍库
-        </Link>
-        <div style={{ fontSize: '12px', color: 'var(--tx-3)', letterSpacing: '0.2em' }}>
-          搜索结果
+    <div className="container-page py-8 lg:py-12">
+      <Breadcrumb
+        items={[
+          { label: "首页", href: "/" },
+          { label: "古籍对读", href: "/library" },
+          { label: "全文检索" },
+        ]}
+        className="mb-6"
+      />
+
+      <div className="max-w-3xl">
+        <p className="eyebrow">古籍对读 · 全文检索</p>
+        <h1 className="mt-2 font-serif text-[clamp(26px,3.6vw,36px)] font-semibold leading-tight tracking-[0.02em] text-ink">
+          {q ? `「${q}」的检索结果` : "全文检索"}
+        </h1>
+
+        <div className="mt-5">
+          <LibrarySearch defaultValue={q} />
         </div>
-        <Link href="/" style={{ fontSize: '12px', color: 'var(--ac)', letterSpacing: '0.2em', textDecoration: 'none' }}>
-          首页 →
-        </Link>
+
+        <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[13px] text-ink-3">
+          {q ? (
+            <>
+              <span>
+                共找到{" "}
+                <strong className="font-mono text-[15px] tabular-nums text-ink">
+                  {hits.length}
+                </strong>{" "}
+                条匹配
+              </span>
+              <span className="text-[12px]">
+                仅检索已收录的古籍原文（繁转简），最多显示 50 条
+              </span>
+            </>
+          ) : (
+            <span>输入关键词，检索已收录的古籍原文（繁转简）。</span>
+          )}
+        </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-12">
-        <div className="text-center mb-10">
-          <div style={{ fontSize: '13px', color: 'var(--tx-3)', letterSpacing: '0.15em', marginBottom: '4px' }}>
-            搜索关键词
-          </div>
-          <h1 style={{ fontSize: 'clamp(22px, 3.5vw, 32px)', fontWeight: 700, color: 'var(--tx-0)', letterSpacing: '0.1em' }}>
-            「{q || '（空）'}」
-          </h1>
-          <div style={{ fontSize: '12px', color: 'var(--tx-3)', marginTop: '8px' }}>
-            共找到 <strong style={{ color: 'var(--ac)' }}>{hits.length}</strong> 条主题整理匹配
-          </div>
-        </div>
+      <p
+        role="note"
+        className="mt-6 max-w-3xl rounded-sm border border-line/15 bg-surface-2/40 p-4 text-[12px] leading-relaxed text-ink-2"
+      >
+        {CLASSICS_NOTICE}
+      </p>
+      <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-ink-2">
+        原文来源：<a href={CLASSICS_SOURCE} className="text-cinnabar">维基文库《紫微斗数全书》（{CLASSICS_SOURCE}）</a>，CC BY-SA 4.0，繁转简，未逐字校勘。
+      </p>
 
-        <p role="note" style={{ fontSize: '12px', color: 'var(--tx-2)', lineHeight: 1.8, marginBottom: '20px' }}>{CLASSICS_NOTICE}</p>
-
+      <div className="mt-8 max-w-3xl">
         {hits.length === 0 ? (
-          <div style={{
-            background: 'var(--bg-card)',
-            padding: '40px 20px',
-            borderRadius: '12px',
-            textAlign: 'center',
-            color: 'var(--tx-2)',
-            border: '1px solid rgba(184,146,42,0.15)',
-          }}>
-            <div style={{ fontSize: '40px', marginBottom: '12px', opacity: 0.4 }}>📜</div>
-            {q ? (
-              <>
-                <div style={{ fontSize: '14px', marginBottom: '6px' }}>暂未在已收录古籍中找到这个关键词</div>
-                <div style={{ fontSize: '11px', color: 'var(--tx-3)', lineHeight: 1.7 }}>
-                  我们持续补充内容中。可尝试搜索：<br />
-                  <span style={{ color: 'var(--ac)' }}>七杀朝斗 / 双禄朝垣 / 化忌 / 紫微 / 命宫 / 机月同梁</span>
-                </div>
-              </>
-            ) : (
-              <div style={{ fontSize: '13px' }}>请输入要搜索的关键词</div>
-            )}
-          </div>
+          <EmptyState
+            icon={<IconSearch size={28} />}
+            title={q ? "暂未在已收录古籍中找到这个关键词" : "输入关键词开始检索"}
+            description={
+              q
+                ? "我们持续补充内容中。可以换一个更短的关键词，或直接点选下面的建议词。"
+                : "可检索古籍原文（繁转简）中的星曜、格局与宫位名，例如七杀朝斗、双禄朝垣、化忌。"
+            }
+            action={<SuggestionLinks />}
+          />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {hits.map((hit, i) => {
-              const ctx = getParagraphById(hit.paragraphId);
-              const chapterIdx = ctx?.chapterIdx ?? 0;
+          <ol className="space-y-3">
+            {hits.map((hit, index) => {
+              const context = getParagraphById(hit.paragraphId);
+              const chapterIdx = context?.chapterIdx ?? 0;
               return (
-                <Link
-                  key={i}
-                  href={`/library/${hit.bookSlug}/${chapterIdx}#${hit.paragraphId}`}
-                  style={{
-                    display: 'block',
-                    background: 'var(--bg-card)',
-                    padding: '16px 20px',
-                    borderRadius: '10px',
-                    border: '1px solid rgba(184,146,42,0.18)',
-                    textDecoration: 'none',
-                    color: 'inherit',
-                    transition: 'border-color 0.15s',
-                  }}
-                >
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '11px',
-                    color: 'var(--tx-3)',
-                    marginBottom: '8px',
-                    letterSpacing: '0.1em',
-                  }}>
-                    <span style={{ color: 'var(--ac)', fontWeight: 600 }}>《{hit.bookTitle}》</span>
-                    <span style={{ opacity: 0.5 }}>·</span>
-                    <span>{hit.chapterTitle}</span>
-                  </div>
-                  <div
-                    style={{
-                      fontSize: '14px',
-                      color: 'var(--tx-0)',
-                      lineHeight: 1.9,
-                      letterSpacing: '0.02em',
-                    }}
-                    dangerouslySetInnerHTML={{ __html: hit.snippet }}
-                  />
-                </Link>
+                <li key={`${hit.paragraphId}-${index}`}>
+                  <Link
+                    href={`/library/${hit.bookSlug}/${chapterIdx}#${hit.paragraphId}`}
+                    className="group block rounded-sm border border-line/15 bg-surface p-4 transition-colors hover:border-cinnabar/40 hover:bg-surface-2/40 sm:p-5"
+                  >
+                    <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[12px] text-ink-3">
+                      <span className="font-medium text-cinnabar">
+                        《{hit.bookTitle}》
+                      </span>
+                      <span aria-hidden="true">·</span>
+                      <span>{hit.chapterTitle}</span>
+                      <span className="ml-auto font-mono tabular-nums">
+                        {hit.paragraphId}
+                      </span>
+                    </span>
+                    <p
+                      className="prose-cn mt-2 leading-[1.95]"
+                      dangerouslySetInnerHTML={{ __html: hit.snippet }}
+                    />
+                  </Link>
+                </li>
               );
             })}
-          </div>
+          </ol>
         )}
       </div>
-
-      <style>{`
-        mark { background: rgba(184,146,42,0.3); color: #8b6a14; padding: 0 2px; border-radius: 2px; font-weight: 600; }
-      `}</style>
     </div>
   );
 }

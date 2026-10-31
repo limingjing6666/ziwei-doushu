@@ -3,7 +3,7 @@
  *
  * 包含：
  *  - 主页、起盘页、合盘页
- *  - /library 古籍库（主页 + 3 部古籍 + 章节页）
+ *  - /library 古籍库（主页 + 1 部古籍 + 89 个章节页）
  *  - /knowledge 知识库（主页 + 14×13 主题页）
  */
 
@@ -23,6 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/heming`, priority: 0.7, changeFrequency: 'weekly', lastModified: lastmod },
     { url: `${BASE_URL}/library`, priority: 0.85, changeFrequency: 'weekly', lastModified: lastmod },
     { url: `${BASE_URL}/knowledge`, priority: 0.9, changeFrequency: 'weekly', lastModified: lastmod },
+    { url: `${BASE_URL}/glossary`, priority: 0.6, changeFrequency: 'monthly', lastModified: lastmod },
     { url: `${BASE_URL}/terms`, priority: 0.3, changeFrequency: 'monthly', lastModified: lastmod },
     { url: `${BASE_URL}/privacy`, priority: 0.3, changeFrequency: 'monthly', lastModified: lastmod },
   ];

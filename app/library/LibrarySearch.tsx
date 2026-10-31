@@ -1,21 +1,29 @@
-'use client';
+"use client";
 
 /**
- * 古籍库搜索框 — client component
+ * 古籍库全文检索框 — client component
  *
- * 输入 → 实时搜索 → 跳转 /library/search?q=xxx
+ * 输入关键词 → 跳转 /library/search?q=xxx
+ * 结果页复用同一组件，用 defaultValue 预填查询。
  */
 
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, type FormEvent, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
+import { IconSearch } from "@/components/icons";
 
-export default function LibrarySearch() {
-  const [q, setQ] = useState('');
+export default function LibrarySearch({
+  defaultValue = "",
+}: {
+  defaultValue?: string;
+}) {
+  const [value, setValue] = useState(defaultValue);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const query = value.trim();
 
-  const submit = () => {
-    const query = q.trim();
+  const submit = (event?: FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
     if (!query) return;
     startTransition(() => {
       router.push(`/library/search?q=${encodeURIComponent(query)}`);
@@ -23,48 +31,38 @@ export default function LibrarySearch() {
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      gap: '8px',
-      padding: '6px',
-      background: 'var(--bg-card)',
-      border: '1px solid rgba(184,146,42,0.3)',
-      borderRadius: '12px',
-      boxShadow: '0 4px 16px rgba(184,146,42,0.08)',
-    }}>
-      <input
-        value={q}
-        onChange={e => setQ(e.target.value)}
-        onKeyDown={e => e.key === 'Enter' && submit()}
-        placeholder="搜索主题整理，如：七杀朝斗 / 双禄朝垣 / 化忌"
-        style={{
-          flex: 1,
-          padding: '10px 14px',
-          border: 'none',
-          outline: 'none',
-          fontSize: '14px',
-          color: 'var(--tx-0)',
-          background: 'transparent',
-        }}
+    <form
+      role="search"
+      aria-label="古籍原文（繁转简）全文检索"
+      onSubmit={submit}
+      className="surface-card flex items-center gap-2 p-2 focus-within:border-cinnabar/50"
+    >
+      <IconSearch
+        size={18}
+        className="ml-1.5 hidden shrink-0 text-ink-3 sm:block"
       />
-      <button
-        onClick={submit}
-        disabled={isPending || !q.trim()}
-        style={{
-          padding: '10px 22px',
-          borderRadius: '8px',
-          border: 'none',
-          background: 'linear-gradient(135deg, #d4a948 0%, #b8922a 100%)',
-          color: 'white',
-          fontSize: '13px',
-          fontWeight: 600,
-          letterSpacing: '0.15em',
-          cursor: q.trim() ? 'pointer' : 'not-allowed',
-          opacity: q.trim() ? 1 : 0.5,
-        }}
+      <label htmlFor="library-search-input" className="sr-only">
+        搜索关键词
+      </label>
+      <input
+        id="library-search-input"
+        name="q"
+        type="search"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        placeholder="搜索古籍原文（繁转简），如：七杀朝斗 / 紫微 / 化忌"
+        autoComplete="off"
+        enterKeyHint="search"
+        className="h-10 w-full min-w-0 flex-1 bg-transparent px-2 text-[15px] text-ink placeholder:text-ink-3"
+      />
+      <Button
+        type="submit"
+        size="md"
+        disabled={isPending || !query}
+        className="shrink-0"
       >
-        {isPending ? '…' : '搜索'}
-      </button>
-    </div>
+        {isPending ? "检索中…" : "全文检索"}
+      </Button>
+    </form>
   );
 }

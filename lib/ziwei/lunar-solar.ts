@@ -15,7 +15,19 @@
  * ⚠️ 这里**不许**出现排盘 / 时辰 / 真太阳时 / 四化 任何一行。
  *    那些属于 lib/ziwei/algorithm.ts 与 /api/generate，别顺手塞进来。
  */
-import { Lunar, LunarMonth } from 'lunar-javascript';
+import { Lunar, LunarMonth, Solar } from 'lunar-javascript';
+
+/** 展示用双向换算；先校验公历，禁止库自动纠正非法日期。 */
+export function solarToLunar(year: number, month: number, day: number) {
+  if (![year, month, day].every(Number.isInteger) || year < 1900 || year > 2050) return null;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+  try {
+    const l = Solar.fromYmd(year, month, day).getLunar();
+    return { year: l.getYear(), month: Math.abs(l.getMonth()), day: l.getDay(), leapMonth: l.getMonth() < 0,
+      label: `农历${l.getYearGan()}${l.getYearZhi()}年（农历年份 ${l.getYear()}）${l.getMonthInChinese()}月${l.getDayInChinese()}` };
+  } catch { return null; }
+}
 
 export interface SolarDate {
   year: number;
@@ -24,7 +36,8 @@ export interface SolarDate {
 }
 
 /** 与 /api/generate 对齐的受理年份区间，超出直接判非法（lunar 表在极端年份不可靠） */
-export const LUNAR_YEAR_MIN = 1900;
+// 1900 年 1 月对应农历 1899 年；允许该农历年用于公历边界的双向展示。
+export const LUNAR_YEAR_MIN = 1899;
 export const LUNAR_YEAR_MAX = 2050;
 
 function isIntInRange(value: unknown, min: number, max: number): value is number {

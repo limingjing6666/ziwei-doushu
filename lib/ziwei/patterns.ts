@@ -9,7 +9,7 @@
  * 5. 夹宫：命宫前后两宫
  *
  * 主要古籍出处：
- *  - 《紫微斗数全集》（陈抟祖师传，明代刊本）
+ *  - 《紫微斗数全书》（陈抟祖师传，明代刊本）
  *  - 《紫微斗数全书》（罗洪先编，明代刊本）
  *  - 《骨髓赋》《女命骨髓赋》《十二宫诸星得地合格诀》
  *  - 传统三合星宫规则
@@ -531,7 +531,7 @@ function detectMingZhuChuHai(chart: ZiweiChart, ming: Palace, patterns: Pattern[
     description: '命未空宫，对宫丑宫日月同辉拱照，号"明珠出海"。主出生平凡、后天努力出头，宜远赴他乡、学术研究或大公司高位，主大富大贵。',
     palaces: ['命宫', dui.name],
     conditions: { required, bonus, breaking },
-    source: '《紫微斗数全集·明珠出海》',
+    source: '《紫微斗数全书·明珠出海》',
   });
 }
 

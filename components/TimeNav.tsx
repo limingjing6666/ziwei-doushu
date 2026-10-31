@@ -1,11 +1,26 @@
-'use client';
-import { motion } from 'framer-motion';
-import { STEMS, SI_HUA_TABLE } from '@/lib/ziwei/constants';
-import type { ZiweiChart } from '@/lib/ziwei/types';
+"use client";
 
-export type TimeView = 'mingpan' | 'daxian' | 'liunian';
+import type { AiView } from '@/lib/ai/input';
+import Term from './Term';
+import { STEMS, SI_HUA_TABLE } from "@/lib/ziwei/constants";
+import type { ZiweiChart } from "@/lib/ziwei/types";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import type { SegmentedOption } from "@/components/ui/SegmentedControl";
+import { IconButton } from "@/components/ui/IconButton";
+import { SiHuaBadge } from "@/components/ui/Badge";
+import { IconChevronLeft, IconChevronRight } from "@/components/icons";
 
-interface TimeNavProps {
+export function buildAiView(chart: ZiweiChart, view: TimeView, year: number): AiView & { transformations: Record<string, unknown> } {
+  const dx = chart.daXians[chart.currentDaXianIndex];
+  const p = dx && chart.palaces.find(p => p.branch === dx.palaceBranch);
+  return { type: view === 'mingpan' ? 'natal' : view === 'daxian' ? 'decadal' : 'yearly', year,
+    decadal: dx && p ? { startAge: dx.startAge, endAge: dx.endAge, palaceName: dx.palaceName, stem: p.stem } : undefined,
+    transformations: { natal: chart.palaces.flatMap(p => p.stars.filter(s => s.siHua).map(s => ({ star: s.name, siHua: s.siHua, palace: p.name }))), decadal: p ? buildSiHuaOverlay(p.stem) : {}, yearly: buildSiHuaOverlay(getYearStemIndex(year)) } };
+}
+
+export type TimeView = "mingpan" | "daxian" | "liunian";
+
+export interface TimeNavProps {
   chart: ZiweiChart;
   view: TimeView;
   liunianYear: number;
@@ -15,7 +30,7 @@ interface TimeNavProps {
 
 /** 由年份计算天干索引 (0-9) */
 export function getYearStemIndex(year: number): number {
-  return ((year - 4) % 10 + 10) % 10;
+  return (((year - 4) % 10) + 10) % 10;
 }
 
 /** 根据天干索引返回四化映射：starName → SiHua */
@@ -23,20 +38,22 @@ export function buildSiHuaOverlay(stemIndex: number): Record<string, string> {
   const stars = SI_HUA_TABLE[stemIndex];
   if (!stars) return {};
   return {
-    [stars[0]]: '禄',
-    [stars[1]]: '权',
-    [stars[2]]: '科',
-    [stars[3]]: '忌',
+    [stars[0]]: "禄",
+    [stars[1]]: "权",
+    [stars[2]]: "科",
+    [stars[3]]: "忌",
   };
 }
 
-const SIHUA_COLORS: Record<string, string> = {
-  '禄': '#4ade80',
-  '权': '#60a5fa',
-  '科': '#facc15',
-  '忌': '#f87171',
-};
+const VIEW_OPTIONS: SegmentedOption<TimeView>[] = [
+  { value: "mingpan", label: "本命" },
+  { value: "daxian", label: "大限" },
+  { value: "liunian", label: "流年" },
+];
 
+const SIHUA_ORDER = ["禄", "权", "科", "忌"] as const;
+
+/** 运限切换：本命 / 大限 / 流年 + 流年年份步进 + 叠加四化说明。 */
 export default function TimeNav({
   chart,
   view,
@@ -46,148 +63,90 @@ export default function TimeNav({
 }: TimeNavProps) {
   const currentDx = chart.daXians[chart.currentDaXianIndex];
 
-  // 计算当前叠加四化信息
-  const getOverlayInfo = (): { stemName: string; overlay: Record<string, string> } | null => {
-    if (view === 'mingpan') return null;
+  const overlayInfo = ((): { stemName: string; overlay: Record<string, string> } | null => {
+    if (view === "mingpan") return null;
 
-    if (view === 'daxian' && currentDx) {
-      const dxPalace = chart.palaces.find(p => p.branch === currentDx.palaceBranch);
+    if (view === "daxian" && currentDx) {
+      const dxPalace = chart.palaces.find((palace) => palace.branch === currentDx.palaceBranch);
       if (!dxPalace) return null;
-      const stemIndex = dxPalace.stem;
       return {
-        stemName: STEMS[stemIndex],
-        overlay: buildSiHuaOverlay(stemIndex),
+        stemName: STEMS[dxPalace.stem] ?? "",
+        overlay: buildSiHuaOverlay(dxPalace.stem),
       };
     }
 
-    if (view === 'liunian') {
+    if (view === "liunian") {
       const stemIndex = getYearStemIndex(liunianYear);
       return {
-        stemName: STEMS[stemIndex],
+        stemName: STEMS[stemIndex] ?? "",
         overlay: buildSiHuaOverlay(stemIndex),
       };
     }
 
     return null;
+  })();
+
+  const stepYear = (delta: number) => {
+    onYearChange(Math.max(1900, Math.min(2100, liunianYear + delta)));
+    if (view !== "liunian") onViewChange("liunian");
   };
 
-  const overlayInfo = getOverlayInfo();
-
   return (
-    <div className="mb-3">
-      {/* Tab 行 */}
-      <div
-        className="flex items-center rounded-xl p-1 gap-1"
-        style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border)' }}
-      >
-        {/* 本命 */}
-        <TabButton
-          active={view === 'mingpan'}
-          onClick={() => onViewChange('mingpan')}
-        >
-          本命
-        </TabButton>
+    <div className="mb-3 min-w-0">
+      <div className="mb-2 flex flex-wrap gap-3 text-xs text-ink-3"><span>概念：</span><Term name="本命" /><Term name="大限" /><Term name="流年" /><Term name="四化" /></div>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="hidden text-[12px] tracking-[0.16em] text-ink-3 sm:inline">运限</span>
+          <SegmentedControl<TimeView>
+            options={VIEW_OPTIONS}
+            value={view}
+            onChange={onViewChange}
+            ariaLabel="运限视图"
+            className="[&_button]:!h-9 [&_button]:px-3.5"
+          />
+        </div>
 
-        {/* 大限 */}
-        <TabButton
-          active={view === 'daxian'}
-          onClick={() => onViewChange('daxian')}
-        >
-          {currentDx ? `大限 ${currentDx.startAge}–${currentDx.endAge}` : '大限'}
-        </TabButton>
-
-        {/* 流年 — 含年份切换 */}
-        <div
-          className="relative flex-1 flex items-center justify-center rounded-lg py-1.5 gap-1 transition-all duration-200"
-          style={{
-            background: view === 'liunian'
-              ? 'rgba(212,168,67,0.12)'
-              : 'transparent',
-            border: view === 'liunian'
-              ? '1px solid rgba(212,168,67,0.25)'
-              : '1px solid transparent',
-          }}
-        >
-          <button
-            onClick={() => onViewChange('liunian')}
-            className="text-[10px] font-medium flex-1 text-center"
-            style={{ color: view === 'liunian' ? 'var(--t-gold)' : 'var(--t-faint)' }}
+        <div className="flex items-center gap-0.5">
+          <IconButton label="查看上一年流年" onClick={() => stepYear(-1)}>
+            <IconChevronLeft size={16} />
+          </IconButton>
+          <span
+            aria-live="polite"
+            className="min-w-[4.5em] text-center font-mono text-[13px] tabular-nums text-ink-2"
           >
-            流年
-          </button>
-          {/* 年份 +/- */}
-          <div className="flex items-center gap-0.5">
-            <button
-              onClick={e => { e.stopPropagation(); onYearChange(liunianYear - 1); if (view !== 'liunian') onViewChange('liunian'); }}
-              className="text-[9px] w-4 h-4 flex items-center justify-center rounded"
-              style={{ color: 'var(--t-faint)' }}
-            >
-              ‹
-            </button>
-            <span
-              className="text-[10px] font-mono min-w-[28px] text-center cursor-pointer"
-              style={{ color: view === 'liunian' ? 'var(--t-gold)' : 'var(--t-faint)' }}
-              onClick={() => onViewChange('liunian')}
-            >
-              {liunianYear}
-            </span>
-            <button
-              onClick={e => { e.stopPropagation(); onYearChange(liunianYear + 1); if (view !== 'liunian') onViewChange('liunian'); }}
-              className="text-[9px] w-4 h-4 flex items-center justify-center rounded"
-              style={{ color: 'var(--t-faint)' }}
-            >
-              ›
-            </button>
-          </div>
+            {liunianYear}
+          </span>
+          <IconButton label="查看下一年流年" onClick={() => stepYear(1)}>
+            <IconChevronRight size={16} />
+          </IconButton>
         </div>
       </div>
 
-      {/* 叠加四化说明行 */}
-      {overlayInfo && (
-        <motion.div
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-          className="flex items-center gap-2 mt-1.5 px-1 flex-wrap"
-        >
-          <span className="text-[9px]" style={{ color: 'var(--t-faint)' }}>
-            {view === 'daxian' ? '大限' : `${liunianYear}`}·{overlayInfo.stemName}年四化：
+      {overlayInfo ? (
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line/12 pt-2 text-[12px] leading-relaxed text-ink-3">
+          <span>
+            {view === "daxian" ? "大限" : "流年"} · {overlayInfo.stemName}年四化
           </span>
-          {(['禄', '权', '科', '忌'] as const).map(sh => {
-            const starName = Object.keys(overlayInfo.overlay).find(k => overlayInfo.overlay[k] === sh);
+          {SIHUA_ORDER.map((siHua) => {
+            const starName = Object.keys(overlayInfo.overlay).find(
+              (name) => overlayInfo.overlay[name] === siHua,
+            );
             if (!starName) return null;
             return (
-              <span key={sh} className="text-[9px] font-medium" style={{ color: SIHUA_COLORS[sh] }}>
-                {starName}化{sh}
+              <span key={siHua} className="inline-flex items-center gap-1 text-ink-2">
+                {starName}
+                <Term name={`化${siHua}`}><SiHuaBadge siHua={siHua} overlay label={view === "daxian" ? "限" : "年"} /></Term>
               </span>
             );
           })}
-        </motion.div>
+        </div>
+      ) : (
+        <p className="mt-2 border-t border-line/12 pt-2 text-[12px] leading-relaxed text-ink-3">
+          {view === "daxian"
+            ? "尚未进入大限，暂无叠加四化"
+            : "本命四化已标注在宫位星曜旁"}
+        </p>
       )}
     </div>
-  );
-}
-
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex-1 py-1.5 text-[10px] font-medium rounded-lg transition-all duration-200"
-      style={{
-        background: active ? 'rgba(212,168,67,0.12)' : 'transparent',
-        color: active ? 'var(--t-gold)' : 'var(--t-faint)',
-        border: active ? '1px solid rgba(212,168,67,0.25)' : '1px solid transparent',
-      }}
-    >
-      {children}
-    </button>
   );
 }

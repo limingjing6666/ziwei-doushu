@@ -25,10 +25,14 @@ npm run start
 
 本地接口：`POST /api/interpret` 接收 `{chart,messages:[{role,content}]}`；`POST /api/heming` 接收 `{chartA,chartB,question?}`。返回 SSE `data: {"delta":{"text":"…"}}`，以 `[DONE]` 结束，错误使用中文 JSON 或 SSE error 帧。最多 200KiB 输入，仅保留必要的命盘字段；不主动发送姓名、城市或经度。用户自由输入可能含个人信息，请自行避免。
 
+## 访问统计与运维
+
+可选接入 Neon 后记录访问 IP 与无查询串的页面路径，保留 30 天；未配置数据库时静默关闭，不影响页面和 AI。系统日志只含状态与指标。统计鉴权、每日清理、本地数据库与查看日志的方法见 [运维文档](docs/OPERATIONS.md)。
+
 ## 知识与方法
 
 - `lib/ziwei/method/`：核心模型、步骤、风格维度、边界与带来源 ID 的规则。内部置信只说明证据复现程度，不是预测准确率。
-- `lib/ai/prompts.ts`：融入分层解盘流程、安全与版权边界；合盘以700–1000个中文字符为目标，最多1200字，保留2400 tokens预算避免硬截正文。
+- `lib/ai/prompts.ts`：融入分层解盘流程、安全与版权边界；单盘与合盘总览全文（含小标题与括号解释）以700–900汉字为目标，硬上限1000字（小节不超过5个），保留2400 tokens预算避免硬截正文。
 - `lib/ai/knowledge.ts`：按星、宫、格局、四化检索，连同旧库总参考上限 6000 字。
 - `scripts/distill-method.py`：可选主题抽取工具，原始材料只从外部只读路径读取，候选输出须放仓库外并人工复核。
 - `scripts/copyright/`：连续字串及 8-gram 检测、回归与 CI 哈希基线。`npm test` 必须运行。

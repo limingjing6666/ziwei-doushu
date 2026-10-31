@@ -64,5 +64,9 @@ export async function checkRateLimit(request: Request): Promise<void> {
       return next.count;
     });
   }
-  windows.forEach((w, i) => { if (values[i] > w.limit) throw new AiError(429, w.message); });
+  // Daily exhaustion takes precedence when both windows are exceeded; limits stay unchanged.
+  for (const i of [1, 0]) {
+    const w = windows[i];
+    if (values[i] > w.limit) throw new AiError(429, w.message, Math.ceil(((i === 1 ? 86400000 : 60000) - now % (i === 1 ? 86400000 : 60000)) / 1000), i === 1 ? 'daily' : 'minute');
+  }
 }

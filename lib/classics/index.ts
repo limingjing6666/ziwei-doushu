@@ -2,20 +2,14 @@
  * 古籍原典查询库 — 入口
  *
  * 加载所有古籍数据 + 提供查询/搜索 API
- * 数据为 JSON 静态打包，零 DB 依赖、零网络请求
+ * 数据为 TypeScript 静态打包，零 DB 依赖、零网络请求
  */
 
 import type { Book, Paragraph, SearchHit } from './types';
-import { guSuiFu } from './data/gusuifu';
-import { ziWeiQuanJi } from './data/quanji';
 import { ziWeiQuanShu } from './data/quanshu';
 
 /** 所有已收录古籍 */
-export const ALL_BOOKS: Book[] = [
-  guSuiFu,
-  ziWeiQuanJi,
-  ziWeiQuanShu,
-];
+export const ALL_BOOKS: Book[] = [ziWeiQuanShu];
 
 /** 总段落数（用于首页统计） */
 export const TOTAL_PARAGRAPHS = ALL_BOOKS.reduce(
@@ -32,6 +26,7 @@ export function getBookBySlug(slug: string): Book | null {
 export function getChapter(bookSlug: string, chapterIdx: number) {
   const book = getBookBySlug(bookSlug);
   if (!book) return null;
+  if (!Number.isInteger(chapterIdx) || chapterIdx < 0) return null;
   const chapter = book.chapters[chapterIdx];
   if (!chapter) return null;
   return { book, chapter, chapterIdx };
@@ -54,8 +49,8 @@ export function getParagraphById(id: string) {
 /**
  * 全文搜索
  *
- * 简单子字符串匹配（不分词，对中文 OK）
- * 大小写不敏感、繁简转换暂不支持
+ * 简单子字符串匹配（正文 + 章标题；标题命中定位到首段）
+ * 精确匹配；暂不支持繁简转换（不向前端引入转换库）
  */
 export function searchClassics(query: string, limit = 30): SearchHit[] {
   const q = query.trim();
@@ -65,21 +60,23 @@ export function searchClassics(query: string, limit = 30): SearchHit[] {
   for (const book of ALL_BOOKS) {
     for (const chapter of book.chapters) {
       for (const p of chapter.paragraphs) {
-        const idx = p.text.indexOf(q);
+        const text = p === chapter.paragraphs[0] && chapter.title.includes(q)
+          ? `${chapter.title}\n${p.text}` : p.text;
+        const idx = text.indexOf(q);
         if (idx < 0) continue;
 
         // 提取上下文（前后各 40 字）
         const start = Math.max(0, idx - 40);
-        const end = Math.min(p.text.length, idx + q.length + 40);
-        const before = p.text.slice(start, idx);
-        const matched = p.text.slice(idx, idx + q.length);
-        const after = p.text.slice(idx + q.length, end);
+        const end = Math.min(text.length, idx + q.length + 40);
+        const before = text.slice(start, idx);
+        const matched = text.slice(idx, idx + q.length);
+        const after = text.slice(idx + q.length, end);
 
         const snippet = (start > 0 ? '…' : '')
           + escapeHtml(before)
           + `<mark>${escapeHtml(matched)}</mark>`
           + escapeHtml(after)
-          + (end < p.text.length ? '…' : '');
+          + (end < text.length ? '…' : '');
 
         hits.push({
           bookSlug: book.slug,

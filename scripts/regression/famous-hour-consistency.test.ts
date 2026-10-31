@@ -11,12 +11,15 @@
  *
  * 走源码解析而非运行时 import —— famous.ts 带 `server-only`，
  * 直接跑需要额外的 node 条件参数，解析源码更省事也更跨平台。
+ *
+ * 2026-10-31：名人盘属未接线实验内容，源码已归档到 experiments/famous.ts，
+ * 本回归继续校验归档数据的时辰索引，防止将来恢复时踩同一个坑。
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const BRANCH_NAMES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
-const src = readFileSync(new URL('../../lib/ziwei/famous.ts', import.meta.url), 'utf8');
+const src = readFileSync(new URL('../../experiments/famous.ts', import.meta.url), 'utf8');
 
 const rows = [...src.matchAll(/hour:\s*(\d+),?[ \t]*(?:\/\/[ \t]*(.*))?/g)];
 assert.ok(rows.length > 0, 'famous.ts 里没解析到任何 hour 字段，正则或文件结构变了');

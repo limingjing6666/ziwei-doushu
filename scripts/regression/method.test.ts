@@ -20,8 +20,8 @@ assert.equal(branded.openGraph?.title, branded.title);
 assert.equal(branded.twitter?.title, branded.title);
 assert.equal(manifestMetadata().name, SITE_TITLE);
 assert.equal(manifestMetadata().description, SITE_SLOGAN);
-assert.ok(readFileSync('components/ShareCardCanvas.tsx', 'utf8').includes('>{SITE_TITLE}</div>'));
-assert.ok(readFileSync('components/ShareCardCanvas.tsx', 'utf8').includes('>{SITE_SLOGAN}</div>'));
+// 分享卡（ShareCardCanvas）属未接线实验内容，源码已归档到 experiments/；
+// 品牌一致性由上面的 pageMetadata / manifest 断言覆盖。
 assert.equal(rules.length, 30);
 assert.ok(MENTAL_MODELS.length >= 3 && MENTAL_MODELS.length <= 7);
 const allowed = new Set(['07-methodology', '01-stars', '02-palaces', '03-patterns', '04-sihua']);
@@ -35,9 +35,18 @@ for (const rule of rules) {
 }
 for (const packet of manifest.packets) assert.ok(packet.source_ids.length >= 20 && packet.source_ids.length <= 60);
 for (const model of MENTAL_MODELS) assert.ok(model.rules.every(id => rules.some(r => r.id === id)));
-assert.ok(INTERPRET_SYSTEM.includes(METHOD_PROMPT));
+// The AI adapter removes teaching disclaimers without editing the shared framework.
+for (const section of ['【分层解盘流程】', '【表达维度】', '【诚实边界】']) {
+  assert.ok(METHOD_PROMPT.includes(section));
+  assert.ok(INTERPRET_SYSTEM.includes(section));
+}
+for (const preserved of ['大限优先是依据分析的层次', '不推算死亡日期', '不用宿命或道德标签定义人', '不提供具体药物处方、法律处置或投资操作', '禁止引用、复述或近似改写受保护的现代讲课与注本']) {
+  assert.ok(METHOD_PROMPT.includes(preserved));
+  assert.ok(INTERPRET_SYSTEM.includes(preserved));
+}
+assert.doesNotMatch(INTERPRET_SYSTEM, /但不是医学诊断|缺项或流派差异须明示/);
 assert.ok(HEMING_SYSTEM.includes('大限优先'));
-assert.ok(HEMING_SYSTEM.includes('最多1200字'));
+assert.ok(HEMING_SYSTEM.includes('硬上限1000字'));
 assert.ok(HEMING_SYSTEM.includes('保留完整结尾'));
 assert.ok(RULE_INDEX.star.get('紫微')?.length);
 assert.ok(RULE_INDEX.palace.get('夫妻')?.length);
