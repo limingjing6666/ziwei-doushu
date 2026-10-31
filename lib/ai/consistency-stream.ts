@@ -7,7 +7,7 @@ export const BUFFER_HEARTBEAT_MS = 10000;
 export const OUTPUT_CHUNK_CHARS = 96;
 /** Same delta/error/length/DONE frames as before. Heartbeats are SSE comments, already
  * understood/ignored by readSseData; there is no status-event type in the client protocol. */
-export function consistencyStream(upstream: Response, input: Omit<ValidationInput, 'text'>, options: { buffered: boolean; deadline: number; rewrite: Rewriter; signal?: AbortSignal }): Response {
+export function consistencyStream(upstream: Response, input: Omit<ValidationInput, 'text'>, options: { buffered: boolean; deadline: number; rewrite: Rewriter; signal?: AbortSignal; onRepair?: () => void }): Response {
   if (!upstream.body) return upstream;
   const stop = new AbortController(), signal = options.signal ? AbortSignal.any([stop.signal, options.signal]) : stop.signal;
   const encoder = new TextEncoder();
@@ -17,7 +17,8 @@ export function consistencyStream(upstream: Response, input: Omit<ValidationInpu
     async start(controller) {
       const send = (wire: string) => { if (!cancelled && !signal.aborted) controller.enqueue(encoder.encode(wire)); };
       const delta = (text: string) => { if (text) send(encodeDelta(text)); };
-      const buffer = createSentenceWindow(text => codeRepair({ ...input, text }));
+      const repair = (text: string) => { const result = codeRepair({ ...input, text }); if (result !== text) options.onRepair?.(); return result; };
+      const buffer = createSentenceWindow(repair);
       if (options.buffered) timer = setInterval(() => send(': ping\n\n'), BUFFER_HEARTBEAT_MS);
       let terminal: string | undefined;
       try {
@@ -25,11 +26,12 @@ export function consistencyStream(upstream: Response, input: Omit<ValidationInpu
           if (frame === '[DONE]') {
             signal.throwIfAborted();
             if (options.buffered) {
-              const result = terminal ? codeRepair({ ...input, text: full }) : await repairAnswer({ ...input, text: full }, { deadline: options.deadline, rewrite: options.rewrite, signal });
+              const result = terminal ? repair(full) : await repairAnswer({ ...input, text: full }, { deadline: options.deadline, rewrite: options.rewrite, signal });
+              if (result !== full) options.onRepair?.();
               for (let i = 0; i < result.length; i += OUTPUT_CHUNK_CHARS) delta(result.slice(i, i + OUTPUT_CHUNK_CHARS));
             } else {
               delta(buffer.finish());
-              logIssues(validateAnswer({ ...input, text: codeRepair({ ...input, text: full }) }));
+              logIssues(validateAnswer({ ...input, text: repair(full) }));
             }
             if (terminal && options.buffered) send(`data: ${terminal}\n\n`);
             send('data: [DONE]\n\n'); return;
@@ -48,7 +50,7 @@ export function consistencyStream(upstream: Response, input: Omit<ValidationInpu
       } catch {
         if (!signal.aborted) {
           if (full) {
-            if (options.buffered) delta(codeRepair({ ...input, text: full }));
+            if (options.buffered) delta(repair(full));
             else delta(buffer.finish());
           }
           send(`data: ${options.buffered && terminal ? terminal : '{"error":"解读暂时中断，请稍后重试。"}'}\n\ndata: [DONE]\n\n`);

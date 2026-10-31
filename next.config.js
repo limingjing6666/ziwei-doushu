@@ -9,6 +9,8 @@ while (path.relative(buildRoot, modulesPath).startsWith('..')) buildRoot = path.
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   turbopack: { root: buildRoot },
+  // Preserve prefetch/RSC headers and _rsc for the visit logger's exclusion checks.
+  skipProxyUrlNormalize: true,
   transpilePackages: ['lunar-javascript'],
   // Do not ship embedded dependency source/comments in production source maps.
   experimental: { turbopackSourceMaps: false },

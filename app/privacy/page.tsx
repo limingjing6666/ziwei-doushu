@@ -1,6 +1,7 @@
 import { LegalLayout } from '@/components/content/LegalLayout';
 import type { LegalSection } from '@/components/content/LegalLayout';
 import { pageMetadata } from '@/lib/brand';
+import { VISIT_RETENTION_DAYS } from '@/lib/visit-policy';
 
 export const metadata = pageMetadata('隐私政策', '本站实际数据处理与隐私说明。', '/privacy');
 const SECTIONS: LegalSection[] = [
@@ -22,6 +23,8 @@ export default function PrivacyPage() {
     <p>本站 AI 接口没有将命盘及对话持久存入数据库的实现。第三方 AI 服务商可能依其自身政策处理请求，请参阅 <a href="https://cdn.deepseek.com/policies/zh-CN/deepseek-privacy-policy.html" rel="noopener noreferrer">DeepSeek 隐私政策</a>。浏览器仅在内存中缓存最近成功的回答，避免同一问题重复请求；关闭页面后清除。</p>
     <h2 id="share" className="scroll-mt-24">3. 访问统计、日志与限流</h2>
     <p>在 Vercel 托管环境中，页面加载 Vercel Analytics 与 Speed Insights（本地或其他托管环境不加载其专用端点），用于访问统计和性能测量，可能处理页面路径、设备/浏览器及性能数据。托管平台还可能按其配置处理网络请求日志（包括 IP、路径、状态码等）。本站应用未主动记录命盘或对话日志，无法据此承诺第三方日志的具体保存期限。</p>
+    <h3>访问记录</h3>
+    <p>为统计访问量与排查问题，本站记录访问时间、IP 地址、访问的页面路径（不含生辰等查询参数）、来源页（不含查询参数）、浏览器标识，以及由 IP 推断的大致地区（国家、省、城市）。访问记录不与生辰信息或解读内容关联，保留 {VISIT_RETENTION_DAYS} 天后自动删除，不出售、不用于广告。系统日志只记录服务状态、耗时与用量，不含用户信息。</p>
     <p>为防止滥用，AI 接口以请求 IP 的 SHA-256 摘要进行每分钟、每日计数。配置 Upstash Redis 时将摘要键与短期计数发送给 Upstash，不发送命盘和对话；未配置时只作服务器实例内存计数。计数按短期窗口过期。</p>
     <h2 id="security" className="scroll-mt-24">4. 信息安全</h2>
     <p>生产环境应使用 HTTPS；AI 密钥仅留在服务端，接口限制输入大小、来源与频率。任何网络传输都存在风险，请仅在获得对方同意后提交其出生信息。</p>
