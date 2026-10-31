@@ -115,9 +115,9 @@ const FEATURES = [
     subtitle: '传统星宫知识库 × AI 分析',
     points: [
       '命格分析：从命宫主星出发，结合三方四正，给出全面的性格与人生格局判断',
-      '六大维度解读：事业方向、感情婚姻、财运模式、健康注意、家庭关系、子女缘分',
+      '分主题解读：事业方向、关系期待、资源安排、身心状态、家庭与沟通',
       '大限流年追踪：当前10年大限重点、今年流年宫位的具体提示与行动建议',
-      '自由追问：针对你的命盘直接提问，「今年能换工作吗」「什么时候结婚运最好」',
+      '自由追问：针对你的命盘直接提问，「今年适合换工作吗」「如何改善沟通」',
     ],
   },
   {
@@ -196,7 +196,7 @@ const SIHUA_BRIEF: Record<string, { attr: string; brief: string }> = {
   '化禄': { attr: '吉化·增益', brief: '福星到宫，主财运与福气增益。所在宫位事物顺遂，能力增强，是命盘中最受欢迎的化星。' },
   '化权': { attr: '吉化·权威', brief: '权力星到宫，主掌控与领导力。所在宫位主强势与决断，喜入官禄宫与命宫，主事业上的实权。' },
   '化科': { attr: '吉化·名誉', brief: '科名星到宫，主声誉与贵人缘。所在宫位主文名与考运，有贵人扶持，宜学术、考试与公开场合。' },
-  '化忌': { attr: '凶化·阻碍', brief: '劫数星到宫，主执念与阻碍。所在宫位需特别关注，该宫人生课题将成为重要考验。' },
+  '化忌': { attr: '压力·牵挂', brief: '提示这个领域可能容易有压力或纠结。可以检查投入与期待，不代表坏事必然发生。' },
 };
 
 // ─── 主星简介数据 ─────────────────────────────────────────
@@ -212,7 +212,7 @@ const STAR_BRIEF: Record<string, { attr: string; brief: string }> = {
   '贪狼': { attr: '木水·桃花', brief: '桃花星，主欲望与才艺。多才多艺，欲望旺盛，社交活跃，宜从事艺术、公关、商业，人缘极好。' },
   '巨门': { attr: '水·是非星', brief: '暗星，主口才与是非。口才出众，思辨能力强，适合律师、教育、媒体，注意口舌是非，以辩才立身。' },
   '天相': { attr: '水·印星', brief: '印星，主辅佐与印绶。善于协调，重视礼节，正直守法，适合幕僚、行政、法律类工作，贵人运佳。' },
-  '天梁': { attr: '土·荫星', brief: '荫星，主老成与荫蔽。正直稳重，慈悲心强，老天爷会保佑，适合医疗、社会工作、宗教领域。' },
+  '天梁': { attr: '土·荫星', brief: '荫星，主老成与荫蔽。正直稳重，慈悲心强，注重经验与照顾他人，适合医疗、社会工作、宗教领域。' },
   '七杀': { attr: '金火·将星', brief: '将星，主刚烈与开创。性格刚毅，行动力强，勇于挑战，适合创业、军警、竞争性行业，逢凶化吉。' },
   '破军': { attr: '水·耗星', brief: '耗星，主变动与开拓。勇于突破，不惧改变，一生变动大但有魄力，适合开拓型工作，走别人没走过的路。' },
 };
@@ -554,7 +554,7 @@ export default function HomePage() {
           </div>
           <div className="space-y-3" style={{ maxWidth: '840px', margin: '0 auto' }}>
             {[
-              { text: '提前窥探命运的意义', size: 'clamp(17px, 2.2vw, 28px)', color: 'rgba(215,228,252,0.72)', delay: 0.1 },
+              { text: '阅读传统命盘的意义', size: 'clamp(17px, 2.2vw, 28px)', color: 'rgba(215,228,252,0.72)', delay: 0.1 },
               { text: '不在于预知未来', size: 'clamp(21px, 2.6vw, 32px)', color: 'rgba(220,232,250,0.74)', delay: 0.25 },
               { text: '而在于不断认识自己', size: 'clamp(24px, 3vw, 40px)', color: 'rgba(218,230,248,0.8)', delay: 0.34 },
             ].map((line, i) => (
@@ -659,7 +659,7 @@ export default function HomePage() {
           </FadeIn>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
             {[
-              { glyph: '天', label: '先天命运', pct: '参考', color: c.goldSolid, borderColor: c.goldLine, desc: '起盘把出生信息转换为传统星宫符号。这些符号适合讨论偏好，不是个人价值的评分，不能替代真实经历。', sub: '命盘 · 星曜 · 五行' },
+              { glyph: '天', label: '个人起点', pct: '参考', color: c.goldSolid, borderColor: c.goldLine, desc: '起盘把出生信息转换为传统星宫符号。这些符号适合讨论偏好，不是个人价值的评分，不能替代真实经历。', sub: '命盘 · 星曜 · 五行' },
               { glyph: '地', label: '地理环境', pct: '参考', color: 'rgba(96,165,250,0.9)', borderColor: 'rgba(96,165,250,0.3)', desc: '家庭资源、社会条件与工作环境都会影响机会。阅读命盘时，应补充现实背景，避免把环境差异归结为个人命数。', sub: '地域 · 风水 · 环境' },
               { glyph: '人', label: '人心意念', pct: '参考', color: 'rgba(100,216,139,0.9)', borderColor: 'rgba(100,216,139,0.3)', desc: '把解读变成一个可尝试的小行动：约一次沟通、学习一项技能或调整资源安排。结果要回到生活中检验，不必服从星曜标签。', sub: '意志 · 选择 · 行动' },
             ].map((item, i) => (
@@ -757,7 +757,7 @@ export default function HomePage() {
                   先说最值得关注的一点，再展示命盘推导，最后列出可执行的选择。不用术语堆砌制造神秘感。
                 </p>
                 <p style={{ fontSize: '11px', color: c.textMuted, fontStyle: 'italic', marginTop: '12px' }}>
-                  本站独立整理传统规则，不代表任何讲授者授权或背书。传统术数不等于科学测量，不能代替专业意见。
+                  本站独立整理传统规则，阅读时可对照说明与原始星宫信息。
                 </p>
               </div>
             </div>
@@ -884,29 +884,7 @@ export default function HomePage() {
         </FadeIn>
       </section>
 
-      {/* Footer */}
-      <footer className="relative z-10 py-10 px-6"
-        style={{ borderTop: `1px solid ${c.niCardBord}` }}>
-
-        <div className="text-center">
-          <p className="text-[10px] tracking-wider mb-3" style={{ color: c.footerText }}>
-            天机盘 · AI 紫微命盘 · 三合四化 · 古法排盘 · AI 解读
-          </p>
-          <p className="text-[10px] tracking-wider mb-3 max-w-2xl mx-auto leading-relaxed"
-            style={{ color: c.footerText, opacity: 0.85 }}>
-            本平台基于中国传统文化研究，仅提供学习参考。<br className="sm:hidden" />
-            不构成任何医疗、投资、法律或重大决策建议。
-          </p>
-          <p className="text-[10px] mb-3 leading-relaxed" style={{ color: c.footerText }}>
-            本站部分断语来自 <a href="https://github.com/Renhuai123/ziwei-doushu" style={{ textDecoration: 'underline' }}>紫微斗数开源解读数据集 v4.0</a>（CC BY 4.0），作者：王多鱼AI。已提取、去重并过滤引文。
-          </p>
-          <p className="text-[10px] tracking-wider" style={{ color: c.footerText }}>
-            <a href="/terms" style={{ color: c.footerText, textDecoration: 'underline' }}>服务条款</a>
-            {' · '}
-            <a href="/privacy" style={{ color: c.footerText, textDecoration: 'underline' }}>隐私政策</a>
-          </p>
-        </div>
-      </footer>
+      {/* 所有页面共用根布局页脚，避免重复声明。 */}
     </div>
   );
 }

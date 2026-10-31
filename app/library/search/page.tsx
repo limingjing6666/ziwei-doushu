@@ -3,6 +3,7 @@
  */
 
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { searchClassics, getParagraphById } from '@/lib/classics';
 import { pageMetadata } from '@/lib/brand';
 import { CLASSICS_NOTICE } from '@/lib/classics/types';
@@ -12,7 +13,8 @@ export const metadata = pageMetadata('搜索 · 古籍对读库', CLASSICS_NOTIC
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const sp = await searchParams;
   const q = sp.q?.trim() || '';
-  const hits = q ? searchClassics(q, 50) : [];
+  if (!q) redirect('/library');
+  const hits = searchClassics(q, 50);
 
   return (
     <div style={{ background: 'var(--bg-page)', minHeight: '100vh' }}>
@@ -35,7 +37,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
             搜索关键词
           </div>
           <h1 style={{ fontSize: 'clamp(22px, 3.5vw, 32px)', fontWeight: 700, color: 'var(--tx-0)', letterSpacing: '0.1em' }}>
-            「{q || '（空）'}」
+            「{q}」
           </h1>
           <div style={{ fontSize: '12px', color: 'var(--tx-3)', marginTop: '8px' }}>
             共找到 <strong style={{ color: 'var(--ac)' }}>{hits.length}</strong> 条主题整理匹配
