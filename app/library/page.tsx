@@ -7,11 +7,9 @@
 import Link from 'next/link';
 import { ALL_BOOKS, TOTAL_PARAGRAPHS } from '@/lib/classics';
 import LibrarySearch from './LibrarySearch';
+import { pageMetadata } from '@/lib/brand';
 
-export const metadata = {
-  title: '天机盘 · 古籍对读库 · 紫微斗数全集 / 全书 / 骨髓赋',
-  description: '紫微斗数权威古籍全文检索：《紫微斗数全集》《紫微斗数全书》《骨髓赋》天机盘学习参考',
-};
+export const metadata = pageMetadata('古籍对读库', '传统主题整理与检索；未校勘内容不作为古籍原文。', '/library');
 
 export default function LibraryHomePage() {
   return (
@@ -23,7 +21,7 @@ export default function LibraryHomePage() {
           ← 返回首页
         </Link>
         <div style={{ fontSize: '12px', color: 'var(--tx-3)', letterSpacing: '0.3em' }}>
-          古籍原典库 · CLASSICS
+          古籍对读库 · CLASSICS
         </div>
         <Link href="/chart" style={{ fontSize: '12px', color: 'var(--ac)', letterSpacing: '0.2em', textDecoration: 'none' }}>
           起盘 →
@@ -38,10 +36,10 @@ export default function LibraryHomePage() {
           <div style={{ height: '1px', width: '48px', background: 'linear-gradient(to left, transparent, rgba(184,146,42,0.4))' }} />
         </div>
         <h1 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 700, color: 'var(--tx-0)', letterSpacing: '0.15em', marginBottom: '12px' }}>
-          传统紫微方法论 · 古籍原典库
+          传统紫微方法论 · 古籍对读库
         </h1>
         <p style={{ fontSize: '14px', color: 'var(--tx-2)', letterSpacing: '0.1em', maxWidth: '600px', margin: '0 auto', lineHeight: 1.7 }}>
-          紫微斗数权威古籍全文检索<br />
+          紫微斗数主题整理检索（非古籍全文）<br />
           收录 <strong style={{ color: 'var(--ac)' }}>{ALL_BOOKS.length}</strong> 部古籍 · 共 <strong style={{ color: 'var(--ac)' }}>{TOTAL_PARAGRAPHS}</strong> 段精华
         </p>
       </div>

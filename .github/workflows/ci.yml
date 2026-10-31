@@ -25,5 +25,11 @@ jobs:
       - name: 类型检查
         run: npm run typecheck
 
-      - name: 排盘引擎回归
+      - name: 排盘引擎回归与版权检查
         run: npm test
+
+      - name: 无 AI 密钥构建
+        run: env -u DEEPSEEK_API_KEY npm run build
+
+      - name: 构建文案版权检查
+        run: npm run copyright:check -- --extra .next/

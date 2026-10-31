@@ -1,6 +1,8 @@
-# Tianjipan · AI Zi Wei Chart
+# 天机盘 · AI 紫微命盘
 
-**Traditional charting · Three-harmony structure · Four transformations · AI interpretation**
+**三合四化 · 古法排盘 · AI 解读**
+
+Tianjipan · AI Zi Wei Chart — Three harmonies and four transformations · Traditional charting · AI interpretation.
 
 An independently organized Next.js 16 application for Zi Wei Dou Shu charting, time-cycle views, chart comparison, topic retrieval and classical-text reading. No personal endorsement, authorized lineage or scientific prediction is claimed. Interpretations are cultural references, not medical, legal or investment advice.
 

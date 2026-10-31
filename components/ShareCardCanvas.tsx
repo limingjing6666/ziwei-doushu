@@ -9,6 +9,7 @@
 
 import type { ZiweiChart } from '@/lib/ziwei/types';
 import { SITE_HOST } from '@/lib/site';
+import { SITE_TITLE, SITE_SLOGAN } from '@/lib/brand';
 
 const BRANCH_NAMES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
 
@@ -92,8 +93,8 @@ export default function ShareCardCanvas({ chart, birth, highlight }: ShareCardPr
             color: 'white', fontSize: '15px', fontWeight: 700,
           }}>紫</div>
           <div>
-            <div style={{ fontSize: '15px', color: '#3d2f10', fontWeight: 600, letterSpacing: '0.12em', lineHeight: 1.2 }}>天机盘</div>
-            <div style={{ fontSize: '9px', color: '#a89b7c', letterSpacing: '0.18em', marginTop: '2px' }}>三合四化 · ZI WEI</div>
+            <div style={{ fontSize: '13px', color: '#3d2f10', fontWeight: 600, letterSpacing: '0.04em', lineHeight: 1.2 }}>{SITE_TITLE}</div>
+            <div style={{ fontSize: '9px', color: '#a89b7c', letterSpacing: '0.18em', marginTop: '2px' }}>{SITE_SLOGAN}</div>
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>

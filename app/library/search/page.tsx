@@ -4,10 +4,10 @@
 
 import Link from 'next/link';
 import { searchClassics, getParagraphById } from '@/lib/classics';
+import { pageMetadata } from '@/lib/brand';
+import { CLASSICS_NOTICE } from '@/lib/classics/types';
 
-export const metadata = {
-  title: '搜索 · 古籍原典库',
-};
+export const metadata = pageMetadata('搜索 · 古籍对读库', CLASSICS_NOTICE, '/library/search');
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const sp = await searchParams;
@@ -38,9 +38,11 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
             「{q || '（空）'}」
           </h1>
           <div style={{ fontSize: '12px', color: 'var(--tx-3)', marginTop: '8px' }}>
-            共找到 <strong style={{ color: 'var(--ac)' }}>{hits.length}</strong> 条古籍原文匹配
+            共找到 <strong style={{ color: 'var(--ac)' }}>{hits.length}</strong> 条主题整理匹配
           </div>
         </div>
+
+        <p role="note" style={{ fontSize: '12px', color: 'var(--tx-2)', lineHeight: 1.8, marginBottom: '20px' }}>{CLASSICS_NOTICE}</p>
 
         {hits.length === 0 ? (
           <div style={{

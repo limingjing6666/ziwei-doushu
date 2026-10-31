@@ -7,7 +7,7 @@ if (!raw) throw new Error('Read-only source checkout required to generate finger
 const source = fingerprint(raw);
 mkdirSync('scripts/copyright', { recursive: true });
 writeFileSync('scripts/copyright/source-hashes.json.gz', gzipSync(JSON.stringify({
-  version: 1, algorithm: 'sha256', normalization: 'NFKC then Han-only, per entry/quote',
+  version: 2, algorithm: 'sha256-128', normalization: 'NFKC then Han-only, per entry/quote',
   eight: [...source.eight].sort(), ten: [...source.ten].sort(),
 }), { level: 9 }));
 console.log(`Fingerprints only: eight=${source.eight.size}, ten=${source.ten.size}`);

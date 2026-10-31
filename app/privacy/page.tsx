@@ -1,4 +1,6 @@
-export const metadata = { title: '隐私政策 · 天机盘', description: '天机盘隐私政策' };
+import { pageMetadata } from '@/lib/brand';
+
+export const metadata = pageMetadata('隐私政策', '本站数据处理与隐私说明。', '/privacy');
 
 export default function PrivacyPage() {
   return (

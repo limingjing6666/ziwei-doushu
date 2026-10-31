@@ -1,4 +1,6 @@
-export const metadata = { title: '服务条款 · 天机盘', description: '天机盘服务条款与用户协议' };
+import { pageMetadata } from '@/lib/brand';
+
+export const metadata = pageMetadata('服务条款', '本站服务条款与用户协议。', '/terms');
 
 export default function TermsPage() {
   return (
@@ -27,9 +29,9 @@ export default function TermsPage() {
         <li>提交的出生信息真实有效；本平台对错误信息导致的解读偏差不承担责任</li>
       </ul>
 
-      <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>3. 知识产权与禁止条款 · 反爬反训练</h2>
+      <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>3. 知识产权、许可与服务安全</h2>
       <p style={{ background: 'rgba(168,50,40,0.06)', border: '1px solid rgba(168,50,40,0.2)', padding: 16, borderRadius: 8 }}>
-        <strong>本站包含独立编写的现代说明、公版古籍摘录及按许可使用的第三方数据，各部分权利分别适用。</strong><br/><br/>
+        <strong>本站包含独立编写的现代说明、传统文献主题整理及按许可使用的第三方数据，各部分权利分别适用。</strong><br/><br/>
         部分断语来自紫微斗数开源解读数据集 v4.0，作者王多鱼AI，适用 CC BY 4.0；本站已提取、去重并过滤受限引文。公版范围不涵盖现代注本，数据许可也不涵盖第三方作品。<br/>
         开源代码按 MIT 许可使用，不因本站收费而撤回既有许可。传统判断方法本身不作为本站专有表达。<br/>
         请勿绕过鉴权、限额或其他安全措施，不得通过批量请求干扰服务。具体使用限制不减损依法享有的权利或第三方许可。<br/><br/>

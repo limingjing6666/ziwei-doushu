@@ -27,6 +27,12 @@ export function matchesRule(rule: MethodRule, chart: ZiweiChart): boolean {
   if (!Object.keys(c).length) return true;
   return chart.palaces.some(base => {
     if (c.palaces?.length && !c.palaces.some(p => palaceName(p) === palaceName(base.name))) return false;
+    // Anchor the relation at the first required star/mark, not an arbitrary empty
+    // palace: two unrelated stars can otherwise both meet a third palace.
+    if (c.relation && c.relation !== 'adjacent') {
+      if (c.stars?.length && !base.stars.some(s => s.name === c.stars![0])) return false;
+      if (!c.stars?.length && c.sihua?.length && !base.stars.some(s => s.siHua === c.sihua![0])) return false;
+    }
     const scope = related(base, chart, c.relation);
     const stars = scope.flatMap(p => p.stars);
     if (c.stars?.some(name => !stars.some(s => s.name === name))) return false;
@@ -39,7 +45,7 @@ export function matchesRule(rule: MethodRule, chart: ZiweiChart): boolean {
     }
     // For flanking rules, the two required stars must occupy different neighbors.
     if (c.relation === 'adjacent' && c.stars?.length === 2) {
-      if (!scope.every(p => c.stars!.some(name => p.stars.some(s => s.name === name)))) return false;
+      if (scope.length !== 2 || !scope.every(p => c.stars!.some(name => p.stars.some(s => s.name === name)))) return false;
     }
     return true;
   });

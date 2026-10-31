@@ -1034,7 +1034,7 @@ export default function HomePage() {
                 background: 'transparent',
                 textDecoration: 'none',
               }}>
-              📜 古籍原典库 →
+              📜 古籍对读库 →
             </motion.a>
           </div>
         </FadeIn>

@@ -95,6 +95,7 @@ async function main() {
     globalThis.fetch = async (_url, init) => {
       const sent = JSON.parse(init!.body as string);
       assert.equal(sent.model, 'deepseek-flash'); assert.equal(sent.stream, true);
+      assert.equal(sent.max_tokens, 2400, 'prompt length control must not shrink the completion safety margin');
       assert.deepEqual(sent.thinking, { type: 'disabled' });
       return new Response(fragmented('data: {"choices":[{"delta":{"reasoning_content":"不可见"}}]}\n\ndata: {"choices":[{"delta":{"content":"命宫天府，重视积累。"}}]}\n\ndata: [DONE]\n\n'));
     };

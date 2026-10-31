@@ -27,8 +27,8 @@ export interface LunarInfo {
   lunarYear: number;
   lunarMonth: number;    // positive = normal, negative = leap month
   lunarDay: number;
-  yearStem: number;      // 0-9 (甲乙丙丁戊己庚辛壬癸)
-  yearBranch: number;    // 0-11 (子丑寅卯辰巳午未申酉戌亥)
+  yearStem: number;      // STEMS 的零基下标
+  yearBranch: number;    // BRANCHES 的零基下标
   isLeapMonth: boolean;
   /** 节气四柱（年/月/日/时柱），如 ["壬午","壬子","壬戌","庚戌"] */
   fourPillars?: [string, string, string, string];

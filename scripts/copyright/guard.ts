@@ -2,10 +2,13 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { gunzipSync } from 'node:zlib';
+import { execFileSync } from 'node:child_process';
 import ts from 'typescript';
 
 export const normalize = (text: string) => (text.normalize('NFKC').match(/\p{Script=Han}/gu) ?? []).join('');
-export const digest = (text: string) => createHash('sha256').update(text).digest('hex');
+// 128-bit SHA-256 prefixes: ~213k windows have negligible collision risk (~7e-29).
+// Hashes are not ciphertext; short, guessable inputs still admit dictionary tests.
+export const digest = (text: string) => createHash('sha256').update(text).digest('hex').slice(0, 32);
 export function grams(text: string, n: number): string[] {
   const chars = [...normalize(text)];
   return Array.from({ length: Math.max(0, chars.length - n + 1) }, (_, i) => chars.slice(i, i + n).join(''));
@@ -44,6 +47,10 @@ export function sourceTexts(root = SOURCE_ROOT): string[] | null {
 export function loadFingerprints(sourceRoot = SOURCE_ROOT): Fingerprints {
   const raw = sourceTexts(sourceRoot);
   const baseline = JSON.parse(gunzipSync(readFileSync('scripts/copyright/source-hashes.json.gz')).toString());
+  if (baseline.version !== 2 || baseline.algorithm !== 'sha256-128'
+    || !['eight', 'ten'].every(k => Array.isArray(baseline[k]) && baseline[k].every((h: unknown) => typeof h === 'string' && /^[a-f0-9]{32}$/.test(h)))) {
+    throw new Error('Invalid fingerprints-only baseline.');
+  }
   if (raw) {
     const current = fingerprint(raw);
     // Baseline must not silently miss new material or change corpus semantics.
@@ -59,8 +66,7 @@ export function loadFingerprints(sourceRoot = SOURCE_ROOT): Fingerprints {
 }
 
 export type TextUnit = { path: string; line: number; text: string; start?: number; end?: number };
-export function collectFile(path: string): TextUnit[] {
-  const text = readFileSync(path, 'utf8');
+export function collectFile(path: string, text = readFileSync(path, 'utf8')): TextUnit[] {
   if (!/\.[cm]?[jt]sx?$/.test(path)) {
     if (path.endsWith('.html')) {
       const rendered = text.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
@@ -69,13 +75,22 @@ export function collectFile(path: string): TextUnit[] {
         .replace(/&(?:nbsp|amp|quot|lt|gt|apos);/g, '');
       return [{ path, line: 1, text: rendered }];
     }
-    if (path.endsWith('.json')) {
+    if (/\.(json|map)$/.test(path)) {
       const units: TextUnit[] = [];
       const visit = (v: unknown) => {
         if (typeof v === 'string') units.push({ path, line: 1, text: v });
         else if (v && typeof v === 'object') Object.values(v).forEach(visit);
       };
-      visit(JSON.parse(text));
+      const parsed = JSON.parse(text);
+      if (path.endsWith('.map') && Array.isArray(parsed.sourcesContent)) {
+        // A source map embeds code, not a single rendered string. Parse each
+        // embedded source just like tracked code; never join unrelated literals.
+        parsed.sourcesContent.forEach((content: unknown, i: number) => {
+          if (typeof content === 'string') units.push(...collectFile(`${path}#${parsed.sources?.[i] ?? 'embedded.js'}`, content));
+        });
+        const { sourcesContent: _embedded, ...metadata } = parsed;
+        visit(metadata);
+      } else visit(parsed);
       return units;
     }
     return text.split(/\n\s*\n/).map((text, i) => ({ path, line: i + 1, text }));
@@ -96,6 +111,13 @@ export function collectFile(path: string): TextUnit[] {
     ts.forEachChild(node, visit);
   }
   visit(source);
+  // Comments are shipped too; do not silently exempt them from content review.
+  const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, text);
+  for (let token = scanner.scan(); token !== ts.SyntaxKind.EndOfFileToken; token = scanner.scan()) {
+    if (token === ts.SyntaxKind.SingleLineCommentTrivia || token === ts.SyntaxKind.MultiLineCommentTrivia) {
+      units.push({ path, line: source.getLineAndCharacterOfPosition(scanner.getTokenPos()).line + 1, text: scanner.getTokenText() });
+    }
+  }
   // Also join adjacent static JSX text around formatting elements (e.g. <strong>).
   function jsxText(node: ts.JsxChild): string | null {
     if (ts.isJsxText(node)) return node.text;
@@ -126,12 +148,16 @@ export function files(root: string): string[] {
   return readdirSync(root, { withFileTypes: true }).flatMap(e => e.isDirectory()
     ? files(join(root, e.name)) : [join(root, e.name)]);
 }
+export const isTextTarget = (path: string) => /\.(?:[cm]?[jt]sx?|json|map|md|txt|html|rsc|py|ya?ml|css)$/.test(path)
+  || /(?:^|\/)(?:LICENSE|DATASET-LICENSE|\.gitignore|\.env\.example)$/.test(path);
+
 export function scan(root = process.cwd()) {
   const source = loadFingerprints();
-  const targets = ['app', 'components', 'lib', 'docs'].flatMap(d => existsSync(join(root, d)) ? files(join(root, d)) : []);
-  targets.push(...files(join(root, 'scripts')).filter(p => p.endsWith('.md')));
-  targets.push(...['README.md', 'README.en.md', 'CONTRIBUTING.md', 'DATASET-LICENSE'].map(p => join(root, p)));
-  const units = targets.filter(p => /\.(tsx?|jsx?|json|md)$/.test(p) || p.endsWith('DATASET-LICENSE')).flatMap(collectFile);
+  // The tracked tree is the boundary, including scripts, CI, licenses and comments.
+  const targets = execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' }).split('\0')
+    .filter(Boolean).map(p => join(root, p))
+    .filter(p => existsSync(p) && (isTextTarget(p) || !readFileSync(p).includes(0)));
+  const units = targets.flatMap(p => collectFile(p));
   const failures = units.map(u => ({ ...u, result: check(u.text, source) })).filter(u => u.result.failed);
   return { units: units.length, files: targets.length, failures: failures.map(f => ({ ...f, path: relative(root, f.path) })) };
 }

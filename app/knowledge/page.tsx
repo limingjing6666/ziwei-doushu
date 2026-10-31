@@ -6,10 +6,10 @@
 import Link from 'next/link';
 import { ALL_STARS, ALL_TOPICS, getKnowledge, STAR_BRIEF_SEO, STAR_TO_SLUG } from '@/lib/seo/knowledge';
 import { TOPIC_LABEL } from '@/lib/ziwei/db-analysis';
+import { pageMetadata } from '@/lib/brand';
 
 export const metadata = {
-  title: '天机盘 · 紫微斗数知识库 · 14 主星 × 13 专题',
-  description: '天机盘传统星宫知识库，整理十四主星的十三类专题，说明触发条件、联动关系与阅读限制。',
+  ...pageMetadata('紫微斗数知识库 · 14 主星 × 13 专题', '传统星宫知识库，说明触发条件、联动关系与阅读限制。', '/knowledge'),
   keywords: ['紫微斗数', '天机盘', '三合四化', '紫微斗数全集', '紫微斗数全书', '14 主星', '12 宫位'],
 };
 

@@ -4,26 +4,27 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { SITE_URL } from '@/lib/site';
+import { SITE_TITLE, SITE_SLOGAN } from '@/lib/brand';
 
 export const metadata: Metadata = {
-  title: '天机盘 · AI 紫微命盘',
+  title: SITE_TITLE,
   description: '三合四化 · 古法排盘 · AI 解读。基于传统三合派紫微斗数，结合四化飞星，分层阅读星宫结构与运限主题，仅供文化学习参考。',
   keywords: '天机盘, 紫微斗数, 三合四化, 紫微斗数全集, 紫微斗数全书, 骨髓赋, 命盘, 命理, 14主星, 12宫位',
   metadataBase: new URL(SITE_URL),
   manifest: '/manifest.webmanifest',
   twitter: {
     card: 'summary',
-    title: '天机盘 · AI 紫微命盘',
-    description: '三合四化 · 古法排盘 · AI 解读',
+    title: SITE_TITLE,
+    description: SITE_SLOGAN,
   },
   alternates: {
     canonical: '/',
   },
   openGraph: {
-    title: '天机盘 · AI 紫微命盘',
+    title: SITE_TITLE,
     description: '三合四化 · 古法排盘 · AI 解读。基于传统三合派紫微斗数，结合四化飞星，分层阅读星宫结构与运限主题，仅供文化学习参考。',
     url: SITE_URL,
-    siteName: '天机盘',
+    siteName: SITE_TITLE,
     locale: 'zh_CN',
     type: 'website',
   },
@@ -48,8 +49,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           '@context': 'https://schema.org', '@type': 'WebSite',
-          name: '天机盘 · AI 紫微命盘', url: SITE_URL,
-          description: '三合四化 · 古法排盘 · AI 解读',
+          name: SITE_TITLE, url: SITE_URL,
+          description: SITE_SLOGAN,
         }) }} />
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('ziwei-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);else document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();` }} />
       </head>

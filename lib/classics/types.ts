@@ -1,16 +1,18 @@
 /**
  * 古籍原典查询库 — 类型定义
  *
- * 设计：所有古籍以 JSON 静态数据打包到代码（公版无版权风险）
+ * 设计：主题整理以静态数据打包；未完成版本校勘，不据目录名认定权利。
  * Next.js 启动时一次性加载到内存，零 DB 依赖
  */
+
+export const CLASSICS_NOTICE = '本页是未经版本逐字校勘的主题整理稿，含现代说明，不作为所署古籍的原文或公版授权证明；请与可靠影印版本对读，不据此推断健康、收益或关系结果。';
 
 export interface Paragraph {
   /** 段落唯一 id（用于锚点跳转） */
   id: string;
   /** 段落序号（章节内） */
   idx: number;
-  /** 段落原文（古文） */
+  /** 整理稿段落；不自动视为古籍原文 */
   text: string;
   /** 现代翻译（可选，未来填充） */
   translation?: string;
@@ -49,6 +51,6 @@ export interface SearchHit {
   paragraphId: string;
   /** 高亮片段（含 <mark> 标签） */
   snippet: string;
-  /** 原文 */
+  /** 命中的整理稿文本 */
   text: string;
 }
