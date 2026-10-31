@@ -23,7 +23,7 @@
   --tx-inv2: rgba(240,237,232,0.65);
 
   /* 唯一强调色：墨金 */
-  --ac:     #B8922A;
+  --ac:     #806018;
   --ac-dim: #7A5F1A;
   --ac-bg:  rgba(184,146,42,0.07);
   --ac-bdr: rgba(184,146,42,0.22);
@@ -451,10 +451,12 @@ body {
 .birth-form input:disabled, .birth-form select:disabled { opacity: .45; }
 .birth-date-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; }
 .birth-location-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.field-error { color: #ef7971; font-size: 13px; }
+.field-error { color: #b52c25; font-size: 13px; }
+[data-theme="dark"] .field-error { color: #ef7971; }
 .ux-button, .ux-primary { min-height: 44px; padding: 9px 14px; border-radius: 10px; border: 1px solid var(--bdr-heavy); }
 .ux-button.active { border-color: var(--ac); color: var(--ac); background: var(--ac-bg); }
 .ux-primary { background: linear-gradient(135deg,#f0d070,#d9aa45,#b8862a); color: #020810; font-weight: 600; }
+button { min-height: 40px; min-width: 40px; }
 button:disabled { cursor: not-allowed; opacity: .5; }
 .ux-notice { border: 1px solid var(--ac-bdr); background: var(--ac-bg); padding: 12px; border-radius: 10px; font-size: 13px; line-height: 1.7; }
 :focus-visible { outline: 2px solid var(--ac); outline-offset: 3px; }
@@ -468,8 +470,14 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .palace-select { min-height: 40px; width: 100%; text-align: left; font-size: 14px; color: var(--tx-0); }
 .palace-star { min-height: 30px; font-size: 11px; }
 .major-star { font-size: 13px; font-weight: 600; }
-.term-trigger { border-bottom: 1px dotted var(--ac); text-align: inherit; }
-.term-popover { position: fixed; width: 280px; max-width: calc(100vw - 24px); z-index: 200; padding: 16px; border: 1px solid var(--ac); border-radius: 12px; background: var(--bg-1); color: var(--tx-0); box-shadow: var(--sh-lg); font-size: 14px; }
+.term-trigger { border-bottom: 1px dotted var(--ac); text-align: inherit; min-height: 40px; min-width: 40px; }
+.term-popover button { min-height: 40px; min-width: 40px; }
+.term-popover a { display: inline-flex; align-items: center; min-height: 40px; }
+.birth-form label:has(> input[type="checkbox"]), .birth-form label:has(> input[type="radio"]) { display: inline-flex; align-items: center; min-height: 40px; gap: 6px; }
+.mobile-selection-preview button, [aria-label="首次阅读引导"] button { min-height: 40px; min-width: 40px; }
+.time-nav button[aria-label="上一年"], .time-nav button[aria-label="下一年"] { min-width: 40px; }
+.time-nav button { min-height: 40px; }
+.term-popover { position: fixed; width: 280px; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; z-index: 200; padding: 16px; border: 1px solid var(--ac); border-radius: 12px; background: var(--bg-1); color: var(--tx-0); box-shadow: var(--sh-lg); font-size: 14px; }
 .ai-markdown { font-size: 14px; line-height: 1.85; overflow-wrap: anywhere; }
 .ai-markdown h1,.ai-markdown h2,.ai-markdown h3 { color: var(--ac); font-weight: 600; margin: 1em 0 .4em; font-size: 16px; }
 .ai-markdown p { margin: .5em 0; }

@@ -25,7 +25,7 @@ export function solarToLunar(year: number, month: number, day: number) {
   try {
     const l = Solar.fromYmd(year, month, day).getLunar();
     return { year: l.getYear(), month: Math.abs(l.getMonth()), day: l.getDay(), leapMonth: l.getMonth() < 0,
-      label: `农历${l.getYearGan()}${l.getYearZhi()}年（农历年份 ${l.getYear()}）${l.getMonth() < 0 ? '闰' : ''}${l.getMonthInChinese()}月${l.getDayInChinese()}` };
+      label: `农历${l.getYearGan()}${l.getYearZhi()}年（农历年份 ${l.getYear()}）${l.getMonthInChinese()}月${l.getDayInChinese()}` };
   } catch { return null; }
 }
 

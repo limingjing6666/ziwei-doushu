@@ -30,7 +30,10 @@ export default function BirthForm({ onSubmit, loading, initialData, onFormSave, 
   const ref = useRef<HTMLFormElement>(null);
   const id = useId();
   useEffect(() => { onFormSave?.(form); }, [form, onFormSave]);
-  const update = (patch: Partial<BirthFormState>) => { setForm(f => ({ ...f, ...patch })); setFailure(''); };
+  const update = (patch: Partial<BirthFormState>, preserveDst = false) => {
+    setForm(f => ({ ...f, ...patch })); setFailure('');
+    if (!preserveDst && ['year', 'month', 'day', 'calendar', 'clockHour', 'clockMinute'].some(k => k in patch)) setDstOriginal(null);
+  };
   const errors = validateBirthForm(form);
   const solar = formSolarDate(form);
   const lunar = solar && solarToLunar(solar.year, solar.month, solar.day);
@@ -92,14 +95,14 @@ export default function BirthForm({ onSubmit, loading, initialData, onFormSave, 
       <label><input type="radio" name={`${id}-solar`} checked={form.useTrueSolar !== false} onChange={() => update({ useTrueSolar: true })} /> 按真太阳时（默认）</label>
       <label><input type="radio" name={`${id}-solar`} checked={form.useTrueSolar === false} onChange={() => update({ useTrueSolar: false })} /> 按钟表时间</label>
     </div><p className="text-xs my-2" style={{ color: 'var(--tx-2)' }}>出生地用于真太阳时校正，影响时辰判断；不确定可选「按钟表时间」。本表沿用经度校正口径，未选地点不作偏移。</p>
-    <div className="birth-location-grid"><label className="birth-field">省份<select value={form.province} disabled={form.useTrueSolar === false} onChange={e => { const p = PROVINCES.find(p => p.name === e.target.value); const c = p?.cities[0]; update({ province: e.target.value, city: c?.name ?? '', longitude: c?.longitude ?? 120 }); }}><option value="">选择省份</option>{PROVINCES.map(p => <option key={p.name}>{p.name}</option>)}</select></label>
-    <label className="birth-field">城市<select value={form.city} disabled={!form.province || form.useTrueSolar === false} onChange={e => update({ city: e.target.value, longitude: cities.find(c => c.name === e.target.value)?.longitude ?? 120 })}><option value="">选择城市</option>{cities.map(c => <option key={c.name}>{c.name}</option>)}</select></label></div>
+    <div className="birth-location-grid"><label className="birth-field">省份<select aria-label="省份" value={form.province} disabled={form.useTrueSolar === false} onChange={e => { const p = PROVINCES.find(p => p.name === e.target.value); const c = p?.cities[0]; update({ province: e.target.value, city: c?.name ?? '', longitude: c?.longitude ?? 120 }); }}><option value="">选择省份</option>{PROVINCES.map(p => <option key={p.name}>{p.name}</option>)}</select></label>
+    <label className="birth-field">城市<select aria-label="城市" value={form.city} disabled={!form.province || form.useTrueSolar === false} onChange={e => update({ city: e.target.value, longitude: cities.find(c => c.name === e.target.value)?.longitude ?? 120 })}><option value="">选择城市</option>{cities.map(c => <option key={c.name}>{c.name}</option>)}</select></label></div>
     {hasTime && <p className="text-sm mt-2">当前：{BRANCHES[branch]}时{form.useTrueSolar !== false ? '（经度校正）' : '（钟表时间）'}</p>}
     {changed && <p className="ux-notice mt-2">按真太阳时校正后，出生时辰由「{BRANCHES[clockBranch]}时」变为「{BRANCHES[branch]}时」。<button type="button" className="underline" onClick={() => update({ useTrueSolar: false })}>改按钟表时间</button></p>}
     </fieldset>
     {hasTime && Number(form.clockHour) === 23 && <p className="ux-notice my-3">23 点后属晚子时，不同流派对日柱有不同算法；本页沿用原设置，23 点至 24 点按{lateZishiRule === 'next-day' ? '次日' : '本日'}排盘，0 点至 1 点按本日处理。</p>}
     {solar && isChinaDST(solar.year, solar.month, solar.day) && <div className="ux-notice my-3">该时段中国实行过夏令时，出生时间是否为夏令时钟表时间？默认不自动调整；若已换算为标准时间，无需操作。
-      <button type="button" className="ux-button mt-2" disabled={!dstOriginal && !shiftClock(form, -60)} onClick={() => { if (dstOriginal) { update(dstOriginal); setDstOriginal(null); } else { const shifted = shiftClock(form, -60); if (shifted) { setDstOriginal({ clockHour: form.clockHour, clockMinute: form.clockMinute }); update(shifted); } } }}>{dstOriginal ? '撤销减 1 小时' : '这是夏令时读数，减 1 小时'}</button><p className="text-xs">若调整会跨日，请自行核对日期后手动修改。</p></div>}
+      <button type="button" className="ux-button mt-2" disabled={form.unknownTime || (!dstOriginal && !shiftClock(form, -60))} onClick={() => { if (dstOriginal) { update(dstOriginal, true); setDstOriginal(null); } else { const shifted = shiftClock(form, -60); if (shifted) { setDstOriginal({ clockHour: form.clockHour, clockMinute: form.clockMinute }); update(shifted, true); } } }}>{dstOriginal ? '撤销减 1 小时' : '这是夏令时读数，减 1 小时'}</button><p className="text-xs">若调整会跨日，请自行核对日期后手动修改。</p></div>}
     <fieldset className="my-5"><legend className="text-sm mb-2">性别（必填 · 用于运限顺逆）</legend><div className="flex gap-3">{(['male', 'female'] as const).map(g => <button type="button" name="gender" key={g} className={form.gender === g ? 'ux-button active flex-1' : 'ux-button flex-1'} aria-pressed={form.gender === g} onClick={() => update({ gender: g })}>{g === 'male' ? '男' : '女'}</button>)}</div>{attempted && errors.gender && <p className="field-error">{errors.gender}</p>}</fieldset>
     {failure && <p role="alert" className="field-error">{failure}</p>}
     {!hideSubmit && <button type="submit" className="ux-primary w-full" disabled={busy || loading}>{busy || loading ? '正在排盘…' : '开始排盘'}</button>}

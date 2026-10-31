@@ -37,7 +37,7 @@ export default function Markdown({ text, streaming }: { text: string; streaming?
     const start = i; const paragraph: ReactNode[] = [];
     while (i < lines.length && lines[i].trim() && (i === start || !/^(#{1,3}\s|\s*(?:[-*]|\d+\.)\s)/.test(lines[i]))) {
       if (i > start) paragraph.push(<br key={`br-${i}`} />);
-      paragraph.push(...inline(lines[i])); i++;
+      paragraph.push(<React.Fragment key={`line-${i}`}>{inline(lines[i])}</React.Fragment>); i++;
     }
     nodes.push(<p key={start}>{paragraph}</p>);
   }
