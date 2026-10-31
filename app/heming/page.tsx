@@ -313,9 +313,6 @@ export default function HemingPage() {
         </Card>
       </section>
 
-      <p className="mt-6 text-center text-[12px] leading-relaxed text-ink-3">
-        AI 生成内容可能出错，请自行核对；关系判断请回到现实沟通与选择。
-      </p>
     </div>
   );
 }

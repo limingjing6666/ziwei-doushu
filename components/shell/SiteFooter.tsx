@@ -87,7 +87,7 @@ export function SiteFooter() {
             本站部分断语来自紫微斗数开源解读数据集 v4.0（CC BY 4.0），作者：王多鱼AI；已提取、去重并过滤受限引文，修改不代表上游作者认可。代码按 MIT 许可使用。
           </p>
           <p>
-            © {new Date().getFullYear()} 天机盘 · 传统术数内容仅供文化学习参考。AI 生成内容可能出错，请自行核对。
+            © {new Date().getFullYear()} 天机盘 · 传统术数内容仅供文化学习参考。
           </p>
         </div>
       </div>
