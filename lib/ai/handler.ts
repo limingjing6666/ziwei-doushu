@@ -15,7 +15,7 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     if (body.birthTimeKnown === false) a.birthInfo.birthTimeKnown = false;
     a.liunianYear = normalizeView(body.view ?? body.viewA ?? (a.liunianYear ? { year: a.liunianYear } : undefined), a).year;
     if (b) b.liunianYear = normalizeView(body.viewB, b).year;
-    const messages = mode === 'interpret' ? normalizeMessages(body.messages) : [];
+    const messages = normalizeMessages(body.messages);
     const scenario = b ? (body.mode === 'followup' ? 'followup' : 'overview') : body.mode === 'detail' ? 'detail' : body.mode === 'overview' ? 'overview' : 'followup';
     const maxTokens = scenario === 'overview' ? 1600 : scenario === 'detail' ? 500 : 600;
     const lengthRule = scenario === 'overview' ? '整份解读不超过1000字，主动收束并写完整结尾。' : '本次只简答当前问题，200–300字，不重写总览或原报告。';
@@ -27,7 +27,7 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
       : `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chart: chartToText(a), selectedView: viewToText(body.view ?? (a.liunianYear ? { year: a.liunianYear } : undefined), a), references: retrieveKnowledge(a) })}`;
     return await streamDeepSeek(request, `${b ? HEMING_SYSTEM : INTERPRET_SYSTEM}\n【本次篇幅硬约束】${lengthRule}`, [
       { role: 'user', content: context },
-      ...(b ? [{ role: 'user' as const, content: text(body.question, 1000) || '请分析双方的相处模式与建议。' }] : messages.length ? messages : [{ role: 'user' as const, content: '请解读这张命盘的核心特点和实际建议。' }]),
+      ...(b ? [...messages, { role: 'user' as const, content: text(body.question, 1000) || '请分析双方的相处模式与建议。' }] : messages.length ? messages : [{ role: 'user' as const, content: '请解读这张命盘的核心特点和实际建议。' }]),
     ], Math.max(1, deadline - Date.now()), maxTokens);
   } catch (error) {
     const known = error instanceof AiError;
