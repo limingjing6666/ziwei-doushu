@@ -2,7 +2,7 @@
 const { chromium } = require('/home/box/.npm/_npx/420ff84f11983ee5/node_modules/playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const OUT = '/workspace/tianjipan/round3';
+const OUT = process.env.REVIEW_OUT || '/workspace/tianjipan/round3/review';
 const BASE = 'http://localhost:3100';
 async function fill(form, { unknown = false, year = '1990', month = '5', day = '15' } = {}) {
   await form.locator('[name="year"]').fill(year);
@@ -11,6 +11,8 @@ async function fill(form, { unknown = false, year = '1990', month = '5', day = '
   if (unknown) await form.getByText('不知道出生时辰', { exact: true }).click();
   else { await form.locator('[name="clockHour"]').selectOption('8'); await form.locator('[name="clockMinute"]').selectOption('30'); }
   await form.getByRole('button', { name: '男', exact: true }).click();
+  await form.getByLabel('省份', { exact: true }).selectOption('河南省');
+  await form.getByLabel('城市', { exact: true }).selectOption('郑州');
 }
 const SSE = text => 'data: ' + JSON.stringify({ delta: { text } }) + '\n\ndata: [DONE]\n\n';
 async function shot(page, name) { await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true }); }
@@ -26,7 +28,10 @@ async function noOverflow(page, label) {
     for (const [prefix, width, height] of [['mobile', 390, 844], ['desktop', 1280, 800]]) {
       const context = await browser.newContext({ viewport: { width, height } });
       const page = await context.newPage();
-      const errors = []; page.on('pageerror', e => errors.push(e.message));
+      const errors = []; const consoleErrors = []; const unexpected404 = [];
+      page.on('response', r => { if (r.status() === 404 && !r.url().includes('/this-page-does-not-exist')) unexpected404.push(r.url()); });
+      page.on('pageerror', e => errors.push(e.message));
+      page.on('console', m => { if (['error', 'warning'].includes(m.type())) consoleErrors.push(m.text()); });
       const requests = []; page.on('request', r => { if (r.url().includes('/api/interpret')) requests.push(r.postDataJSON()); });
       let response = 'success';
       await page.route('**/api/interpret', async route => {
@@ -39,7 +44,9 @@ async function noOverflow(page, label) {
         if (response === 'slow') await new Promise(r => setTimeout(r, 1300));
         return route.fulfill({ contentType: 'text/event-stream', body: SSE('## 先说结论\n可以考虑换工作，但先找好下家。\n- 核对**预算**\n- 准备作品\n\n四化（资源与压力的变化标记）需分层观察。') });
       });
-      await page.goto(BASE + '/chart');
+      await page.goto(BASE + '/');
+      await page.getByRole('button', { name: '立即起盘', exact: true }).first().click();
+      await page.waitForURL(BASE + '/chart');
       await page.getByRole('button', { name: '开始排盘', exact: true }).click();
       await page.getByText(/请填写出生年份/).waitFor();
       assert.equal(await page.locator('[name="year"]').evaluate(el => el === document.activeElement), true);
@@ -87,7 +94,7 @@ async function noOverflow(page, label) {
       assert.equal(requests.length, 0, 'mount must not auto-spend AI quota');
       const loadingMs = await page.evaluate(() => window.__round3LoadingMs);
       assert.ok(loadingMs < 100, `loading feedback ${loadingMs}ms`);
-      await page.mouse.move(0, 0); await page.waitForTimeout(800); await page.keyboard.press('Escape');
+      await page.mouse.move(0, 0); await page.waitForTimeout(1400); await page.keyboard.press('Escape');
       await noOverflow(page, prefix + ' result');
       await shot(page, `${prefix}-chart-result`);
       await page.screenshot({ path: `${OUT}/${prefix}-chart-result-top.png` });
@@ -192,9 +199,13 @@ async function noOverflow(page, label) {
       assert.equal(await page.locator('html').getAttribute('data-theme'), 'light');
       await fill(page.locator('form')); await page.getByRole('button', { name: '开始排盘', exact: true }).click();
       await page.locator('.palace-slot').first().waitFor();
-      await page.mouse.move(0, 0); await page.waitForTimeout(800); await page.keyboard.press('Escape');
+      await page.mouse.move(0, 0); await page.waitForTimeout(1400); await page.keyboard.press('Escape');
       await noOverflow(page, prefix + ' light result'); await shot(page, `${prefix}-chart-light`);
       assert.deepEqual(errors, []);
+      const appErrors = consoleErrors.filter(s => !/Failed to load resource: (the server responded with a status of (404|429|500)|net::ERR_INTERNET_DISCONNECTED)/.test(s));
+      assert.deepEqual(appErrors, [], 'no hydration/React/application console errors');
+      assert.deepEqual(unexpected404, [], 'normal navigation must not request missing assets/analytics endpoints');
+      fs.writeFileSync(`${OUT}/${prefix}-console.json`, JSON.stringify(consoleErrors, null, 2));
       await context.close();
     }
     fs.writeFileSync(`${OUT}/browser-results.json`, JSON.stringify(results, null, 2));
