@@ -53,7 +53,7 @@ async function main() {
     let output = '';
     await consumeAiResponse(sseResponse('data: {"delta":{"text":"中文"}}\n\ndata: [DONE]\n\n'), s => { output = s; });
     assert.equal(output, '中文');
-    await assert.rejects(consumeAiResponse(Response.json({ error: '请求太频繁' }, { status: 429 }), () => {}), /请求太频繁/);
+    await assert.rejects(consumeAiResponse(Response.json({ error: '请求太频繁' }, { status: 429 }), () => {}), /请求有点频繁/);
     await assert.rejects(consumeAiResponse(sseResponse('data: {"delta":{"text":"部分"}}\n\n'), () => {}), /中断/);
     await assert.rejects(readBody(new Request('http://localhost', { method: 'POST', body: ' '.repeat(205000) })), errorStatus(413));
     const tooLarge = new Request('http://localhost', { method: 'POST', body: fragmented(' '.repeat(205000)), duplex: 'half' } as RequestInit);
@@ -95,7 +95,7 @@ async function main() {
     globalThis.fetch = async (_url, init) => {
       const sent = JSON.parse(init!.body as string);
       assert.equal(sent.model, 'deepseek-flash'); assert.equal(sent.stream, true);
-      assert.equal(sent.max_tokens, 2400, 'prompt length control must not shrink the completion safety margin');
+      assert.equal(sent.max_tokens, 2400, 'direct proxy callers retain the legacy fallback; route budgets are tested separately');
       assert.deepEqual(sent.thinking, { type: 'disabled' });
       return new Response(fragmented('data: {"choices":[{"delta":{"reasoning_content":"不可见"}}]}\n\ndata: {"choices":[{"delta":{"content":"命宫天府，重视积累。"}}]}\n\ndata: [DONE]\n\n'));
     };

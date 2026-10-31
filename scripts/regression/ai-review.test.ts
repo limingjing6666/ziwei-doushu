@@ -78,7 +78,7 @@ async function main() {
       const response = await streamDeepSeek(req, 'test', []);
       const wire = await response.clone().text();
       assert.ok(wire.endsWith('data: [DONE]\n\n'), 'truncation/errors must still terminate the SSE protocol');
-      await assert.rejects(consumeAiResponse(response, text => { partial = text; }), /解读暂时中断/);
+      await assert.rejects(consumeAiResponse(response, text => { partial = text; }), suffix.includes('length') ? /内容较长已截断/ : /内容生成中断/);
       assert.match(partial, /命宫天府/); assert.doesNotMatch(partial, /private/);
     }
     globalThis.fetch = async () => sse('data: [DONE]\n\n');
