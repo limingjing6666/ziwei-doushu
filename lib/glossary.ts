@@ -2,7 +2,14 @@
 export const GLOSSARY: Record<string, string> = {
   命宫: '观察自我表达、行动偏好与性格线索的起点。需要结合其他宫位和现实经历阅读。',
   身宫: '后天重心所在，也与身体根基有关，需结合所在宫位与星曜阅读。',
-  五行局: '这是一种排盘分组，名称如水二局、火六局。数字参与起星和运限起点的计算，不用于比较人的好坏。',
+  五行局: '排盘分组与起限数字。名称如火六局，不代表“火”性格，也不比较人的好坏。',
+  宫干: '宫位天干，决定飞化方向。依该天干查四化星曜的实际落宫。',
+  命主: '命宫地支对应的象征星。辅助观察先天气质，不代替命宫星曜。',
+  身主: '生年地支对应的象征星。辅助观察后天重心，不等于身宫主星。',
+  飞化: '依天干找四化星的落宫。不是星曜实际移动，须区分运限层次。',
+  自化: '本宫天干引动本宫星曜。仅在已计算的标记存在时使用。',
+  会照: '关联宫位星曜共同影响。须核对三合及对宫关系，不任意拼宫。',
+  借星: '空宫参考对宫主星。不是把对宫星搬进本宫。',
   本命: '由出生信息生成的基础盘，提供传统象义的观察线索。',
   大限: '每十年一段的运势阶段，用来讨论阶段主题，不是十年的既定结果。',
   流年: '所选年份的观察层。这里将当年四化叠加在本命盘，不是重新排完整流年十二宫。',
@@ -11,7 +18,7 @@ export const GLOSSARY: Record<string, string> = {
   化权: '常用于观察主动性、承担与掌控需求，不等于一定掌权。',
   化科: '常用于观察表达、认可与学习支持，不等于考试或名誉保证。',
   化忌: '提示某领域容易有压力、牵挂或纠结，不表示坏事必然发生。',
-  三方四正: '把本宫、对宫和两个三合宫一起看，避免用一颗星或一个宫下结论。',
+  三方四正: '本宫与三个关联宫。合看对宫及两个三合宫，避免孤星孤宫论断。',
   紫微: '统筹与协调的观察线索。留意是否有协作支持，不把领导意愿等同于地位。',
   天机: '思考、构思与调整的观察线索。可以核对想法如何落实，避免反复消耗。',
   太阳: '公开表达与承担责任的观察线索。留意付出与休息是否平衡。',
@@ -35,8 +42,8 @@ export const GLOSSARY: Record<string, string> = {
   铃星: '提示持续紧绷或细微摩擦，可作为检查压力积累的线索。',
   地空: '提示想法与落实之间的距离，也可以对应想象力与重新思考。',
   地劫: '提示资源投入与消耗，适合核对预算和计划，不代表必有损失。',
-  庙旺利陷: '星曜在不同位置的传统亮度分级，不是人的价值或人生好坏等级。',
-  亮度: '庙、旺、得、利、平、不、闲、陷等传统状态，用来调整星性侧重点。',
+  庙旺利陷: '星曜状态的传统强弱分级。由强到弱为庙、旺、得、利、平、不、陷，不是人的价值等级。',
+  亮度: '星曜状态的传统强弱分级。通常依庙、旺、得、利、平、不、陷阅读，闲、地按本盘原标记，不擅改等级。',
   空宫借星: '空宫只表示没有主星，可以参考对宫主星；不是把对宫星移入本宫。',
   兄弟: '观察手足、同辈与合作分工的传统象义。',
   夫妻: '代表亲密关系与婚姻状况，结合星曜、四化和运限观察伴侣倾向、婚期与分合。',
@@ -50,6 +57,27 @@ export const GLOSSARY: Record<string, string> = {
   福德: '观察休息、满足感与内在需求的传统象义。',
   父母: '观察长辈、支持关系及文书沟通的传统象义。',
 };
+/** Short form <=20 chars (prompt variants <=15); long form remains GLOSSARY. */
+export const GLOSSARY_SHORT: Record<string, string> = {
+  宫干: '宫位天干，决定飞化方向', 五行局: '排盘分组与起限数字', 命主: '命宫地支对应的象征星', 身主: '生年地支对应的象征星',
+  庙旺利陷: '星曜状态由强到弱', 亮度: '星曜状态的传统强弱分级', 飞化: '依天干找四化星的落宫', 自化: '本宫天干引动本宫星曜',
+  三方四正: '本宫与三个关联宫', 会照: '关联宫位星曜共同影响', 借星: '空宫参考对宫主星',
+  命宫: '代表本人和性格底色', 身宫: '后天重心所在', 大限: '每十年的运势阶段', 流年: '某一年的运势',
+  四化: '禄权科忌四种变化', 化禄: '顺、有助力', 化权: '掌控、主动', 化科: '认可、名声', 化忌: '压力和牵挂，不等于坏事',
+};
+/** Inject only lexemes present in chart/reference text, bounded to 600 chars. */
+export function glossaryForChart(chartText: string): string {
+  const entries: string[] = [];
+  const add = (term: string, desc: string) => { if (!entries.some(e => e.startsWith(`${term}（`))) entries.push(`${term}（${desc}）`); };
+  for (const [term, short] of Object.entries(GLOSSARY_SHORT)) if (chartText.includes(term)) add(term, short);
+  for (const ju of chartText.match(/[水木金土火][二三四五六]局/g) ?? []) add(ju, GLOSSARY_SHORT.五行局);
+  for (const b of ['庙', '旺', '得', '利', '平', '不', '陷', '闲', '地']) if (chartText.includes(`（${b}）`)) add(b, '星曜状态分级，非人的好坏');
+  for (const [term, long] of Object.entries(GLOSSARY)) if (chartText.includes(term) && !entries.some(e => e.startsWith(`${term}（`))) add(term, GLOSSARY_SHORT[term] ?? long.split(/[。；，]/)[0].slice(0, 15));
+  for (const term of chartText.matchAll(/命中格局【([^】]+)】/g)) add(term[1], '须核对组合条件的传统名称');
+  let result = '【本盘术语速查（首次出现请用括号解释）】';
+  for (const entry of entries) { if (result.length + entry.length + 1 > 600) break; result += `\n${entry}`; }
+  return result;
+}
 export function termDescription(term: string): string {
   return GLOSSARY[term] ?? GLOSSARY[term.replace(/宫$/, '').replace('仆役', '交友')] ?? (/^[水木金土火][二三四五六]局$/.test(term) ? GLOSSARY.五行局 : '星曜是一种传统观察符号，需结合搭配与现实经历，不宜单独定性。');
 }
