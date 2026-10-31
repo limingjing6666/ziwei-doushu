@@ -54,7 +54,7 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
       { role: 'user', content: context },
       ...(b ? [...messages, { role: 'user' as const, content: text(body.question, 1000) || '请分析双方的相处模式与建议。' }] : messages.length ? messages : [{ role: 'user' as const, content: text(body.question, 1000) || '请解读这张命盘的核心特点和实际建议。' }]),
     ], Math.max(1, deadline - Date.now()), maxTokens, telemetry);
-    return telemetry.response(consistencyStream(upstream, { mode: scenario, facts, question }, { buffered: isNumericSensitive(question), deadline, rewrite: deepSeekRewriter(request.signal, telemetry), signal: request.signal }));
+    return telemetry.response(consistencyStream(upstream, { mode: scenario, facts, question }, { buffered: isNumericSensitive(question), deadline, rewrite: deepSeekRewriter(request.signal, telemetry), signal: request.signal, onRepair: () => { telemetry.repaired = true; } }));
   } catch (error) {
     telemetry.error(error);
     const known = error instanceof AiError;
