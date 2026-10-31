@@ -5,6 +5,8 @@ declare module 'lunar-javascript' {
     getYear(): number;
     getMonth(): number;  // negative = leap month
     getDay(): number;
+    getMonthInChinese(): string;
+    getDayInChinese(): string;
     getYearGan(): string;
     getYearZhi(): string;
     getMonthGan(): string;

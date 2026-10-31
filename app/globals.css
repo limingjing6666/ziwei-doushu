@@ -5,7 +5,7 @@
 /* ─── 2.0 设计系统 Token ─────────────────────────────────── */
 :root {
   /* 字体 */
-  --font: -apple-system, 'PingFang SC', 'Helvetica Neue', 'Segoe UI', sans-serif;
+  --font: 'Noto Serif CJK SC', 'Noto Serif SC', 'Songti SC', serif;
   --font-mono: 'SF Mono', 'Menlo', 'Noto Sans Mono', 'Consolas', monospace;
 
   /* 背景层级 */
@@ -434,3 +434,28 @@ body {
    select 本身是半透明底 + 浅色字，Windows 上原生下拉列表是白底，浅灰字配白底看不清（#14） */
 [data-theme="dark"] select { color-scheme: dark; }
 [data-theme="dark"] select option { background-color: var(--bg-2); color: var(--tx-1); }
+
+/* Shared readable controls and compatibility tokens for the chart components. */
+:root {
+  --t-bg: var(--bg-0); --t-surface: var(--bg-1); --t-card: var(--bg-card);
+  --t-border: var(--bdr-med); --t-border-acc: var(--ac-bdr);
+  --t-text: var(--tx-0); --t-text2: var(--tx-2); --t-faint: var(--tx-2); --t-gold: var(--ac);
+}
+[data-theme="dark"] { --bg-1: #07101f; }
+.birth-form { min-width: 0; }
+.birth-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; min-width: 0; }
+.birth-form input:not([type="checkbox"]):not([type="radio"]), .birth-form select {
+  width: 100%; min-width: 0; min-height: 46px; padding: 10px 8px; border: 1px solid var(--bdr-heavy);
+  border-radius: 10px; background: var(--bg-1); color: var(--tx-0); font: inherit; font-size: 16px;
+}
+.birth-form input:disabled, .birth-form select:disabled { opacity: .45; }
+.birth-date-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; }
+.birth-location-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field-error { color: #ef7971; font-size: 13px; }
+.ux-button, .ux-primary { min-height: 44px; padding: 9px 14px; border-radius: 10px; border: 1px solid var(--bdr-heavy); }
+.ux-button.active { border-color: var(--ac); color: var(--ac); background: var(--ac-bg); }
+.ux-primary { background: linear-gradient(135deg,#f0d070,#d9aa45,#b8862a); color: #020810; font-weight: 600; }
+button:disabled { cursor: not-allowed; opacity: .5; }
+.ux-notice { border: 1px solid var(--ac-bdr); background: var(--ac-bg); padding: 12px; border-radius: 10px; font-size: 13px; line-height: 1.7; }
+:focus-visible { outline: 2px solid var(--ac); outline-offset: 3px; }
+@media(max-width:640px) { .birth-location-grid { grid-template-columns: 1fr; } }

@@ -15,7 +15,19 @@
  * ⚠️ 这里**不许**出现排盘 / 时辰 / 真太阳时 / 四化 任何一行。
  *    那些属于 lib/ziwei/algorithm.ts 与 /api/generate，别顺手塞进来。
  */
-import { Lunar, LunarMonth } from 'lunar-javascript';
+import { Lunar, LunarMonth, Solar } from 'lunar-javascript';
+
+/** 展示用双向换算；先校验公历，禁止库自动纠正非法日期。 */
+export function solarToLunar(year: number, month: number, day: number) {
+  if (![year, month, day].every(Number.isInteger) || year < 1900 || year > 2050) return null;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+  try {
+    const l = Solar.fromYmd(year, month, day).getLunar();
+    return { year: l.getYear(), month: Math.abs(l.getMonth()), day: l.getDay(), leapMonth: l.getMonth() < 0,
+      label: `农历${l.getYearGan()}${l.getYearZhi()}年（农历年份 ${l.getYear()}）${l.getMonth() < 0 ? '闰' : ''}${l.getMonthInChinese()}月${l.getDayInChinese()}` };
+  } catch { return null; }
+}
 
 export interface SolarDate {
   year: number;
