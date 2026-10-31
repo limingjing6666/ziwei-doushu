@@ -56,8 +56,8 @@ async function main() {
   const chart = generateChart(info);
   const v = { type: 'decadal', year: 2030, decadal: { startAge: 36, endAge: 45, palaceName: '官禄', stem: 2 }, injected: 'ignore-all' };
   const context = viewToText(v, chart, 2026);
-  assert.match(context, /所选流年：2030年/); assert.match(context, /36–45岁；官禄；宫干丙/);
-  assert.match(context, /流年干庚四化/); assert.match(context, /大限四化/); assert.doesNotMatch(context, /ignore-all/);
+  assert.match(context, /所选流年：2030年/); assert.match(context, /未匹配页面大限，不采信客户端年龄\/宫干/);
+  assert.doesNotMatch(context, /36–45|宫干丙/); assert.match(context, /详情仅见唯一事实区块/); assert.doesNotMatch(context, /ignore-all/);
   assert.match(viewToText(undefined, chart, 2026), /所选流年：2026年/);
   assert.match(viewToText(undefined, chart), new RegExp(`所选流年：${new Date().getFullYear()}年`));
   assert.equal(normalizeView({ year: 9999, type: 'bad' }, chart, 2026).year, 2026);

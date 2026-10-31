@@ -51,14 +51,21 @@ export type Rewriter = (targets: RepairTarget[], factsText: string, timeoutMs: n
 /** One batch call max, never regenerate the whole answer. Insufficient time => deterministic fallback. */
 export async function repairAnswer(input: ValidationInput, options: { deadline: number; rewrite: Rewriter; now?: () => number }): Promise<string> {
   const now = options.now ?? Date.now;
-  let text = codeRepair(input, false);
+  const clean = (raw: string) => {
+    let unknown = 0;
+    const filled = fillPlaceholders(raw, input.facts, () => { unknown++; });
+    unknown += (filled.match(/\{\{[^{}]*$/g) ?? []).length;
+    if (unknown) console.warn('[ai-consistency]', { 'placeholder-left': unknown });
+    return codeRepair({ ...input, text: filled }, false);
+  };
+  let text = clean(input.text);
   const issues = validateAnswer({ ...input, text }); logIssues(issues);
   const originalFirst = firstSentence(text);
   const targets = planRepairs(text, issues);
   if (targets.length && options.deadline - now() >= REWRITE_RESERVE_MS) try {
     const replacements = await options.rewrite(targets, ageFactsToText(input.facts, input.question), Math.max(1, options.deadline - now() - 1000));
     text = replaceTargets(text, targets, replacements);
-    text = codeRepair({ ...input, text }, false);
+    text = clean(text);
   } catch { /* no private provider errors/user text in telemetry; code fallback retains full answer */ }
   if (validateAnswer({ ...input, text }).some(i => i.type === 'first-sentence-jargon')) text = originalFirst + text.slice(firstSentence(text).length);
   const result = codeRepair({ ...input, text });
