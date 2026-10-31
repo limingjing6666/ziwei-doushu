@@ -1,0 +1,52 @@
+{
+  "originalGuardTestSha256": "b54d70cf857581454e42e4f1564a7b895bbdb9cf8ec4308c300161f691e265f4",
+  "notice": "Exact, reviewed ancient-source/structural-label overlaps only; no blanket path exemptions.",
+  "source": "https://zh.wikisource.org/wiki/紫微斗數全書/卷一",
+  "entries": [
+    {
+      "path": "lib/classics/data/quanshu.ts",
+      "sha256": "ee5d9c02bc993c9c998c65a2d064bc247788c88f618b70a6889911559b2f02c3",
+      "reason": "诸星问答论·天同; q_卷一.txt:285-286 (t2s)."
+    },
+    {
+      "path": "lib/classics/data/quanshu.ts",
+      "sha256": "a5483e0622495ccf17847d56144ba4c3f42923de1e56abf5a1fa68e36b1be641",
+      "reason": "诸星问答论·贪狼; q_卷一.txt:311 (t2s, first portion)."
+    },
+    {
+      "path": "lib/classics/data/quanshu.ts",
+      "sha256": "f82a45f5b5516396b7d46e4f664bff30b638ca45ee02b3395ce42c1bc433dafb",
+      "reason": "诸星问答论·破军; q_卷一.txt:352 (t2s, first portion)."
+    },
+    {
+      "path": "scripts/build-classics/gen.py",
+      "sha256": "4693450f1a7dd1b2ff07895ad5722527223cf61c29ea91bb374068dfc22a2533",
+      "reason": "Five-element diagram labels (q_卷二.txt:285-432), not a modern quotation."
+    },
+    {
+      "path": "scripts/build-classics/quanshu-simplified.json",
+      "sha256": "ee5d9c02bc993c9c998c65a2d064bc247788c88f618b70a6889911559b2f02c3",
+      "reason": "Same simplified 天同 paragraph as generated TS."
+    },
+    {
+      "path": "scripts/build-classics/quanshu-simplified.json",
+      "sha256": "a5483e0622495ccf17847d56144ba4c3f42923de1e56abf5a1fa68e36b1be641",
+      "reason": "Same simplified 贪狼 paragraph as generated TS."
+    },
+    {
+      "path": "scripts/build-classics/quanshu-simplified.json",
+      "sha256": "f82a45f5b5516396b7d46e4f664bff30b638ca45ee02b3395ce42c1bc433dafb",
+      "reason": "Same simplified 破军 paragraph as generated TS."
+    },
+    {
+      "path": "scripts/build-classics/wikisource/q_卷一.txt",
+      "sha256": "40ff9c3883905540dfe961fee6669e64981571ace056e81f58fde0fbd9b980ed",
+      "reason": "Original 天同 block; q_卷一.txt:285-286."
+    },
+    {
+      "path": "scripts/build-classics/wikisource/q_卷一.txt",
+      "sha256": "3b83d1cd53f4a70bf6826826b5a044c9ed84a114a371b0da93f9d251be7e16c2",
+      "reason": "Original 贪狼 block; q_卷一.txt:311-312."
+    }
+  ]
+}

@@ -49,7 +49,7 @@ export function getParagraphById(id: string) {
 /**
  * 全文搜索
  *
- * 简单子字符串匹配（不分词，对中文 OK）
+ * 简单子字符串匹配（正文 + 章标题；标题命中定位到首段）
  * 精确匹配；暂不支持繁简转换（不向前端引入转换库）
  */
 export function searchClassics(query: string, limit = 30): SearchHit[] {
@@ -60,21 +60,23 @@ export function searchClassics(query: string, limit = 30): SearchHit[] {
   for (const book of ALL_BOOKS) {
     for (const chapter of book.chapters) {
       for (const p of chapter.paragraphs) {
-        const idx = p.text.indexOf(q);
+        const text = p === chapter.paragraphs[0] && chapter.title.includes(q)
+          ? `${chapter.title}\n${p.text}` : p.text;
+        const idx = text.indexOf(q);
         if (idx < 0) continue;
 
         // 提取上下文（前后各 40 字）
         const start = Math.max(0, idx - 40);
-        const end = Math.min(p.text.length, idx + q.length + 40);
-        const before = p.text.slice(start, idx);
-        const matched = p.text.slice(idx, idx + q.length);
-        const after = p.text.slice(idx + q.length, end);
+        const end = Math.min(text.length, idx + q.length + 40);
+        const before = text.slice(start, idx);
+        const matched = text.slice(idx, idx + q.length);
+        const after = text.slice(idx + q.length, end);
 
         const snippet = (start > 0 ? '…' : '')
           + escapeHtml(before)
           + `<mark>${escapeHtml(matched)}</mark>`
           + escapeHtml(after)
-          + (end < p.text.length ? '…' : '');
+          + (end < text.length ? '…' : '');
 
         hits.push({
           bookSlug: book.slug,

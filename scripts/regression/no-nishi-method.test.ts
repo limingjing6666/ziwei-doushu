@@ -10,7 +10,8 @@ const keys = Object.keys(GENERATED_STAR_DB);
 assert.equal(keys.length, 50);
 for (const key of keys) {
   const text = GENERATED_STAR_DB[key].jiE;
-  assert.ok(text?.trim(), `${key}: jiE must exist and be nonempty`);
+  assert.ok(text, `${key}: jiE must exist`);
+  assert.ok(text.trim(), `${key}: jiE must be nonempty`);
   assert.ok(text.includes('【核心论断】'), `${key}: core section missing`);
 }
 const files = execFileSync('git', ['ls-files', '-z', '--', 'lib'], { encoding: 'utf8' }).split('\0');
