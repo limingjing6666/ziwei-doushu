@@ -194,6 +194,7 @@ export default function InsightPanel({ chart, selectedPalace, selectedSiHua }: I
   const lastPalaceBranch = useRef<number | undefined>(undefined);
   const lastSiHuaKey = useRef<string | undefined>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const requestRef = useRef<AbortController | null>(null);
 
   // Keep refs in sync
   useEffect(() => { messagesRef.current = messages; }, [messages]);
@@ -211,6 +212,11 @@ export default function InsightPanel({ chart, selectedPalace, selectedSiHua }: I
     if (autoLoaded.current) return;
     autoLoaded.current = true;
     sendMessage(TOPIC_PROMPTS.overview, true);
+    return () => {
+      requestRef.current?.abort();
+      autoLoaded.current = false;
+      loadingRef.current = false;
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Inject palace analysis when palace selected
@@ -276,12 +282,16 @@ ${selectedSiHua.starName}化${selectedSiHua.siHua}落在【${palaceName}】，�
   }, [selectedSiHua]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const streamResponse = async (apiMessages: { role: 'user' | 'assistant'; content: string }[]) => {
+    const abort = new AbortController();
+    requestRef.current = abort;
     try {
       const res = await fetch('/api/interpret', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chart, messages: apiMessages }),
+        signal: abort.signal,
       });
+      if (abort.signal.aborted) return;
       if (res.ok) setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
       await consumeAiResponse(res, text => {
         setMessages(prev => {
@@ -291,10 +301,14 @@ ${selectedSiHua.starName}化${selectedSiHua.siHua}落在【${palaceName}】，�
         });
       });
     } catch (e) {
+      if (abort.signal.aborted) return;
       setMessages(prev => [...prev, { role: 'assistant', content: e instanceof Error ? e.message : '解读失败，请稍后重试。' }]);
     } finally {
-      setLoading(false);
-      loadingRef.current = false;
+      if (requestRef.current === abort && !abort.signal.aborted) {
+        requestRef.current = null;
+        setLoading(false);
+        loadingRef.current = false;
+      }
     }
   };
 

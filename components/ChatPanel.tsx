@@ -27,6 +27,8 @@ export default function ChatPanel({ chart }: ChatPanelProps) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const requestRef = useRef<AbortController | null>(null);
+  useEffect(() => () => requestRef.current?.abort(), []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -35,7 +37,9 @@ export default function ChatPanel({ chart }: ChatPanelProps) {
   }, [messages]);
 
   const sendMessage = async (text: string) => {
-    if (!text.trim() || loading) return;
+    if (!text.trim() || loading || requestRef.current) return;
+    const abort = new AbortController();
+    requestRef.current = abort;
     const userMsg: Message = { role: 'user', content: text };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
@@ -46,7 +50,9 @@ export default function ChatPanel({ chart }: ChatPanelProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chart, messages: [...messages, userMsg] }),
+        signal: abort.signal,
       });
+      if (abort.signal.aborted) return;
 
       if (res.ok) setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
       await consumeAiResponse(res, text => {
@@ -57,12 +63,16 @@ export default function ChatPanel({ chart }: ChatPanelProps) {
         });
       });
     } catch (e) {
+      if (abort.signal.aborted) return;
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: e instanceof Error ? e.message : '解读失败，请稍后重试。',
       }]);
     } finally {
-      setLoading(false);
+      if (requestRef.current === abort) {
+        requestRef.current = null;
+        if (!abort.signal.aborted) setLoading(false);
+      }
     }
   };
 

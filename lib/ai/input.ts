@@ -59,17 +59,26 @@ export async function readBody(request: Request): Promise<Record<string, unknown
   if (Number(request.headers.get('content-length')) > max) throw new AiError(413, '请求内容过大，请减少对话内容后重试。');
   if (!request.body) throw new AiError(400, '请求内容不能为空。');
   const reader = request.body.getReader();
+  // Bound slow/stalled uploads as well as their size, and release on disconnect.
+  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(10000)]);
+  const onAbort = () => { void reader.cancel().catch(() => {}); };
+  signal.addEventListener('abort', onAbort, { once: true });
+  if (signal.aborted) onAbort();
   const parts: Uint8Array[] = [];
   let size = 0;
   try {
     while (true) {
       const { done, value } = await reader.read();
+      if (signal.aborted) throw new AiError(408, '请求读取超时或中断，请重试。');
       if (done) break;
       size += value.byteLength;
       if (size > max) { await reader.cancel(); throw new AiError(413, '请求内容过大，请减少对话内容后重试。'); }
       parts.push(value);
     }
-  } finally { reader.releaseLock(); }
+  } finally {
+    signal.removeEventListener('abort', onAbort);
+    reader.releaseLock();
+  }
   try {
     const value: unknown = JSON.parse(Buffer.concat(parts).toString('utf8'));
     if (!isObject(value)) throw new Error();

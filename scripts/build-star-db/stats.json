@@ -31,5 +31,6 @@
   "restricted_unique_sentences": 228,
   "restricted_paragraph_occurrences": 295074,
   "restricted_sentence_occurrences": 388144,
-  "unsafe_or_overlay_sentence_occurrences": 149166
+  "unsafe_or_overlay_sentence_occurrences": 147506,
+  "malformed_paragraph_occurrences": 3460
 }

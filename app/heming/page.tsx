@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import BirthForm, { type BirthFormState } from '@/components/BirthForm';
 import { formToBirthInfo } from '@/lib/ziwei/share';
@@ -54,8 +54,6 @@ export default function HemingPage() {
   const isDark = theme === 'dark';
 
   // ─── 双方命盘状态 ─────────────────────────────────────────
-  const [chartA, setChartA] = useState<ZiweiChart | null>(null);
-  const [chartB, setChartB] = useState<ZiweiChart | null>(null);
   // 双方表单状态由 BirthForm onFormSave 同步到此处，统一按钮触发起盘
   const [formA, setFormA] = useState<BirthFormState | null>(null);
   const [formB, setFormB] = useState<BirthFormState | null>(null);
@@ -68,6 +66,8 @@ export default function HemingPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const analysisRef = useRef<HTMLDivElement>(null);
+  const requestRef = useRef<AbortController | null>(null);
+  useEffect(() => () => requestRef.current?.abort(), []);
 
   // ─── 起盘（单次调用，返回 chart 给统一流程使用）──────────
   // 开源版不含后端 /api/generate：直接用本仓库的排盘引擎在浏览器里起盘
@@ -85,49 +85,51 @@ export default function HemingPage() {
 
   // ─── 统一入口：起盘 + 合盘分析 ─────────────────────────────
   const runAnalysis = useCallback(async (q?: string) => {
+    if (requestRef.current && !requestRef.current.signal.aborted) return;
     setFormError(null);
     if (!isFormReady(formA) || !isFormReady(formB)) {
       setFormError('请先填写双方完整出生信息');
       return;
     }
+    const abort = new AbortController();
+    requestRef.current = abort;
     setAnalyzing(true);
     setAnalysis('');
     setAnalysisError(false);
     setErrorMessage('');
 
     try {
-      // 并行起两张盘（如果还没起）
-      let cA = chartA;
-      let cB = chartB;
-      const [newA, newB] = await Promise.all([
-        cA ? Promise.resolve(cA) : generateChart(formToBirthInfo(formA!)),
-        cB ? Promise.resolve(cB) : generateChart(formToBirthInfo(formB!)),
+      // Always derive both charts from the current forms; cached charts become stale on edits.
+      const [cA, cB] = await Promise.all([
+        generateChart(formToBirthInfo(formA!)),
+        generateChart(formToBirthInfo(formB!)),
       ]);
-      cA = newA;
-      cB = newB;
+      if (abort.signal.aborted) return;
       if (!cA || !cB) {
         setAnalysisError(true);
         setAnalyzing(false);
         return;
       }
-      if (!chartA) setChartA(cA);
-      if (!chartB) setChartB(cB);
-
       const res = await fetch('/api/heming', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chartA: cA, chartB: cB, question: q ?? undefined }),
+        signal: abort.signal,
       });
       await consumeAiResponse(res, setAnalysis);
       // scroll to analysis
       setTimeout(() => analysisRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     } catch (error) {
+      if (abort.signal.aborted) return;
       setErrorMessage(error instanceof Error ? error.message : '分析暂时不可用，请重试。');
       setAnalysisError(true);
     } finally {
-      setAnalyzing(false);
+      if (requestRef.current === abort) {
+        requestRef.current = null;
+        if (!abort.signal.aborted) setAnalyzing(false);
+      }
     }
-  }, [chartA, chartB, formA, formB, generateChart]);
+  }, [formA, formB, generateChart]);
 
   const cardStyle = {
     background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.9)',

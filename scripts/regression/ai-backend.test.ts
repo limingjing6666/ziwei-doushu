@@ -17,6 +17,7 @@ function fragmented(value: string) {
     c.close();
   } });
 }
+const sseResponse = (value: string) => new Response(fragmented(value), { headers: { 'Content-Type': 'text/event-stream' } });
 const errorStatus = (status: number) => (e: unknown) => e instanceof AiError && e.status === status;
 async function main() {
   const fetchOriginal = globalThis.fetch;
@@ -50,10 +51,10 @@ async function main() {
     for await (const data of readSseData(fragmented(': ping\r\ndata: {"delta":{"text":"中文"}}\r\n\r\ndata: [DONE]\n\n'))) frames.push(data);
     assert.deepEqual(frames, ['{"delta":{"text":"中文"}}', '[DONE]']);
     let output = '';
-    await consumeAiResponse(new Response(fragmented('data: {"delta":{"text":"中文"}}\n\ndata: [DONE]\n\n')), s => { output = s; });
+    await consumeAiResponse(sseResponse('data: {"delta":{"text":"中文"}}\n\ndata: [DONE]\n\n'), s => { output = s; });
     assert.equal(output, '中文');
     await assert.rejects(consumeAiResponse(Response.json({ error: '请求太频繁' }, { status: 429 }), () => {}), /请求太频繁/);
-    await assert.rejects(consumeAiResponse(new Response(fragmented('data: {"delta":{"text":"部分"}}\n\n')), () => {}), /中断/);
+    await assert.rejects(consumeAiResponse(sseResponse('data: {"delta":{"text":"部分"}}\n\n'), () => {}), /中断/);
     await assert.rejects(readBody(new Request('http://localhost', { method: 'POST', body: ' '.repeat(205000) })), errorStatus(413));
     const tooLarge = new Request('http://localhost', { method: 'POST', body: fragmented(' '.repeat(205000)), duplex: 'half' } as RequestInit);
     await assert.rejects(readBody(tooLarge), errorStatus(413));

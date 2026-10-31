@@ -37,6 +37,8 @@ export async function checkRateLimit(request: Request): Promise<void> {
   ];
   const url = process.env.UPSTASH_REDIS_REST_URL, token = process.env.UPSTASH_REDIS_REST_TOKEN;
   let values: number[];
+  // Incomplete production configuration must not silently weaken distributed quotas.
+  if (Boolean(url) !== Boolean(token)) throw new AiError(503, '解读服务暂时繁忙，请稍后重试。');
   if (url && token) {
     try {
       // TTL is refreshed but keys contain the fixed window, so quota never rolls forward.
@@ -47,12 +49,14 @@ export async function checkRateLimit(request: Request): Promise<void> {
       });
       if (!response.ok) throw new Error();
       const results = await response.json() as { result?: number; error?: string }[];
-      if (!Array.isArray(results) || results.length !== 4 || results.some(r => r.error || typeof r.result !== 'number')) throw new Error();
+      if (!Array.isArray(results) || results.length !== 4 || results.some(r => !r || r.error || !Number.isSafeInteger(r.result) || r.result! < 1)
+        || results[1].result !== 1 || results[3].result !== 1) throw new Error();
       values = [results[0].result!, results[2].result!];
     } catch { throw new AiError(503, '解读服务暂时繁忙，请稍后重试。'); }
   } else {
     for (const [key, value] of counters) if (value.expires <= now) counters.delete(key);
-    if (counters.size > 20000) throw new AiError(503, '解读服务暂时繁忙，请稍后重试。');
+    const newKeys = windows.filter(w => !counters.has(w.key)).length;
+    if (counters.size + newKeys > 20000) throw new AiError(503, '解读服务暂时繁忙，请稍后重试。');
     values = windows.map(w => {
       const old = counters.get(w.key);
       const next = { count: (old?.count ?? 0) + 1, expires: old?.expires ?? now + w.ttl * 1000 };

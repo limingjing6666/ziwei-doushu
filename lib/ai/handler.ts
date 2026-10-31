@@ -6,6 +6,7 @@ import { INTERPRET_SYSTEM, HEMING_SYSTEM } from './prompts';
 import { checkOrigin, checkRateLimit } from './rate-limit';
 
 export async function handleAi(request: Request, mode: 'interpret' | 'heming'): Promise<Response> {
+  const deadline = Date.now() + 55000;
   try {
     checkOrigin(request);
     const body = await readBody(request);
@@ -21,7 +22,7 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     return await streamDeepSeek(request, b ? HEMING_SYSTEM : INTERPRET_SYSTEM, [
       { role: 'user', content: context },
       ...(b ? [{ role: 'user' as const, content: text(body.question, 1000) || '请分析双方的相处模式与建议。' }] : messages.length ? messages : [{ role: 'user' as const, content: '请解读这张命盘的核心特点和实际建议。' }]),
-    ]);
+    ], Math.max(1, deadline - Date.now()));
   } catch (error) {
     const known = error instanceof AiError;
     return Response.json({ error: known ? error.message : '解读服务暂时不可用，请稍后重试。' }, {

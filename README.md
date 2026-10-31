@@ -16,9 +16,10 @@
 
 本分支新增 Node.js `/api/interpret`、`/api/heming`，使用原生 fetch 调 DeepSeek 官方流式接口（默认 `deepseek-flash`），不依赖 AI SDK。下文关于“未开源/占位”的介绍是**上游商业版的历史边界**，不代表本分支缺少这两个接口。
 
-- 配置与默认值见 [`.env.example`](./.env.example)。两个接口共享 IP 分钟/UTC 日配额（默认 5/30）；生产建议配置 Upstash REST，内存 Map 在 serverless 上仅尽力而为。配置了 Redis 但不可用时返回 503，不悄悄绕过限额。
+- 密钥只在服务端运行时注入，不使用 `NEXT_PUBLIC_` 或 `next.config` 的 `env` 导出。本地安全重建可先删除 `.next`，再用 `env -u DEEPSEEK_API_KEY -u UPSTASH_REDIS_REST_TOKEN npm run build`（构建不需要凭据）；`npm run start` 时继承运行时凭据。不要分发构建缓存，旧版 Turbopack 缓存可能保存构建环境快照。
+- 配置与默认值见 [`.env.example`](./.env.example)。两个接口共享 IP 分钟/UTC 日配额（默认 5/30）；生产建议配置 Upstash REST，内存 Map 在 serverless 上仅尽力而为。Redis 凭据仅配置一项、服务不可用或计数/过期失败时返回 503，不悄悄绕过限额。
 - 请求：`interpret` 接收 `{chart, messages:[{role:'user'|'assistant',content}]}`；`heming` 接收 `{chartA,chartB,question?}`。最多读取 200KiB body，最近 12 条对话每条 2000 字，合盘问题 1000 字。不会接受客户端 system 消息。
-- 响应：SSE `data: {"delta":{"text":"…"}}`，以 `data: [DONE]` 结束；不输出 reasoning_content。非 200 是 `{error}` 中文提示；已开始的流中断会提示并结束。客户端断开会取消上游，服务端 55 秒总超时，路由 60 秒上限。
+- 响应：SSE `data: {"delta":{"text":"…"}}`，以 `data: [DONE]` 结束；不输出 reasoning_content。非 200 是 `{error}` 中文提示；已开始的流中断或输出截断会返回 SSE `{error}`（随后 `[DONE]`），前端显示错误并保留已有内容。客户端断开/组件卸载会取消上游，读取 body 最长 10 秒，请求处理总预算 55 秒，路由 60 秒上限。
 - 命盘转中文后按星曜/宫位检索断语、复用格局检测（最多 6 条），合盘增加夫妻宫参考与双向生年干四化落点，总参考最多 6000 字。不把整个库送给模型，也不喂倪师引文。原始姓名、城市和经度不送模型；自由对话仍可能包含用户自行填写的信息。
 - 生产 Origin/Referer 默认白名单及覆盖方式见环境变量示例。无这些头的 CLI 请求仍可调用，来源检查不是鉴权；上线建议增加平台防火墙/验证码与费用告警，IP 转发头必须由可信代理覆盖。
 - 第一版断语为数据集的提取、过滤、去重衍生版，不是上游私有库；重建与过滤统计见 [`scripts/build-star-db/README.md`](./scripts/build-star-db/README.md)。旧亮度仅供参考，以当前命盘为准。部分通用星性仍需人工审校。

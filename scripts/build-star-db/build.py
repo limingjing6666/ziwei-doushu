@@ -5,7 +5,7 @@ import zstandard
 
 STARS = '紫微 天机 太阳 武曲 天同 廉贞 天府 太阴 贪狼 巨门 天相 天梁 七杀 破军'.split()
 FIELDS = dict(overview='mingGong', personality='personality', love='fuQi', career='guanLu', wealth='caiBo', health='jiE', family='xiongDi', children='ziNv', move='qianYi', friends='jiaoYou', home='tianZhai', spirit='fuDe', parents='fuMu')
-# Citation paragraphs are split only AFTER masking full quoted spans (which may contain punctuation).
+# Never split inside quotes/parentheses: dropping half an attributed sentence leaves orphan text.
 RESTRICTED = re.compile(r'天纪|倪师|倪海厦|倪先生|B\s*站|bilibili|BV[\w]+|第\s*\d+\s*[集讲]|[pP]\d{2}|\d{1,2}[:：]\d{2}|同集|上集|下集', re.I)
 UNSAFE = re.compile(r'死别|死期|夭|埋尸|坟|冢|自杀|残疾|大灾|必离|离婚|克[夫妻三]|淫|荡|刑克|重大灾|治不好的病')
 # Dataset-specific overlays must not become unconditional generic star knowledge.
@@ -33,6 +33,27 @@ def group_key(text):
         return None
     # Keep borrowed combinations separate so an empty palace is never assigned a resident star.
     return ('空宫借:' if '空宫' in line else '') + '+'.join(stars)
+
+def sentences(text):
+    """Keep quoted/parenthesized spans intact for EVERY filtering pass, not just citations."""
+    pairs = {'「': '」', '『': '』', '“': '”', '（': '）', '(': ')', '"': '"'}
+    stack, result, current = [], [], []
+    for char in text:
+        current.append(char)
+        if stack and char == stack[-1]:
+            stack.pop()
+        elif char in pairs:
+            stack.append(pairs[char])
+        elif char in '」』”）)':
+            return []  # Malformed source paragraph: do not turn it into plausible-looking fragments.
+        if char in '。！？' and not stack:
+            result.append(''.join(current))
+            current = []
+    if stack:
+        return []
+    if current:
+        result.append(''.join(current))
+    return result
 
 def main():
     ap = argparse.ArgumentParser()
@@ -64,29 +85,20 @@ def main():
                             para = para.strip()
                             if not para:
                                 continue
-                            if RESTRICTED.search(para):
+                            units = sentences(para)
+                            if not units:
+                                removed['malformed_paragraph_occurrences'] += 1
+                                continue
+                            restricted = bool(RESTRICTED.search(para))
+                            if restricted:
                                 removed['restricted_paragraph_occurrences'] += 1
                                 removed_unique.add(para)
-                                # Protect punctuation inside quotes, then restore before checking each full sentence.
-                                # This preserves public-domain quotations without orphaning restricted quotations.
-                                quotes = []
-                                def protect(m):
-                                    quotes.append(m[0])
-                                    return f'QUOTEPLACEHOLDER{len(quotes)-1}END'
-                                masked = re.sub(r'「[^」]*」|“[^”]*”|『[^』]*』|\"[^\"]*\"', protect, para)
-                                kept = []
-                                for sentence in re.findall(r'[^。！？]+[。！？]?', masked):
-                                    sentence = re.sub(r'QUOTEPLACEHOLDER(\d+)END', lambda m: quotes[int(m[1])], sentence)
-                                    if RESTRICTED.search(sentence) or re.search(r'这句|上述|这番|这一说法|他也讲|他又说|他不走', sentence):
-                                        removed['restricted_sentence_occurrences'] += 1
-                                        removed_sentences.add(sentence.strip())
-                                    else:
-                                        kept.append(sentence)
-                                para = ''.join(kept)
-                            # Omit dataset-specific four-transform/brightness overlays and alarming claims.
                             kept = []
-                            for sentence in re.findall(r'[^。！？]+[。！？]?', para):
-                                if UNSAFE.search(sentence) or OVERLAY.search(sentence):
+                            for sentence in units:
+                                if RESTRICTED.search(sentence) or (restricted and re.search(r'这句|上述|这番|这一说法|他也讲|他又说|他不走', sentence)):
+                                    removed['restricted_sentence_occurrences'] += 1
+                                    removed_sentences.add(sentence.strip())
+                                elif UNSAFE.search(sentence) or OVERLAY.search(sentence):
                                     removed['unsafe_or_overlay_sentence_occurrences'] += 1
                                 else:
                                     kept.append(sentence)

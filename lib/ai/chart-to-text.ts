@@ -20,7 +20,7 @@ export function chartToText(raw: unknown): string {
   for (const p of c.palaces) {
     const stars = (type: string) => p.stars.filter(s => s.type === type).map(s => `${s.name}${s.brightnessRaw ? `（${s.brightnessRaw}）` : s.brightness ? `（粗亮度:${{ bright: '亮', normal: '平', dim: '暗' }[s.brightness]}）` : ''}`).join('、') || '无/未提供';
     const major = p.stars.filter(s => s.type === 'major');
-    const opposite = c.palaces.find(q => q.branch === (p.branch + 6) % 12);
+    const opposite = p.branch >= 0 ? c.palaces.find(q => q.branch === (p.branch + 6) % 12) : undefined;
     lines.push(`\n【${p.name || '未知宫'}】${STEMS[p.stem] ?? '?'}${BRANCHES[p.branch] ?? '?'}${p.isShenGong ? '（身宫）' : ''}\n主星：${major.length ? stars('major') : `空宫；仅借对宫${opposite?.name ?? '未知'}的${opposite?.stars.filter(s => s.type === 'major').map(s => s.name).join('、') || '未提供'}参照，不是本宫坐星`}\n辅星：${stars('lucky')}；煞星：${stars('sha')}；杂曜：${stars('minor')}\n生年四化：${p.stars.filter(s => s.siHua).map(s => `${s.name}化${s.siHua}`).join('、') || '无标记'}；自化（仅已提供者）：${p.selfSihua?.map(s => `${s.starName}自化${s.siHua}`).join('、') || '未提供'}${p.daXianAge ? `；大限虚岁${p.daXianAge.join('–')}${p.isCurrentDaXian ? '（当前）' : ''}` : ''}`);
     if (p.branch >= 0) lines.push(`三方四正：${[4, 8, 6].map(offset => c.palaces.find(q => q.branch === (p.branch + offset) % 12)?.name || '未提供').join('、')}（末项为对宫）`);
   }

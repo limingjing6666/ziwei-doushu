@@ -1,14 +1,14 @@
 import { AiError, type ChatMessage } from './input';
 import { encodeDelta, readSseData } from './sse';
 
-export async function streamDeepSeek(request: Request, system: string, messages: ChatMessage[]): Promise<Response> {
+export async function streamDeepSeek(request: Request, system: string, messages: ChatMessage[], timeoutMs = 55000): Promise<Response> {
   const key = process.env.DEEPSEEK_API_KEY;
   if (!key) throw new AiError(500, 'AI 解读服务尚未配置，请稍后再试。');
   const abort = new AbortController();
   const onAbort = () => abort.abort();
   request.signal.addEventListener('abort', onAbort, { once: true });
   if (request.signal.aborted) abort.abort();
-  const timer = setTimeout(() => abort.abort(), 55000);
+  const timer = setTimeout(() => abort.abort(), timeoutMs);
   const cleanup = () => { clearTimeout(timer); request.signal.removeEventListener('abort', onAbort); };
   let upstream: Response;
   try {
@@ -29,9 +29,10 @@ export async function streamDeepSeek(request: Request, system: string, messages:
     if (error instanceof AiError) throw error;
     throw new AiError(504, 'AI 服务连接超时或中断，请稍后重试。');
   }
-  const source = readSseData(upstream.body!);
+  const source = readSseData(upstream.body!, abort.signal);
   const encoder = new TextEncoder();
   let cancelled = false;
+  let hasContent = false;
   const body = new ReadableStream<Uint8Array>({
     async pull(controller) {
       try {
@@ -39,24 +40,28 @@ export async function streamDeepSeek(request: Request, system: string, messages:
           const { done, value } = await source.next();
           if (done) throw new Error('upstream ended without DONE');
           if (value === '[DONE]') {
+            if (!hasContent) throw new Error('upstream returned no content');
             controller.enqueue(encoder.encode('data: [DONE]\n\n'));
             controller.close();
             cleanup();
-            await source.return(undefined);
+            await source.return(undefined).catch(() => {});
             return;
           }
           const chunk = JSON.parse(value);
           if (chunk.error) throw new Error('upstream stream error');
+          const reason = chunk.choices?.[0]?.finish_reason;
+          if (reason && reason !== 'stop') throw new Error('upstream response incomplete');
           // Only visible content: reasoning_content is deliberately ignored.
           const content = chunk.choices?.[0]?.delta?.content;
           if (typeof content === 'string' && content) {
+            hasContent = true;
             controller.enqueue(encoder.encode(encodeDelta(content)));
             return;
           }
         }
       } catch {
         if (!cancelled && !request.signal.aborted) {
-          controller.enqueue(encoder.encode(encodeDelta('\n\n解读暂时中断，请稍后重试。') + 'data: [DONE]\n\n'));
+          controller.enqueue(encoder.encode('data: {"error":"解读暂时中断，请稍后重试。"}\n\ndata: [DONE]\n\n'));
           controller.close();
         } else if (!cancelled) controller.close();
         abort.abort();
