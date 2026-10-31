@@ -22,19 +22,21 @@ const terms = {
   机月同梁: '偏重策划、协调与服务', 巨火羊: '表达易急，需留意沟通摩擦',
 };
 for (const prompt of [INTERPRET_SYSTEM, HEMING_SYSTEM]) {
-  assert.ok(prompt.includes(METHOD_PROMPT));
+  assert.match(prompt, /【分层解盘流程】/);
+  assert.match(prompt, /按传统断法直接下结论/);
+  assert.doesNotMatch(prompt, /但不是医学诊断|缺年份或大限就说明限制|缺项或流派差异须明示|不为追求气势使用绝对断言/);
   const start = prompt.indexOf('【回答格式硬规则');
   assert.ok(start > prompt.indexOf('【信任边界】'));
   const block = prompt.slice(start);
   assert.match(block, /每次回答的第一句必须直接回答用户所问.*不超过40字.*纯文本一句话.*不加粗、不加标题标记.*不用“结论：”前缀/);
   assert.match(block, /总览、追问、点宫位\/星曜\/四化的单项解读、合盘总览与合盘追问均适用/);
-  assert.match(block, /开放性提问.*整体印象\/核心倾向/);
+  assert.match(block, /开放性提问.*整体印象\/核心特点/);
   assert.match(block, /禁止以“先看大限背景”“从命盘来看”“根据命盘”“首先分析”等铺垫开头/);
   assert.match(block, /禁止第一句只罗列星名\/大限背景，禁止把结论放到建议里才第一次出现/);
   assert.match(block, /“大限优先”是依据的分析次序，不是回答的开头/);
   assert.match(block, /整体第一句回答整个问题，小节首句只总结本节，不重复整体答案/);
   assert.match(block, /好：“可以换，但建议先拿到新机会再辞职。”；坏：“先看大限背景：当前走田宅大限……”。示例仅示范格式，不要照抄内容/);
-  assert.match(block, /最高优先级特例：若 birthTimeKnown 为 false，第一句仍必须固定为“因出生时辰未知，命宫\/身宫\/宫位排布不可靠，下面只作参考”，优先于直接答案、术语解释和字数要求；紧接着第二句才是直接答案/);
+  assert.match(block, /最高优先级特例：若 birthTimeKnown 为 false，第一句仍必须固定为“因出生时辰未知，命宫\/身宫\/宫位排布不可靠”，优先于直接答案、术语解释和字数要求；紧接着第二句才是直接答案/);
   assert.match(block, /不可肯定判断依赖宫位的内容/);
   assert.match(block, /合盘任一方未知同样适用.*甲方、乙方还是双方/);
   assert.match(block, /凡是普通人不一定懂的命理术语，只要出现就先解释/);
@@ -47,26 +49,23 @@ for (const prompt of [INTERPRET_SYSTEM, HEMING_SYSTEM]) {
   }
   assert.match(block, /正例段落（仅示范格式，不针对具体命盘，不要照抄内容）.*大限（.*天同（.*化忌（/);
   assert.match(block, /在字数限制内可以少用术语，用到就必须解释/);
-  assert.match(block, /最后一行单独一句轻提示/);
-  assert.match(block, /命理只是参考，具体选择还看你自己的实际情况。/);
-  assert.match(block, /一句话、不超过30字.*不加粗、不加标题、不用括号或引用块/);
-  assert.match(block, /参考类免责全篇恰好一次，必须是全文最后一句，后面不能再有任何内容/);
-  assert.match(block, /中间段落和各小节末尾绝不重复/);
-  assert.match(block, /UI 页脚的统一声明与回答末尾这一句是两回事，回答末尾仍然要有且只有这一句/);
-  assert.match(block, /用户问健康\/体质\/疾厄，或回答中谈到身体时，末句改为“命理只作参考，身体不适请及时就医。”，替代普通轻提示，不另加第二句医生提示/);
+  assert.match(block, /全文及结尾不得出现任何免责\/提醒\/参考类句子/);
+  assert.match(block, /回答在最后一条依据或建议处自然结束/);
+  assert.doesNotMatch(block, /末句：|轻提示|预留末句空间|下面只作参考/);
   assert.match(block, /字数目标是下限附近的充实回答，不要为了简短而省略依据和建议；术语解释用括号短语，不要另起段落/);
-  assert.match(block, /首句、术语解释和末句均计入现有字数预算.*具体宫位、星曜、四化依据与可执行建议/);
-  assert.match(block, /主动收束，保留完整结尾.*在被截断之前先保证写出末句再停笔/);
+  assert.match(block, /首句与术语解释均计入现有字数预算.*具体宫位、星曜、四化依据与可执行建议/);
+  assert.match(block, /主动收束，保留完整结尾，不留待续/);
   assert.match(block, /简体中文；只用 ## \/ ### 小标题、- 或 1\. 列表和 \*\*加粗\*\*；不用表格、代码块、HTML、引用块/);
   assert.doesNotMatch(prompt, /禁止重复参考类免责声明|每次回答和每个小节均以一句|350|\u502a\u5e08|\u502a\u6d77\u53a6|\u6b63\u5b97/);
   assert.doesNotMatch(prompt, /不断言婚期|不点名疾病|不谈疾病|不给医疗建议|不写健康关键时间段|不预测疾病|不断具体结婚年份|不继承其绝对婚期|请以专业医生意见为准|200–300字|不超过300字|一至两条依据/);
   assert.match(prompt, /不预测死期/);
-  assert.match(prompt, /没有的星曜不得编造，不确定就明确说不确定/);
+  assert.match(prompt, /没有的星曜不得编造，缺失部分不写/);
   assert.match(prompt, /不能为给年份而编造数据/);
-  assert.match(prompt, /易患疾病类别与器官系统倾向/);
+  assert.match(prompt, /易患疾病类别与器官系统/);
   assert.match(prompt, /健康关键大限\/流年/);
   assert.match(prompt, /问“什么时候能结婚”须给出有依据的大限、年份区间或具体流年/);
-  assert.match(prompt, /不是医学诊断/);
+  assert.doesNotMatch(prompt, /传统疾厄倾向不是医学诊断|应直说“目前无法确定”|给出时间判断后提醒/);
+  assert.match(prompt, /候选 unavailable.*直接省略具体年份/);
   assert.match(prompt, /不提供具体药物处方、法律处置或投资操作/);
   assert.match(prompt, /不推荐具体投资标的、收益或交易时机/);
   assert.match(prompt, /不以克夫克妻、因果债务等标签污名化人，不恐吓、不推销化解服务/);
@@ -114,4 +113,4 @@ assert.match(panel, /\['overview', 'love', 'career', 'health'\]\.includes\(key\)
 assert.match(panel, /placeholder="(?:继续追问，如：)?今年适合换工作吗？"/);
 assert.match(readFileSync('lib/ai/handler.ts', 'utf8'), /Date\.now\(\) \+ 57000/);
 for (const route of ['interpret', 'heming']) assert.match(readFileSync(`app/api/${route}/route.ts`, 'utf8'), /maxDuration = 60/);
-console.log('✓ Prompt rules: 首句/术语/唯一末句、健康婚期策略、恢复篇幅、知识检索及引文过滤、话题路由与时限');
+console.log('✓ Prompt rules: 首句/术语/无免责收尾、健康婚期策略、恢复篇幅、知识检索及引文过滤、话题路由与时限');

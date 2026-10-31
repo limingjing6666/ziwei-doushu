@@ -29,7 +29,7 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
       ? b ? '合盘总览目标700–1000汉字，最多1200字。' : '整盘总览目标700–1200汉字，最多1400字；独立健康/感情/婚姻/事业专题600–1000字，详细给出宫位星曜依据和数据支持的时间点。'
       : scenario === 'detail' ? '单项解读目标400–700汉字，充分展开所选宫位/星曜/四化的依据与建议。'
         : `追问目标400–800汉字，充分回答当前问题并给足依据${b ? '，不重写原报告' : ''}。`)
-      + '第一句直接回答（时辰未知固定首句优先），术语首次出现括号解释；接近上限主动收束并写完整结尾，优先保证最后一行恰好一句轻提示再停笔。';
+      + '第一句直接回答（时辰未知固定首句优先），术语首次出现括号解释；接近上限主动收束，在最后一条依据或建议处自然结束，全文及结尾不得写免责、提醒或无法判断等元话语。';
     if (!process.env.DEEPSEEK_API_KEY) throw new AiError(500, 'AI 解读服务尚未配置，请稍后再试。');
     await checkRateLimit(request);
     const question = `${text(body.topic, 40)} ${text(body.question, 1000) || [...messages].reverse().find(m => m.role === 'user')?.content || ''}`;
@@ -38,7 +38,7 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     const factsA = buildAgeFacts(a, { currentYear, currentDate, selectedYear: viewA.year });
     const factsB = b ? buildAgeFacts(b, { currentYear, currentDate, selectedYear: viewB!.year }) : undefined;
     // A is the single marriage candidate source in compatibility mode, not a spliced third range.
-    if (factsB && !factsB.birthTimeKnown) factsA.marriage = { unavailable: true, reason: '乙方出生时辰未知，目前无法确定共同婚期', rangeText: '', years: [], candidates: [] };
+    if (factsB && !factsB.birthTimeKnown) factsA.marriage = { unavailable: true, reason: '乙方出生时辰未知', rangeText: '', years: [], candidates: [] };
     const facts = factsB ? compatibilityFacts(factsA, factsB) : factsA;
     const chartA = chartToText(a, { facts: factsA, question });
     const chartB = b ? chartToText(b, { facts: factsB, question: isHealthQuestion(question) ? '健康' : '' }) : undefined;

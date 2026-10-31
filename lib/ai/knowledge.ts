@@ -53,7 +53,7 @@ export function retrieveKnowledge(a: ZiweiChart, b?: ZiweiChart): string {
       const palace = c.palaces.find(p => palaceKey(p.name) === '夫妻');
       for (const star of palace?.stars.filter(s => s.type === 'major') ?? []) {
         const entry = Object.hasOwn(STAR_IN_FUQI_GU, star.name) ? STAR_IN_FUQI_GU[star.name] : undefined;
-        if (entry) spouses.push(`${label}夫妻宫${star.name}（合盘知识条目，仅作互动偏好参考）：${safeReference(entry.spouse_traits)}；条件性助力：${safeReference(entry.good)}`);
+        if (entry) spouses.push(`${label}夫妻宫${star.name}（合盘知识条目，断互动偏好）：${safeReference(entry.spouse_traits)}；条件性助力：${safeReference(entry.good)}`);
       }
     }
     parts.unshift(...spouses);

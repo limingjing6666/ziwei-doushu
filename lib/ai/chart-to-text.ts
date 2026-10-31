@@ -14,13 +14,13 @@ export function ageFactsToText(f: AgeFacts, question = ''): string {
     '所有年龄均为虚岁；公历流年标签指该年春节开始的农历年，不是生日实岁；年份区间含首尾。“今年”“最近”均指所选流年，不是当前公历年。',
     dx ? `当前大限：第${dx.index}限，本命${dx.palace}；虚岁 ${dx.startAge}–${dx.endAge}（公历 ${dx.startYear}–${dx.endYear}）；宫干${dx.stem}；大限四化：${dx.transformations}` : '当前大限未提供或尚未起限，不擅套第一限。',
     selected ? `所选流年：${selected.year}年；虚岁 ${selected.nominalAge}；流年干${STEMS[((selected.year - 4) % 10 + 10) % 10]}四化：${selected.transformations.map(t => `${t.star}化${t.mark}落本命${t.palace}`).join('、')}\n流年十二宫：${selected.palaceNames.join('；')}` : '所选流年数据未提供，不自行推算。',
-    `birthTimeKnown: ${f.birthTimeKnown}。${f.birthTimeKnown ? '出生时辰已提供。' : '因出生时辰未知，命宫/身宫/宫位排布不可靠，下面只作参考。不得对依赖宫位的内容作肯定判断。'}`];
+    `birthTimeKnown: ${f.birthTimeKnown}。${f.birthTimeKnown ? '出生时辰已提供。' : '因出生时辰未知，命宫/身宫/宫位排布不可靠。只写不依赖宫位的内容。'}`];
   if (isMarriageQuestion(question)) {
-    if (f.marriage.unavailable) lines.push(`婚期候选 unavailable：${f.marriage.reason}。目前无法确定，不使用婚期占位符。`);
-    else lines.push(`婚期仅允许 {{MARRIAGE_RANGE}} = ${f.marriage.rangeText}；具体候选仅允许 {{MARRIAGE_YEARS}} = ${f.marriage.years.join('、')} 年。范围只是候选包络，不表示中间每年同等有利，不保证结婚。`,
+    if (f.marriage.unavailable) lines.push('婚期候选 unavailable：不使用婚期占位符，不写具体年份，只就可断部分直接作答，不复述缺项。');
+    else lines.push(`婚期仅允许 {{MARRIAGE_RANGE}} = ${f.marriage.rangeText}；具体候选仅允许 {{MARRIAGE_YEARS}} = ${f.marriage.years.join('、')} 年。范围为候选包络；具体判断使用列出的候选年份，不把中间每年视作同等有利。`,
       ...f.marriage.candidates.map(c => `候选 ${c.year}年，虚岁 ${c.nominalAge}；流年夫妻落本命${c.marriagePalace}；第${c.decadal?.index ?? '?'}大限（本命${c.decadal?.palace ?? '未知'}）；分数${c.score}；${c.reasons.join('；')}`));
   }
-  if (isHealthQuestion(question)) lines.push(f.health.years.length ? `健康关键年份仅允许 {{HEALTH_YEARS}} = ${f.health.entries.map(e => `${e.year}年（虚岁 ${e.nominalAge}）：${e.reasons.join('、')}`).join('；')}` : '健康关键年份 unavailable：目前无法确定，不使用健康占位符。');
+  if (isHealthQuestion(question)) lines.push(f.health.years.length ? `健康关键年份仅允许 {{HEALTH_YEARS}} = ${f.health.entries.map(e => `${e.year}年（虚岁 ${e.nominalAge}）：${e.reasons.join('、')}`).join('；')}` : '健康关键年份 unavailable：不使用健康占位符，不写具体年份，只就可断部分直接作答，不复述缺项。');
   lines.push('【大限一览表】\n序号｜本命宫位｜虚岁起止｜公历年起止', ...f.decadals.map(d => `${d.index}｜${d.palace}｜虚岁 ${d.startAge}–${d.endAge}｜公历 ${d.startYear}–${d.endYear}`),
     '【事实使用边界】仅当用户明确问某个大限时才引用大限段年龄；其它年龄一律使用事实区块里的数字。某宫的大限段绝不是婚期，禁止将夫妻宫大限段当成婚期。');
   return lines.join('\n');
@@ -31,7 +31,7 @@ export function ageFactsToText(f: AgeFacts, question = ''): string {
 export function viewToText(raw: unknown, chart: ZiweiChart, currentYear = new Date().getFullYear()): string {
   const v = normalizeView(raw, chart, currentYear);
   const d = v.decadal && chart.daXians.find(d => d.startAge === v.decadal!.startAge && d.endAge === v.decadal!.endAge && palaceKey(d.palaceName) === palaceKey(v.decadal!.palaceName));
-  return `【当前所选运势层】\n视图：${{ natal: '本命', decadal: '大限', yearly: '流年' }[v.type]}；所选流年：${v.year}年（详情仅见唯一事实区块）\n所选大限：${d ? `本命${d.palaceName}（数字及四化以事实区块/一览表为准）` : '未匹配页面大限，不采信客户端年龄/宫干'}\nbirthTimeKnown: ${chart.birthInfo.birthTimeKnown !== false}。${chart.birthInfo.birthTimeKnown === false ? '因出生时辰未知，命宫/身宫/宫位排布不可靠，下面只作参考。' : '出生时辰已提供。'}`;
+  return `【当前所选运势层】\n视图：${{ natal: '本命', decadal: '大限', yearly: '流年' }[v.type]}；所选流年：${v.year}年（详情仅见唯一事实区块）\n所选大限：${d ? `本命${d.palaceName}（数字及四化以事实区块/一览表为准）` : '未匹配页面大限，不采信客户端年龄/宫干'}\nbirthTimeKnown: ${chart.birthInfo.birthTimeKnown !== false}。${chart.birthInfo.birthTimeKnown === false ? '因出生时辰未知，命宫/身宫/宫位排布不可靠。' : '出生时辰已提供。'}`;
 }
 export const palaceKey = (name: string) => name === '命宫' ? '命宫' : name.replace(/宫$/, '').replace('交友', '仆役');
 const shown = (n: number) => n >= 0 ? String(n) : '未提供';
