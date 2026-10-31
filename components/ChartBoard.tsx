@@ -10,7 +10,7 @@ import { cn } from "@/lib/ui/cn";
 
 export interface ChartBoardProps {
   chart: ZiweiChart;
-  /** 点击星曜查看本地详情。 */
+  /** 点击星曜查看详情。 */
   onStarSelect?: (star: Star, palace: Palace) => void;
   onPalaceSelect?: (palace: Palace) => void;
   timeView?: TimeView;

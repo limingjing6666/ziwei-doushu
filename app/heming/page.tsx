@@ -133,7 +133,7 @@ export default function HemingPage() {
       const pair = { chartA: buildChart(formToBirthInfo(formA!)), chartB: buildChart(formToBirthInfo(formB!)) };
       setCharts(pair); setAnalysis(''); setTurns([]);
       const year = new Date().getFullYear();
-      await execute({ ...pair, viewA: buildAiView(pair.chartA, 'mingpan', year), viewB: buildAiView(pair.chartB, 'mingpan', year), mode: 'overview' }, -1);
+      await execute({ ...pair, viewA: buildAiView(pair.chartA, 'mingpan', year), viewB: buildAiView(pair.chartB, 'mingpan', year), mode: 'overview', question: '【合盘总览】首句直答两人合不合，再分节说明相处特点、双方依据、互飞与摩擦、3条建议。' }, -1);
     } catch { setFormError('排盘未完成，请检查双方出生信息后重试'); setAnalyzing(false); }
     finally { startingRef.current = false; }
   };
@@ -148,7 +148,7 @@ export default function HemingPage() {
     <div className="container-page py-10 md:py-14">
       <PageHeader
         title="合盘"
-        description="把两个人的命盘放在一起读：先各自起盘，再对照星曜、宫位与四化的互动。AI 只做辅助解读，关系仍由现实中的沟通与选择决定。"
+        description="把两个人的命盘放在一起读：先各自起盘，再对照星曜、宫位与四化的互动。"
       />
 
       <hr className="rule-double mt-8" />
@@ -203,11 +203,7 @@ export default function HemingPage() {
                 <Spinner label="正在生成解读" />
                 正在生成
               </span>
-            ) : (
-              <Badge tone="muted" className="ml-auto">
-                AI 辅助 · 仅供参考
-              </Badge>
-            )}
+            ) : null}
           </div>
 
           {formError ? (
@@ -231,7 +227,7 @@ export default function HemingPage() {
                   尚未开始合盘
                 </p>
                 <p className="mt-2 max-w-md text-[14px] leading-relaxed text-ink-3">
-                  双方出生信息填写完整后，点击下方按钮开始。系统会先在本地排出两张命盘，再生成对照解读。
+                  双方出生信息填写完整后，点击下方按钮开始。系统会先排出两张命盘，再生成对照解读。
                 </p>
                 <Button
                   size="lg"
@@ -258,7 +254,7 @@ export default function HemingPage() {
               </div>
             ) : null}
 
-            {charts && [charts.chartA, charts.chartB].map((c, i) => <div key={i}>{c.birthInfo.birthTimeKnown === false && <p className="ux-notice my-3">{i === 0 ? '甲方' : '乙方'}出生时辰未知，命宫、身宫与各宫排布不可靠，结果仅供参考。</p>}{c.birthInfo.timeCorrectionNotice && <p className="ux-notice my-3">{i === 0 ? '甲方' : '乙方'}：{c.birthInfo.timeCorrectionNotice}。可在表单改按钟表时间后重新合盘。</p>}</div>)}
+            {charts && [charts.chartA, charts.chartB].map((c, i) => <div key={i}>{c.birthInfo.birthTimeKnown === false && <p className="ux-notice my-3">{i === 0 ? '甲方' : '乙方'}出生时辰未知，命宫、身宫与各宫排布不可靠，仅解读生年四化与流年的大方向。</p>}{c.birthInfo.timeCorrectionNotice && <p className="ux-notice my-3">{i === 0 ? '甲方' : '乙方'}：{c.birthInfo.timeCorrectionNotice}。可在表单改按钟表时间后重新合盘。</p>}</div>)}
             {analysis ? <div aria-label="原始合盘报告"><AiProse text={analysis} streaming={analyzing && last.current?.index === -1} /></div> : null}
             {analyzing && <AiLoading />}
             <AiErrorNotice error={error} loading={analyzing} retry={() => { if (last.current) void execute(last.current.payload, last.current.index); }} />
@@ -317,9 +313,6 @@ export default function HemingPage() {
         </Card>
       </section>
 
-      <p className="mt-6 text-center text-[12px] leading-relaxed text-ink-3">
-        AI 生成内容可能出错，请自行核对；关系判断请回到现实沟通与选择。
-      </p>
     </div>
   );
 }

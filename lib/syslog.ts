@@ -1,4 +1,4 @@
-const keys = new Set('requestId route status durationMs upstreamStatus upstreamMs ttfbMs promptTokens completionTokens totalTokens cacheHitTokens cacheMissTokens outputChars mode timeKnown repaired truncated finishReason errorClass errorMessage limited rows deployment'.split(' '));
+const keys = new Set('requestId route status durationMs upstreamStatus upstreamMs ttfbMs promptTokens completionTokens totalTokens cacheHitTokens cacheMissTokens outputChars mode timeKnown truncated finishReason errorClass errorMessage limited rows deployment'.split(' '));
 export function syslog(level: 'info' | 'warn' | 'error', event: string, fields: Record<string, number | boolean | string | null | undefined> = {}) {
   const safe: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(fields)) {

@@ -6,7 +6,7 @@ import { recordVisit, visitData, visitStats, shouldRecord, isBot, pruneVisits } 
 import { syslog } from '../../lib/syslog';
 import { authorized } from '../../lib/stats-auth';
 import { GET } from '../../app/api/admin/stats/route';
-import { streamDeepSeek, deepSeekRewriter } from '../../lib/ai/deepseek';
+import { streamDeepSeek } from '../../lib/ai/deepseek';
 import { AiTelemetry } from '../../lib/ai/telemetry';
 import { handleAi } from '../../lib/ai/handler';
 import { proxy } from '../../proxy';
@@ -90,7 +90,6 @@ async function main() {
     let sentUsage = false;
     globalThis.fetch = async (_url, init) => {
       const body = JSON.parse(String(init?.body));
-      if (!body.stream) return Response.json({ choices: [{ message: { content: '["fixed"]' } }], usage: { prompt_tokens: 2, completion_tokens: 1, total_tokens: 3 } });
       sentUsage = body.stream_options.include_usage === true;
       return new Response('data: {"choices":[{"delta":{"content":"private output"}}]}\n\ndata: {"choices":[{"delta":{},"finish_reason":"length"}]}\n\ndata: {"choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15,"prompt_cache_hit_tokens":4,"prompt_cache_miss_tokens":6}}\n\ndata: [DONE]\n\n');
     };
@@ -100,11 +99,6 @@ async function main() {
     await wrapped.text(); assert(sentUsage);
     const done = logs.map(l => JSON.parse(l.line)).filter(l => l.event === 'ai.done').at(-1);
     assert.equal(done.totalTokens, 15); assert.equal(done.cacheHitTokens, 4); assert.equal(done.truncated, true); assert.equal(done.outputChars, 14);
-    const rewriteTelemetry = new AiTelemetry('interpret');
-    await deepSeekRewriter(new AbortController().signal, rewriteTelemetry)([{ text: 'private paragraph', types: [], start: 0, end: 17 }], 'private facts', 1000);
-    await rewriteTelemetry.response(new Response('data: [DONE]\n\n')).text();
-    const rewriteDone = logs.map(l => JSON.parse(l.line)).filter(l => l.event === 'ai.done').at(-1);
-    assert.equal(rewriteDone.totalTokens, 3); assert.equal(rewriteDone.repaired, true);
     delete process.env.UPSTASH_REDIS_REST_URL; delete process.env.UPSTASH_REDIS_REST_TOKEN;
     process.env.AI_MINUTE_LIMIT = '100';
     const chart = generateChart({ year: 1990, month: 1, day: 1, hour: 0, gender: 'male' });

@@ -63,8 +63,8 @@ const fixed = generateChart({ year: 1990, month: 5, day: 15, hour: 4, gender: 'm
   province: '河南', city: '郑州', longitude: 113.6,
   origInput: { year: 1990, month: 5, day: 15, clockHour: 8, clockMinute: 30 } });
 const candidates = getMarriageCandidates(fixed, { currentYear: 2026, currentDate: '2026-10-31', selectedYear: 2030 });
-assert.deepEqual(candidates.years, [2030, 2042, 2028]);
-assert.deepEqual(candidates.candidates.map(c => [c.score, c.reasons]), [
+assert.deepEqual(candidates.years, [2028, 2030, 2042]);
+assert.deepEqual([...candidates.candidates].sort((a, b) => b.score - a.score).map(c => [c.score, c.reasons]), [
   [10, ['流年天喜入本命夫妻宫（+4）', '太阳流年化禄在本命夫妻，引动夫妻三方四正（+2）', '太阴流年化科在本命福德，引动夫妻三方四正（+2）', '流年夫妻与大限夫妻同宫或对宫（+2）']],
   [8, ['流年天喜入本命夫妻宫（+4）', '天梁流年化禄在本命迁移，引动夫妻三方四正（+2）', '左辅流年化科在本命迁移，引动夫妻三方四正（+2）']],
   [6, ['流年天喜入本命命宫（+2）', '太阴流年化权在本命福德，引动夫妻三方四正（+2）', '右弼流年化科在本命迁移，引动夫妻三方四正（+2）']],

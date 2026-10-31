@@ -1,12 +1,10 @@
-import { chartToText, crossTransformations, viewToText, isNumericSensitive, isHealthQuestion } from './chart-to-text';
-import { streamDeepSeek, deepSeekRewriter } from './deepseek';
+import { chartToText, crossTransformations, viewToText, isHealthQuestion } from './chart-to-text';
+import { streamDeepSeek } from './deepseek';
 import { buildAgeFacts } from '@/lib/ziwei/facts';
-import { compatibilityFacts } from './facts';
 import { glossaryForChart } from '@/lib/glossary';
-import { consistencyStream } from './consistency-stream';
 import { AiError, normalizeChart, normalizeMessages, normalizeView, readBody, text } from './input';
 import { retrieveKnowledge } from './knowledge';
-import { INTERPRET_SYSTEM, HEMING_SYSTEM, UNKNOWN_TIME_RULE } from './prompts';
+import { INTERPRET_SYSTEM, HEMING_SYSTEM, systemForTime } from './prompts';
 import { checkOrigin, checkRateLimit } from './rate-limit';
 import { AiTelemetry } from './telemetry';
 
@@ -28,22 +26,18 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     const scenario = b ? (body.mode === 'followup' ? 'followup' : 'overview') : body.mode === 'detail' ? 'detail' : body.mode === 'overview' ? 'overview' : 'followup';
     telemetry.context(scenario, a.birthInfo.birthTimeKnown !== false);
     const maxTokens = scenario === 'overview' ? 2400 : scenario === 'detail' ? 1800 : 2200;
-    let lengthRule = (scenario === 'overview'
-      ? b ? '合盘总览全文（含小标题与括号解释）700–900汉字，硬上限1000字，小节不超过5个且每节不超过170字，建议每条不超过60字。' : '整盘总览全文（含小标题与括号解释）700–900汉字，硬上限1000字，小节不超过5个且每节不超过170字，建议每条不超过60字，写到上限前收束；独立健康/感情/婚姻/事业专题600–1000字，详细给出宫位星曜依据和数据支持的时间点。'
-      : scenario === 'detail' ? '单项解读目标400–700汉字，充分展开所选宫位/星曜/四化的依据与建议。'
-        : `追问目标400–800汉字，充分回答当前问题并给足依据${b ? '，不重写原报告' : ''}。`)
-      + '第一句直接回答（时辰未知固定首句优先），术语首次出现括号解释，每个括号解释≤12字，同类术语只解释一次；接近上限主动收束，在最后一条依据或建议处自然结束，全文及结尾不得写免责、提醒或无法判断等元话语。';
-    if (a.birthInfo.birthTimeKnown === false || b?.birthInfo.birthTimeKnown === false) lengthRule += `\n${UNKNOWN_TIME_RULE}`;
+    const lengthRule = scenario === 'overview'
+      ? '总览或专题700–900汉字，硬上限1000字。'
+      : scenario === 'detail' ? '单项解读400–700汉字。' : '追问400–800汉字，不重写原报告。';
     if (!process.env.DEEPSEEK_API_KEY) throw new AiError(500, 'AI 解读服务尚未配置，请稍后再试。');
     await checkRateLimit(request);
     const question = `${text(body.topic, 40)} ${text(body.question, 1000) || [...messages].reverse().find(m => m.role === 'user')?.content || ''}`;
     const now = new Date(), currentYear = now.getFullYear();
-    const currentDate = `${currentYear}-${now.getMonth() + 1}-${now.getDate()}`;
+    const currentDate = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const factsA = buildAgeFacts(a, { currentYear, currentDate, selectedYear: viewA.year });
     const factsB = b ? buildAgeFacts(b, { currentYear, currentDate, selectedYear: viewB!.year }) : undefined;
     // A is the single marriage candidate source in compatibility mode, not a spliced third range.
     if (factsB && !factsB.birthTimeKnown) factsA.marriage = { unavailable: true, reason: '乙方出生时辰未知', rangeText: '', years: [], candidates: [] };
-    const facts = factsB ? compatibilityFacts(factsA, factsB) : factsA;
     const chartA = chartToText(a, { facts: factsA, question });
     const chartB = b ? chartToText(b, { facts: factsB, question: isHealthQuestion(question) ? '健康' : '' }) : undefined;
     const references = retrieveKnowledge(a, b);
@@ -51,11 +45,11 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     const context = b
       ? `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chartA, chartB, selectedViewA: viewToText(viewA, a), selectedViewB: viewToText(viewB, b), reportSummary: text(body.reportSummary, 1600), crossTransformations: crossTransformations(a, b), references, glossary: glossaryForChart(`${chartA}\n${chartB}\n${references}`) })}`
       : `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chart: chartA, selectedView: viewToText(viewA, a), references, glossary: glossaryForChart(`${chartA}\n${references}`) })}`;
-    const upstream = await streamDeepSeek(request, `${b ? HEMING_SYSTEM : INTERPRET_SYSTEM}\n【本次篇幅硬约束】${lengthRule}`, [
+    const upstream = await streamDeepSeek(request, `${systemForTime(b ? HEMING_SYSTEM : INTERPRET_SYSTEM, a.birthInfo.birthTimeKnown === false || b?.birthInfo.birthTimeKnown === false)}\n【本次篇幅硬约束】${lengthRule}`, [
       { role: 'user', content: context },
       ...(b ? [...messages, { role: 'user' as const, content: text(body.question, 1000) || '请分析双方的相处模式与建议。' }] : messages.length ? messages : [{ role: 'user' as const, content: text(body.question, 1000) || '请解读这张命盘的核心特点和实际建议。' }]),
     ], Math.max(1, deadline - Date.now()), maxTokens, telemetry);
-    return telemetry.response(consistencyStream(upstream, { mode: scenario, facts, question }, { buffered: isNumericSensitive(question), deadline, rewrite: deepSeekRewriter(request.signal, telemetry), signal: request.signal, onRepair: () => { telemetry.repaired = true; } }));
+    return telemetry.response(upstream);
   } catch (error) {
     telemetry.error(error);
     const known = error instanceof AiError;

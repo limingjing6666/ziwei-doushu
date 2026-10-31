@@ -35,7 +35,7 @@ export default function ResultPage({ chart, onReset }: ResultPageProps) {
   return (
     <div className="container-wide py-6 md:py-8">
       <ChartMetaBar chart={chart} onReset={onReset} />
-      {chart.birthInfo.birthTimeKnown === false && <p role="note" className="ux-notice my-3">出生时辰未知，命宫、身宫和各宫排布不可靠，当前以子时占位，仅供参考。</p>}
+      {chart.birthInfo.birthTimeKnown === false && <p role="note" className="ux-notice my-3">出生时辰未知，命宫、身宫和各宫排布不可靠，当前以子时占位，解读只讲生年四化与流年的大方向。</p>}
       {chart.birthInfo.timeCorrectionNotice && <p className="ux-notice my-3">{chart.birthInfo.timeCorrectionNotice}。可重新起盘改按钟表时间。</p>}
       {chart.birthInfo.origInput?.clockHour === 23 && <p className="ux-notice my-3">原始输入为晚子时，本页沿用本日排盘口径。</p>}
       <ResultGuide />
