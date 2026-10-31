@@ -322,7 +322,7 @@ export default async function KnowledgePage({
                 数据与免责
               </h2>
               <p className="mt-2">
-                本页为传统星性主题整理，含现代说明，未逐字校勘原典；仅供文化学习与自我观察，不构成医疗、投资、法律或人生重大决策建议。
+                本页为传统星性主题整理，含现代说明，未逐字校勘原典。
               </p>
               <p className="mt-3">
                 部分断语来自{" "}

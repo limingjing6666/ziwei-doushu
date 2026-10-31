@@ -45,7 +45,7 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "AI 解读可靠吗？",
-    a: "AI 部分是对已经排出的盘面做文字整理，可能出错，也不构成预测。星曜位置、宫位关系与四化落点由本地规则计算，可以逐条核对；AI 可按事业方向、感情婚姻、财运、健康、家庭与沟通等话题解读；段落只作阅读辅助，重要决定请回到现实信息。",
+    a: "星曜位置、宫位关系与四化落点由排盘规则计算，可以逐条核对；AI 可按事业方向、感情婚姻、财运、健康、家庭与沟通等话题解读。",
   },
   {
     q: "站上的内容来自哪里？",
@@ -70,7 +70,7 @@ export default function HomePage() {
               填入出生日期、时刻与出生地，排出十二宫、十四主星与生年四化，标出四化落点和大限所在。
             </p>
             <p className="mt-2 max-w-xl text-[15px] leading-[1.9] text-ink-2 sm:text-base">
-              先看盘面事实，再读解释。星曜位置、四化落点与运限层级由本地规则排出，可以在盘面上逐条核对。
+              先看盘面事实，再读解释。星曜位置、四化落点与运限层级由排盘规则排出，可以在盘面上逐条核对。
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -329,7 +329,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── 常见问题 + 数据署名 + 免责声明 ────────────────── */}
+      {/* ── 常见问题 + 数据署名 + 条款链接 ────────────────── */}
       <section className="section">
         <div className="container-page">
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-14">
@@ -348,7 +348,7 @@ export default function HomePage() {
               数据署名：部分断语整理自紫微斗数开源解读数据集 v4.0（CC BY 4.0），作者王多鱼AI；修改后的表述不代表上游作者认可。古籍原文据维基文库《紫微斗数全书》（CC BY-SA 4.0）繁转简，未逐字校勘。
             </p>
             <p className="mt-2 text-[12px] leading-[1.9] text-ink-3">
-              免责声明：传统术数与 AI 生成内容仅供文化学习与自我观察，不构成医疗、投资、法律或人生重大决策建议。完整说明见{" "}
+              网站使用说明见{" "}
               <Link
                 href="/terms"
                 className="text-ink-2 underline underline-offset-2 hover:text-cinnabar"
