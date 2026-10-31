@@ -28,7 +28,7 @@ export const TOPIC_LABEL: Record<TopicKey, string> = {
   love:        '感情婚姻',
   career:      '事业职业',
   wealth:      '财富运势',
-  health:      '身心状态 / 生活节奏',
+  health:      '健康状况',
   family:      '兄弟合伙',
   children:    '子女缘分',
   move:        '迁移外出',
