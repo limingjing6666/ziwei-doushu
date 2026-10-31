@@ -9,7 +9,7 @@ import { buildAgeFacts } from '../../lib/ziwei/facts';
 import { ageFactsToText } from '../../lib/ai/chart-to-text';
 import { handleAi } from '../../lib/ai/handler';
 import { consumeAiResponse } from '../../lib/ai/client';
-import { INTERPRET_SYSTEM, HEMING_SYSTEM, UNKNOWN_TIME_RULE } from '../../lib/ai/prompts';
+import { INTERPRET_SYSTEM, HEMING_SYSTEM, UNKNOWN_TIME_RULE, systemForTime } from '../../lib/ai/prompts';
 
 async function main() {
   // tsx's preserve-JSX test runtime uses the classic factory; Next uses automatic JSX.
@@ -111,3 +111,12 @@ async function main() {
   console.log('✓ Round7: literal streaming, no rewrite, future-only facts, labelled transformations, prompt and hidden contracts');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
+
+{
+  for (const base of [INTERPRET_SYSTEM, HEMING_SYSTEM]) {
+    const known = systemForTime(base, false);
+    assert.doesNotMatch(known, /时辰未知|未知时辰|未知方|birthTimeKnown/);
+    assert.equal(systemForTime(base, true), base);
+  }
+  console.log('✓ Round7: 时辰已知时提示词不含任何时辰未知说明');
+}

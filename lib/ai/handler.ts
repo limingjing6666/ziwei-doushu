@@ -4,7 +4,7 @@ import { buildAgeFacts } from '@/lib/ziwei/facts';
 import { glossaryForChart } from '@/lib/glossary';
 import { AiError, normalizeChart, normalizeMessages, normalizeView, readBody, text } from './input';
 import { retrieveKnowledge } from './knowledge';
-import { INTERPRET_SYSTEM, HEMING_SYSTEM } from './prompts';
+import { INTERPRET_SYSTEM, HEMING_SYSTEM, systemForTime } from './prompts';
 import { checkOrigin, checkRateLimit } from './rate-limit';
 import { AiTelemetry } from './telemetry';
 
@@ -45,7 +45,7 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     const context = b
       ? `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chartA, chartB, selectedViewA: viewToText(viewA, a), selectedViewB: viewToText(viewB, b), reportSummary: text(body.reportSummary, 1600), crossTransformations: crossTransformations(a, b), references, glossary: glossaryForChart(`${chartA}\n${chartB}\n${references}`) })}`
       : `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chart: chartA, selectedView: viewToText(viewA, a), references, glossary: glossaryForChart(`${chartA}\n${references}`) })}`;
-    const upstream = await streamDeepSeek(request, `${b ? HEMING_SYSTEM : INTERPRET_SYSTEM}\n【本次篇幅硬约束】${lengthRule}`, [
+    const upstream = await streamDeepSeek(request, `${systemForTime(b ? HEMING_SYSTEM : INTERPRET_SYSTEM, a.birthInfo.birthTimeKnown === false || b?.birthInfo.birthTimeKnown === false)}\n【本次篇幅硬约束】${lengthRule}`, [
       { role: 'user', content: context },
       ...(b ? [...messages, { role: 'user' as const, content: text(body.question, 1000) || '请分析双方的相处模式与建议。' }] : messages.length ? messages : [{ role: 'user' as const, content: text(body.question, 1000) || '请解读这张命盘的核心特点和实际建议。' }]),
     ], Math.max(1, deadline - Date.now()), maxTokens, telemetry);
