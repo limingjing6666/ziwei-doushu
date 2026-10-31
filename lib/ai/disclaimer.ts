@@ -1,3 +1,6 @@
+import { JARGON_TERMS, UNKNOWN_TIME_OPENING } from './jargon';
+import type { AnswerFacts } from './facts';
+
 /** Sentence-level output policy. Deliberately match reminder constructions, not words such
  * as 参考 / 医院 / 就医 in ordinary analysis or quotations. Keep additions here testable. */
 export interface TextSpan { start: number; end: number }
@@ -94,6 +97,26 @@ export function createSentenceWindow(transform: (text: string) => string, tailCh
     return out;
   };
   return { push(chunk: string) { raw += chunk; return drain(false); }, finish() { return drain(true); } };
+}
+
+// Single-letter palace shorthand only in unmistakably technical constructions.
+const UNKNOWN_PALACE = /命宫|身宫|财帛|官禄|夫妻|福德|迁移|疾厄|田宅|子女宫|父母宫|兄弟宫|仆役|交友宫|[命身财官福迁疾田子父兄友仆]宫|(?:入|坐|守|落|夹)[命身财官福迁疾田子父兄友仆](?![\u4e00-\u9fff])|[命财官福迁疾田子父兄友仆][、/][命财官福迁疾田子父兄友仆]|大限|格局|入庙|落陷|庙旺|五行局|命主|身主/;
+const PATTERN_NAMES = [...JARGON_TERMS.slice(JARGON_TERMS.indexOf('君臣庆会')), '昌曲同会', '辅弼同会', '魁钺同会', '科权双会'];
+const PALACE_SHORTHAND = new RegExp(`(?:[命身财官福迁疾田子父兄友仆]|子女|父母|兄弟|交友)(?:坐|守|有|见|为|得|逢|遇|主|入|落|在|见到|坐守)?(?:宫|星|${JARGON_TERMS.slice(JARGON_TERMS.indexOf('紫微'), JARGON_TERMS.indexOf('君臣庆会')).join('|')})|[命财官福迁疾田子父兄友仆]{3,}|(?:化[禄权科忌]|星曜)(?:入|坐|守|落)[命身财官福迁疾田子父兄友仆]`);
+export function scrubUnknownTime(text: string, facts: AnswerFacts): string {
+  if (facts.birthTimeKnown !== false) return text;
+  return deleteSentences(text, sentenceSpans(text).filter(span => {
+    const value = text.slice(span.start, span.end).trim();
+    if (span.start === 0 && value.replace(/[。！？!?]$/, '') === UNKNOWN_TIME_OPENING) return false;
+    if (facts.subjects) {
+      // Conservative compatibility guard: only explicit identities, no pronoun inference.
+      const { A, B } = facts.subjects;
+      if (!((!A.birthTimeKnown && /甲方|A方/.test(value)) || (!B.birthTimeKnown && /乙方|B方/.test(value)))) return false;
+    }
+    return UNKNOWN_PALACE.test(value) || PALACE_SHORTHAND.test(value) || PATTERN_NAMES.some(name => value.includes(name))
+      || /(?:星|曜|太阳|太阴|天机|天同|巨门|武曲|廉贞|贪狼|天梁|天府|天相|七杀|破军|紫微)[^。]{0,6}(?:亮度|庙|旺|陷)/.test(value)
+      || /下面只讲|不依赖具体宫位|因出生时辰未知/.test(value);
+  }));
 }
 
 /** Internal fact-block vocabulary must never reach readers; say the years/range plainly. */

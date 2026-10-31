@@ -16,6 +16,9 @@ const PALACES: [string, keyof StarProfile][] = [
 ];
 
 function chartReferences(chart: ZiweiChart, label: string, patternLimit = 6): string[] {
+  // No palace-derived entries are valid for an unknown birth hour. Star meanings
+  // are supplied separately by the glossary; this database has no standalone entries.
+  if (chart.birthInfo.birthTimeKnown === false) return [];
   const parts: string[] = [];
   for (const pattern of detectPatterns(chart).slice(0, patternLimit)) {
     parts.push(`${label}命中格局【${pattern.name}】（${pattern.palaces.join('、')}）：${safeReference(pattern.description)}\n条件：${safeReference(JSON.stringify(pattern.conditions ?? {}))}`);
@@ -50,6 +53,7 @@ export function retrieveKnowledge(a: ZiweiChart, b?: ZiweiChart): string {
     }
     const spouses: string[] = [];
     for (const [label, c] of [['A', a], ['B', b]] as const) {
+      if (c.birthInfo.birthTimeKnown === false) continue;
       const palace = c.palaces.find(p => palaceKey(p.name) === '夫妻');
       for (const star of palace?.stars.filter(s => s.type === 'major') ?? []) {
         const entry = Object.hasOwn(STAR_IN_FUQI_GU, star.name) ? STAR_IN_FUQI_GU[star.name] : undefined;
@@ -58,7 +62,7 @@ export function retrieveKnowledge(a: ZiweiChart, b?: ZiweiChart): string {
     }
     parts.unshift(...spouses);
   }
-  const method = [retrieveMethod(a, b ? 'A' : '本盘', b ? 1000 : 1400), b ? retrieveMethod(b, 'B', 1000) : ''].filter(Boolean).join('\n');
+  const method = [a.birthInfo.birthTimeKnown === false ? '' : retrieveMethod(a, b ? 'A' : '本盘', b ? 1000 : 1400), b && b.birthInfo.birthTimeKnown !== false ? retrieveMethod(b, 'B', 1000) : ''].filter(Boolean).join('\n');
   // Reserve method space before legacy references so it cannot be truncated away.
   return `${method}\n\n${parts.join('\n\n')}`.slice(0, 6000);
 }

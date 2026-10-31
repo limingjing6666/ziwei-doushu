@@ -1,5 +1,5 @@
 import { repairFactsToText } from './facts';
-import { deleteSentences, filterDisclaimers, scrubInternalTerms } from './disclaimer';
+import { deleteSentences, filterDisclaimers, scrubInternalTerms, scrubUnknownTime } from './disclaimer';
 import { fillPlaceholders } from './postprocess';
 import { firstSentence } from './jargon';
 import { logIssues, validateAnswer, type AnswerIssue, type ValidationInput } from './validate';
@@ -52,7 +52,7 @@ export function codeRepair(input: ValidationInput, numericFallback = true): stri
     }
   }
   // Final insurance also applies after placeholders, rewrites, and deterministic additions.
-  return scrubInternalTerms(filterDisclaimers(text));
+  return scrubUnknownTime(scrubInternalTerms(filterDisclaimers(text)), input.facts);
 }
 export type Rewriter = (targets: RepairTarget[], factsText: string, timeoutMs: number, signal?: AbortSignal) => Promise<string[]>;
 /** One batch call max, never regenerate the whole answer. Insufficient time => deterministic fallback. */

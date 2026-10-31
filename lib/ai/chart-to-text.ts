@@ -9,6 +9,12 @@ export { isMarriageQuestion, isHealthQuestion, isNumericSensitive } from './inte
 
 export function ageFactsToText(f: AgeFacts, question = ''): string {
   const dx = f.currentDecadal, selected = f.selected;
+  if (!f.birthTimeKnown) return [
+    '【年龄事实（唯一来源）】',
+    `当前公历年：${f.currentYear}；出生公历年：${f.birthYear}；农历生年：${f.lunarBirthYear}；当前虚岁：${f.currentAge ?? '未提供'}。所有年龄均为虚岁。`,
+    selected ? `所选流年：${selected.year}年；虚岁 ${selected.nominalAge}；流年干四化：${selected.transformations.map(t => `${t.star}化${t.mark}`).join('、')}` : '',
+    '“今年”“最近”均指所选流年。birthTimeKnown: false。',
+  ].filter(Boolean).join('\n');
   const lines = ['【年龄与运限事实（唯一来源）】',
     `当前公历年：${f.currentYear}；出生公历年：${f.birthYear > 0 ? f.birthYear : '未提供'}；农历生年：${f.lunarBirthYear > 0 ? f.lunarBirthYear : '未提供'}；当前虚岁：${f.currentAge ?? '未提供'}（唯一）。`,
     '所有年龄均为虚岁；公历流年标签指该年春节开始的农历年，不是生日实岁；年份区间含首尾。“今年”“最近”均指所选流年，不是当前公历年。',
@@ -30,14 +36,21 @@ export function ageFactsToText(f: AgeFacts, question = ''): string {
  * A client-selected decade is matched back to the page chart, never trusted as a second fact source. */
 export function viewToText(raw: unknown, chart: ZiweiChart, currentYear = new Date().getFullYear()): string {
   const v = normalizeView(raw, chart, currentYear);
+  if (chart.birthInfo.birthTimeKnown === false) return `【当前所选运势层】\n所选流年：${v.year}年；birthTimeKnown: false。时辰未知。`;
   const d = v.decadal && chart.daXians.find(d => d.startAge === v.decadal!.startAge && d.endAge === v.decadal!.endAge && palaceKey(d.palaceName) === palaceKey(v.decadal!.palaceName));
-  return `【当前所选运势层】\n视图：${{ natal: '本命', decadal: '大限', yearly: '流年' }[v.type]}；所选流年：${v.year}年（详情仅见唯一事实区块）\n所选大限：${d ? `本命${d.palaceName}（数字及四化以事实区块/一览表为准）` : '未匹配页面大限，不采信客户端年龄/宫干'}\nbirthTimeKnown: ${chart.birthInfo.birthTimeKnown !== false}。${chart.birthInfo.birthTimeKnown === false ? '因出生时辰未知，命宫/身宫/宫位排布不可靠。' : '出生时辰已提供。'}`;
+  return `【当前所选运势层】\n视图：${{ natal: '本命', decadal: '大限', yearly: '流年' }[v.type]}；所选流年：${v.year}年（详情仅见唯一事实区块）\n所选大限：${d ? `本命${d.palaceName}（数字及四化以事实区块/一览表为准）` : '未匹配页面大限，不采信客户端年龄/宫干'}\nbirthTimeKnown: true。出生时辰已提供。`;
 }
 export const palaceKey = (name: string) => name === '命宫' ? '命宫' : name.replace(/宫$/, '').replace('交友', '仆役');
 const shown = (n: number) => n >= 0 ? String(n) : '未提供';
 export function chartToText(raw: unknown, options: { facts?: AgeFacts; question?: string; currentYear?: number } = {}): string {
   const c = normalizeChart(raw), b = c.birthInfo, l = c.lunarInfo;
   const f = options.facts ?? buildAgeFacts(c, { currentYear: options.currentYear ?? new Date().getFullYear(), selectedYear: (c as ZiweiChart & { liunianYear?: number }).liunianYear });
+  if (b.birthTimeKnown === false) return [
+    ageFactsToText({ ...f, birthTimeKnown: false }),
+    `性别：${b.gender === 'male' ? '男' : '女'}；公历生日：${b.year}年${b.month}月${b.day}日`,
+    `农历生日：${f.lunarBirthYear}年${l.isLeapMonth ? '闰' : ''}${l.lunarMonth}月${l.lunarDay}日；生年干支：${STEMS[l.yearStem] ?? '?'}${BRANCHES[l.yearBranch] ?? '?'}`,
+    `生年四化：${Object.entries(getSiHuaByStem(l.yearStem)).map(([mark, star]) => `${star}化${mark}`).join('、')}`,
+  ].join('\n');
   const lines = [ageFactsToText(f, options.question),
     `性别：${b.gender === 'male' ? '男' : b.gender === 'female' ? '女' : '未提供'}；阴阳性别：${c.yinYangGender || '未提供'}`,
     `排盘日期月日：${shown(b.month)}月${shown(b.day)}日，${BRANCHES[b.hour] ?? '未知'}时（已校正的时辰索引，非钟点；不再重算日期时间）`,
@@ -57,8 +70,9 @@ export function chartToText(raw: unknown, options: { facts?: AgeFacts; question?
 /** Cross-chart flying transformations use A's birth stem but locate each star in B, and vice versa. */
 export function crossTransformations(a: ZiweiChart, b: ZiweiChart): string {
   const direction = (from: ZiweiChart, to: ZiweiChart, label: string) => {
+    if (to.birthInfo.birthTimeKnown === false) return '';
     if (from.lunarInfo.yearStem < 0) return `${label}：生年干缺失，不能推算。`;
     return `${label}（生年干${STEMS[from.lunarInfo.yearStem]}）：` + Object.entries(getSiHuaByStem(from.lunarInfo.yearStem)).map(([h, star]) => `${star}化${h}→${to.palaces.find(p => p.stars.some(s => s.name === star))?.name ?? '未知宫位'}`).join('；');
   };
-  return [direction(a, b, 'A→B'), direction(b, a, 'B→A')].join('\n');
+  return [direction(a, b, 'A→B'), direction(b, a, 'B→A')].filter(Boolean).join('\n');
 }
