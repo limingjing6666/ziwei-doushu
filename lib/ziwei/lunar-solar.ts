@@ -36,7 +36,8 @@ export interface SolarDate {
 }
 
 /** 与 /api/generate 对齐的受理年份区间，超出直接判非法（lunar 表在极端年份不可靠） */
-export const LUNAR_YEAR_MIN = 1900;
+// 1900 年 1 月对应农历 1899 年；允许该农历年用于公历边界的双向展示。
+export const LUNAR_YEAR_MIN = 1899;
 export const LUNAR_YEAR_MAX = 2050;
 
 function isIntInRange(value: unknown, min: number, max: number): value is number {

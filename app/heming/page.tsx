@@ -71,8 +71,8 @@ export default function HemingPage() {
     <h1 className="text-2xl mb-3 text-center" style={{ color: 'var(--ac)' }}>紫微合盘</h1>
     <p className="text-sm text-center mb-6">对照双方的沟通方式、关系期待与分工，给出可尝试的相处建议。</p>
     <div ref={forms} className="heming-grid grid grid-cols-1 md:grid-cols-2 gap-5">
-      <section className="min-w-0"><h2 className="text-lg mb-2">甲方 A</h2><BirthForm hideSubmit onSubmit={() => {}} onFormSave={setFormA} /></section>
-      <section className="min-w-0"><h2 className="text-lg mb-2">乙方 B</h2><BirthForm hideSubmit onSubmit={() => {}} onFormSave={setFormB} /></section>
+      <section className="min-w-0"><h2 className="text-lg mb-2">甲方 A</h2><BirthForm hideSubmit lateZishiRule="next-day" onSubmit={() => {}} onFormSave={setFormA} /></section>
+      <section className="min-w-0"><h2 className="text-lg mb-2">乙方 B</h2><BirthForm hideSubmit lateZishiRule="next-day" onSubmit={() => {}} onFormSave={setFormB} /></section>
     </div>
     {formError && <p role="alert" className="field-error my-3">{formError}</p>}
     <button className="ux-primary my-6 w-full" disabled={loading} onClick={start}>{loading ? '正在分析…' : report ? '用当前表单重新合盘' : '开始合盘分析'}</button>

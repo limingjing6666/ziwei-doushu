@@ -19,7 +19,7 @@ export function calcTrueSolarBranch(clockHour: number, clockMinute: number, long
  * · 00:00-00:59 = 早子时，按本日排盘
  * 这与「时辰支同为子(0)」并不冲突——子时分早晚两段，需要在日期上区分。
  */
-export function formToBirthInfo(form: BirthFormState): BirthInfo {
+export function formToBirthInfo(form: BirthFormState, lateZishiRule: 'next-day' | 'current-day' = 'next-day'): BirthInfo {
   if (Object.keys(validateBirthForm(form)).length || !form.gender) throw new Error('请检查出生信息');
   const solar = formSolarDate(form)!;
   let { year: y, month: m, day: d } = solar;
@@ -27,7 +27,7 @@ export function formToBirthInfo(form: BirthFormState): BirthInfo {
   // 晚子时（23:00-23:59）按次日处理：用 Date 对象自动处理月末/年末进位
   if (!form.unknownTime) {
     const clockHour = parseInt(form.clockHour) || 0;
-    if (clockHour === 23 && y > 0 && m > 0 && d > 0) {
+    if (lateZishiRule === 'next-day' && clockHour === 23 && y > 0 && m > 0 && d > 0) {
       const next = new Date(y, m - 1, d + 1);
       y = next.getFullYear();
       m = next.getMonth() + 1;

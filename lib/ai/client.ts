@@ -17,7 +17,8 @@ export async function consumeAiResponse(response: Response, onText: (text: strin
     if (response.status === 429) {
       if (body?.limitKind === 'daily' || /今天|明天|每日/.test(body?.error ?? '')) throw new AiClientError('今天的免费解读次数已用完，明天再来', 'daily');
       const header = response.headers.get('Retry-After');
-      const seconds = Math.max(1, Math.ceil(header && !Number.isFinite(Number(header)) ? (Date.parse(header) - Date.now()) / 1000 : Number(header || body?.retryAfter) || 60));
+      const delay = header && !Number.isFinite(Number(header)) ? (Date.parse(header) - Date.now()) / 1000 : Number(header || body?.retryAfter);
+      const seconds = Number.isFinite(delay) && delay > 0 ? Math.max(1, Math.ceil(delay)) : 60;
       throw new AiClientError(`请求有点频繁，请 ${seconds} 秒后再试`, 'minute', Date.now() + seconds * 1000);
     }
     if (response.status >= 500) throw new AiClientError('解读服务暂时繁忙，请稍后重试', 'server');

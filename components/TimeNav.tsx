@@ -109,7 +109,7 @@ export default function TimeNav({
 
         {/* 流年 — 含年份切换 */}
         <div
-          className="relative flex-1 flex items-center justify-center rounded-lg py-1.5 gap-1 transition-all duration-200"
+          className="relative flex-[1.4] min-w-0 flex items-center justify-center rounded-lg py-1.5 gap-0.5 transition-all duration-200"
           style={{
             background: view === 'liunian'
               ? 'rgba(212,168,67,0.12)'
@@ -121,7 +121,7 @@ export default function TimeNav({
         >
           <button
             onClick={() => onViewChange('liunian')}
-            className="text-[10px] font-medium flex-1 text-center"
+            className="text-xs font-medium whitespace-nowrap text-center"
             style={{ color: view === 'liunian' ? 'var(--t-gold)' : 'var(--t-faint)' }}
           >
             流年
@@ -191,7 +191,7 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className="flex-1 py-1.5 text-[10px] font-medium rounded-lg transition-all duration-200"
+      className="flex-1 min-w-0 whitespace-nowrap py-1.5 text-xs font-medium rounded-lg transition-all duration-200"
       style={{
         background: active ? 'rgba(212,168,67,0.12)' : 'transparent',
         color: active ? 'var(--t-gold)' : 'var(--t-faint)',

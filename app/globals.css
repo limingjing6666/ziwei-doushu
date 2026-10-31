@@ -459,6 +459,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .ux-notice { border: 1px solid var(--ac-bdr); background: var(--ac-bg); padding: 12px; border-radius: 10px; font-size: 13px; line-height: 1.7; }
 :focus-visible { outline: 2px solid var(--ac); outline-offset: 3px; }
 @media(max-width:640px) { .birth-location-grid { grid-template-columns: 1fr; } }
+.mobile-selection-preview { display: none; }
 .result-layout { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,380px); gap: 20px; align-items: start; }
 .card-glass { background: var(--bg-card); border: 1px solid var(--bdr-med); }
 .card-inner { background: var(--bg-1); }
@@ -478,6 +479,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .time-nav > div:nth-child(2) > button { min-height: 44px; }
 @media(max-width:640px) {
   .result-layout { grid-template-columns: minmax(0,1fr); }
+  .mobile-selection-preview { display: block; position: fixed; bottom: 12px; left: 12px; right: 12px; z-index: 80; background: var(--bg-1); box-shadow: var(--sh-lg); }
   .palace-grid { grid-template-columns: repeat(3,minmax(0,1fr)) !important; grid-template-rows: auto !important; }
   .palace-slot { grid-row: auto !important; grid-column: auto !important; min-width: 0; }
   .palace-center-tile,.palace-lines { display: none !important; }

@@ -18,8 +18,9 @@ export interface BirthFormState {
 interface Props {
   onSubmit: (info: BirthInfo) => void; loading?: boolean;
   initialData?: Partial<BirthFormState>; onFormSave?: (data: BirthFormState) => void; hideSubmit?: boolean;
+  lateZishiRule?: 'next-day' | 'current-day';
 }
-export default function BirthForm({ onSubmit, loading, initialData, onFormSave, hideSubmit }: Props) {
+export default function BirthForm({ onSubmit, loading, initialData, onFormSave, hideSubmit, lateZishiRule = 'current-day' }: Props) {
   const [form, setForm] = useState<BirthFormState>({ name: '', year: '', month: '', day: '', clockHour: '', clockMinute: '', unknownTime: false,
     province: '', city: '', longitude: 120, gender: '', calendar: 'solar', leapMonth: false, useTrueSolar: true, ...initialData });
   const [attempted, setAttempted] = useState(false);
@@ -58,7 +59,7 @@ export default function BirthForm({ onSubmit, loading, initialData, onFormSave, 
     setBusy(true);
     // Yield a paint before synchronous local chart computation.
     await new Promise(resolve => setTimeout(resolve, 32));
-    try { onSubmit(formToBirthInfo(form)); }
+    try { onSubmit(formToBirthInfo(form, lateZishiRule)); }
     catch { setFailure('排盘未完成，请检查出生信息后重试'); }
     finally { setBusy(false); }
   };
@@ -68,7 +69,7 @@ export default function BirthForm({ onSubmit, loading, initialData, onFormSave, 
       {options ? <select id={`${id}-${name}`} name={name} value={String(form[name] ?? '')} disabled={form.unknownTime && (name === 'clockHour' || name === 'clockMinute')}
         aria-invalid={attempted && !!errors[name]} onChange={e => update({ [name]: e.target.value, ...(name === 'month' ? { leapMonth: false } : {}) })}>
         <option value="">{label}</option>{options.map(n => <option key={n} value={n}>{n}</option>)}
-      </select> : <input id={`${id}-${name}`} name={name} type="number" inputMode="numeric" placeholder="如 1990" min={1900} max={new Date().getFullYear()}
+      </select> : <input id={`${id}-${name}`} name={name} type="number" inputMode="numeric" placeholder="如 1990" min={form.calendar === 'lunar' ? 1899 : 1900} max={new Date().getFullYear()}
         value={String(form[name] ?? '')} aria-invalid={attempted && !!errors[name]} onChange={e => update({ [name]: e.target.value, leapMonth: false })} />}
       {attempted && errors[name] && <span className="field-error">{errors[name]}</span>}
     </label>
@@ -96,7 +97,7 @@ export default function BirthForm({ onSubmit, loading, initialData, onFormSave, 
     {hasTime && <p className="text-sm mt-2">当前：{BRANCHES[branch]}时{form.useTrueSolar !== false ? '（经度校正）' : '（钟表时间）'}</p>}
     {changed && <p className="ux-notice mt-2">按真太阳时校正后，出生时辰由「{BRANCHES[clockBranch]}时」变为「{BRANCHES[branch]}时」。<button type="button" className="underline" onClick={() => update({ useTrueSolar: false })}>改按钟表时间</button></p>}
     </fieldset>
-    {hasTime && Number(form.clockHour) === 23 && <p className="ux-notice my-3">23 点后属晚子时，不同流派对日柱有不同算法；本站当前按次日排盘，0 点至 1 点按本日处理，不改变既有口径。</p>}
+    {hasTime && Number(form.clockHour) === 23 && <p className="ux-notice my-3">23 点后属晚子时，不同流派对日柱有不同算法；本页沿用原设置，23 点至 24 点按{lateZishiRule === 'next-day' ? '次日' : '本日'}排盘，0 点至 1 点按本日处理。</p>}
     {solar && isChinaDST(solar.year, solar.month, solar.day) && <div className="ux-notice my-3">该时段中国实行过夏令时，出生时间是否为夏令时钟表时间？默认不自动调整；若已换算为标准时间，无需操作。
       <button type="button" className="ux-button mt-2" disabled={!dstOriginal && !shiftClock(form, -60)} onClick={() => { if (dstOriginal) { update(dstOriginal); setDstOriginal(null); } else { const shifted = shiftClock(form, -60); if (shifted) { setDstOriginal({ clockHour: form.clockHour, clockMinute: form.clockMinute }); update(shifted); } } }}>{dstOriginal ? '撤销减 1 小时' : '这是夏令时读数，减 1 小时'}</button><p className="text-xs">若调整会跨日，请自行核对日期后手动修改。</p></div>}
     <fieldset className="my-5"><legend className="text-sm mb-2">性别（必填 · 用于运限顺逆）</legend><div className="flex gap-3">{(['male', 'female'] as const).map(g => <button type="button" name="gender" key={g} className={form.gender === g ? 'ux-button active flex-1' : 'ux-button flex-1'} aria-pressed={form.gender === g} onClick={() => update({ gender: g })}>{g === 'male' ? '男' : '女'}</button>)}</div>{attempted && errors.gender && <p className="field-error">{errors.gender}</p>}</fieldset>
