@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: { params: Promise<{ star: str
 
   const title = `${star}入${data.palaceName.replace(/宫$/, '')}宫 · ${data.topicLabel} · 传统星性参考`;
   const description = data.parsed.dingdiao
-    || `${star}入${data.palaceName.replace(/宫$/, '')}宫的紫微斗数解读 — 基于开源解读数据集与传统星性，仅供学习参考。`;
+    || `${star}入${data.palaceName.replace(/宫$/, '')}宫的紫微斗数解读 — 基于传统星性整理，仅供学习参考。`;
 
   return {
     ...pageMetadata(title, description, `/knowledge/${slug}/${topic}`, true),

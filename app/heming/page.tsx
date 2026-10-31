@@ -70,7 +70,7 @@ export default function HemingPage() {
   useEffect(() => () => requestRef.current?.abort(), []);
 
   // ─── 起盘（单次调用，返回 chart 给统一流程使用）──────────
-  // 开源版不含后端 /api/generate：直接用本仓库的排盘引擎在浏览器里起盘
+  // 在浏览器里直接起盘
   const generateChart = useCallback(async (info: BirthInfo): Promise<ZiweiChart | null> => {
     try {
       return buildChart(info);
