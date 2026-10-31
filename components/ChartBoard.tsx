@@ -139,7 +139,7 @@ export default function ChartBoard({ chart, onStarSelect, onPalaceSelect, onSiHu
                 delay={i * 0.04}
                 overlayStarSiHua={Object.keys(overlayData).length > 0 ? overlayData : undefined}
                 overlayLabel={overlayLabel}
-                onSiHuaClick={(starName, siHua) => onSiHuaClick?.(starName, siHua, timeView)}
+                onSiHuaClick={(starName, siHua) => { setSelectedBranch(branch); onPalaceSelect?.(palace); onSiHuaClick?.(starName, siHua, timeView); }}
               />
             </div>
           );
@@ -266,7 +266,7 @@ export default function ChartBoard({ chart, onStarSelect, onPalaceSelect, onSiHu
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7 }}
-        className="mt-3 flex items-center justify-center gap-2 text-[9px] flex-wrap"
+        className="sihua-legend mt-3 flex items-center justify-center gap-2 text-xs flex-wrap"
       >
         {[
           { h: '化禄', c: 'text-emerald-500 border-emerald-500/30' },
@@ -274,7 +274,7 @@ export default function ChartBoard({ chart, onStarSelect, onPalaceSelect, onSiHu
           { h: '化科', c: 'text-yellow-500 border-yellow-500/30' },
           { h: '化忌', c: 'text-red-500 border-red-500/30' },
         ].map(({ h, c }) => (
-          <span key={h} className={`border px-1.5 py-0.5 rounded-full font-medium ${c}`}><Term name={h} /></span>
+          <span key={h} data-sihua={h} className={`border px-1.5 py-0.5 rounded-full font-medium ${c}`}><Term name={h} /></span>
         ))}
         <span className="px-1.5 py-0.5 rounded-full" style={{ color: 'var(--t-faint)', border: '1px solid var(--t-border)' }}>
           点击宫位看<Term name="三方四正" />

@@ -31,7 +31,7 @@ export default function ChartPage() {
     <ResultGuide />
     {!mobileInfoClosed && (selectedPalace || selectedSiHua) && <aside className="mobile-selection-preview ux-notice" aria-label="手机本地简介"><div className="flex justify-between gap-2"><strong>{selectedStar?.name ?? selectedSiHua?.starName ?? selectedPalace?.name} · 本地简介</strong><button aria-label="收起手机简介" onClick={() => setMobileInfoClosed(true)}>×</button></div><p className="text-sm my-1">{termDescription(selectedStar?.name ?? (selectedSiHua ? `化${selectedSiHua.siHua}` : selectedPalace?.name ?? '主星'))}</p><button className="underline text-sm" onClick={() => { document.getElementById('ai-reading')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setMobileInfoClosed(true); }}>查看完整简介与 AI 面板 →</button></aside>}
     <div className="result-layout">
-      <div className="min-w-0 space-y-5"><ChartBoard chart={chart} timeView={view} liunianYear={year} onViewChange={setView} onYearChange={setYear}
+      <div className="min-w-0 space-y-5"><ChartBoard chart={chart} timeView={view} liunianYear={year} onViewChange={v => { setView(v); setSelectedSiHua(null); }} onYearChange={y => { setYear(y); setSelectedSiHua(null); }}
         onPalaceSelect={p => { setMobileInfoClosed(false); setSelectedPalace(p); setSelectedStar(null); setSelectedSiHua(null); }}
         onStarSelect={(s, p) => { setMobileInfoClosed(false); setSelectedPalace(p); setSelectedStar(s); setSelectedSiHua(null); }}
         onSiHuaClick={(starName, siHua, v) => { setMobileInfoClosed(false); setSelectedSiHua({ starName, siHua, view: v }); setSelectedStar(null); }} />
