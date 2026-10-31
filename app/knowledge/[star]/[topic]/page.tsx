@@ -85,10 +85,10 @@ export default async function KnowledgePage({ params }: { params: Promise<{ star
     '@type': 'Article',
     headline: `${star}入${data.palaceName}宫 · ${data.topicLabel}`,
     description: data.parsed.dingdiao,
-    author: { '@type': 'Organization', name: '紫微研究' },
+    author: { '@type': 'Organization', name: '天机盘' },
     publisher: {
       '@type': 'Organization',
-      name: '紫微研究',
+      name: '天机盘',
       url: SITE_URL,
     },
     datePublished: '2026-04-28',
@@ -276,7 +276,7 @@ export default async function KnowledgePage({ params }: { params: Promise<{ star
 
       {/* 页脚 */}
       <footer style={{ borderTop: '1px solid rgba(184,146,42,0.15)', padding: '20px 24px', textAlign: 'center', fontSize: '11px', color: 'var(--tx-3)', letterSpacing: '0.1em' }}>
-        <div style={{ marginBottom: '6px' }}>紫微研究 · 传统星性参考 · 仅供学习参考</div>
+        <div style={{ marginBottom: '6px' }}>天机盘 · 传统星性参考 · 仅供学习参考</div>
         <div style={{ opacity: 0.85 }}>本平台不构成任何医疗、投资、法律或重大决策建议</div>
         <div>部分断语来自 <a href="https://github.com/Renhuai123/ziwei-doushu">紫微斗数开源解读数据集 v4.0</a>（<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>），作者：王多鱼AI；已提取、去重并过滤引文。</div>
       </footer>

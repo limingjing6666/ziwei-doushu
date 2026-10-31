@@ -15,7 +15,7 @@ import { SITE_URL } from '@/lib/site';
 const BASE_URL = SITE_URL;
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastmod = new Date('2026-04-28');
+  const lastmod = new Date('2026-10-31');
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE_URL, priority: 1.0, changeFrequency: 'weekly', lastModified: lastmod },

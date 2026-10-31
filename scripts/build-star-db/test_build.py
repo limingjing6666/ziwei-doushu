@@ -9,8 +9,8 @@ class ExtractionTests(unittest.TestCase):
         self.assertEqual(sentences(text), ['古书说「原句一。原句二。」意思如此。', '下一句。'])
 
     def test_attribution_is_same_unit(self):
-        self.assertEqual(sentences('他说「引文。续句。」（天纪第5集53:06）。后文。'),
-                         ['他说「引文。续句。」（天纪第5集53:06）。', '后文。'])
+        self.assertEqual(sentences('他说「引文。续句。」（\u5929\u7eaa第5集53:06）。后文。'),
+                         ['他说「引文。续句。」（\u5929\u7eaa第5集53:06）。', '后文。'])
 
     def test_nested_parentheses(self):
         self.assertEqual(sentences('建议作息（注：「说明。续句。」）。下一句。'),

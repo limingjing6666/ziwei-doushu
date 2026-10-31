@@ -115,7 +115,7 @@ export default async function ChapterPage({ params }: { params: Promise<{ book: 
                   {p.translation}
                 </div>
               )}
-              {p.niNote && (
+              {p.readingNote && (
                 <div style={{
                   marginTop: '8px',
                   marginLeft: '36px',
@@ -126,8 +126,8 @@ export default async function ChapterPage({ params }: { params: Promise<{ book: 
                   color: 'var(--tx-2)',
                   lineHeight: 1.8,
                 }}>
-                  <span style={{ fontSize: '10px', color: 'var(--ji)', marginRight: '6px' }}>倪师注</span>
-                  {p.niNote}
+                  <span style={{ fontSize: '10px', color: 'var(--ji)', marginRight: '6px' }}>阅读提示</span>
+                  {p.readingNote}
                 </div>
               )}
             </div>

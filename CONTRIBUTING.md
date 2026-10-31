@@ -33,8 +33,9 @@ npm test             # 排盘回归
 
 - 代码：[MIT](./LICENSE)
 - 样本数据集：[CC BY 4.0](./DATASET-LICENSE)
-- 倪师原话目录 `docs/tianji-ziwei/`：[CC BY-NC-SA 4.0](./docs/tianji-ziwei/LICENSE.md)，不许商用
 
 ---
 
 **English.** Issues and PRs are welcome. This repo is an open snapshot of the charting engine behind metisziwei.com; the interpretation database, AI prompts and all `/api/*` backend routes are not included, so AI features return 404 by design. For a chart you believe is wrong, please use the "Chart result question" form with full birth data and a reference result. Before opening a PR, run `npm ci`, `npm run typecheck` and `npm test`; changes to chart results need evidence and a regression test.
+
+请勿提交现代讲课字幕、传记语录或未经许可的现代注释。新文案须通过 `npm test` 中的逐字检测。

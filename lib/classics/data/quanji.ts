@@ -13,7 +13,7 @@ export const ziWeiQuanJi: Book = {
   slug: 'quanji',
   dynasty: '明代',
   author: '相传陈抟祖师传',
-  intro: '紫微斗数最权威的古籍之一，相传由宋代陈抟祖师传授。倪海厦《天纪》体系的核心引证来源。',
+  intro: '紫微斗数最权威的古籍之一，编纂和传承脉络尚需版本考证，可与其他古籍对读。',
   wordCount: 80000,
   chapters: [
     {

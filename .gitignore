@@ -15,3 +15,7 @@ node_modules
 scripts/build-star-db/data/
 scripts/build-star-db/.venv/
 __pycache__/
+
+# External read-only source material must never be reintroduced.
+/docs/tianji-ziwei/
+/lib/nihai/

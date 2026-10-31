@@ -26,7 +26,7 @@ async function main() {
   try {
     for (const [key, profile] of Object.entries(STAR_DB)) {
       for (const [field, content] of Object.entries(profile) as [string, string][]) {
-        assert.doesNotMatch(content, /天纪|倪师|倪海厦|倪先生|B\s*站|bilibili|BV\w+|\d{1,2}[:：]\d{2}|�/i, `${key}/${field}`);
+        assert.doesNotMatch(content, /\u5929\u7eaa|\u502a\u5e08|\u502a\u6d77\u53a6|\u502a\u5148\u751f|B\s*站|bilibili|BV\w+|\d{1,2}[:：]\d{2}|�/i, `${key}/${field}`);
         for (const [open, close] of [['「', '」'], ['『', '』'], ['“', '”'], ['（', '）']]) {
           assert.equal(content.split(open).length, content.split(close).length, `${key}/${field}: unbalanced ${open}`);
         }
@@ -41,7 +41,7 @@ async function main() {
       const data = getKnowledge(star, topic);
       assert.ok(data.exists && (data.parsed.dingdiao || data.parsed.lundian), `${star}/${topic}`);
     }
-    assert.equal(safeReference('公开内容。\n\n倪先生说「第一句。第二句。」\n\nB站第5讲。'), '公开内容。');
+    assert.equal(safeReference('公开内容。\n\n\u502a\u5148\u751f说「第一句。第二句。」\n\nB站第5讲。'), '公开内容。');
     assert.equal(safeReference('引用「第一句。第二句」（bIlIbIlI p05）。'), '');
     assert.deepEqual(await collect(stream(': ping\rdata: 一\rdata: 二\r\rdata: [DONE]')), ['一\n二', '[DONE]']);
     assert.deepEqual(await collect(stream(('data: 小\n\n').repeat(120000))), Array(120000).fill('小'));
