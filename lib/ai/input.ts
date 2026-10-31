@@ -35,6 +35,7 @@ export function normalizeChart(raw: unknown): ZiweiChart & { liunianYear?: numbe
   const chart = {
     birthInfo: { year: num(birth.year), month: num(birth.month), day: num(birth.day), hour: index(birth.hour, 12),
       birthTimeKnown: birth.birthTimeKnown === false || raw.birthTimeKnown === false ? false : true,
+      leapMonthPolicy: ['split', 'next-month', 'prev-month', 'origin-month'].includes(text(birth.leapMonthPolicy)) ? birth.leapMonthPolicy : 'split',
       // Unknown gender must not silently become male.
       gender: birth.gender === 'male' || birth.gender === 'female' ? birth.gender : undefined,
       origInput: isObject(birth.origInput) ? { year: num(birth.origInput.year), month: num(birth.origInput.month), day: num(birth.origInput.day), clockHour: num(birth.origInput.clockHour), clockMinute: num(birth.origInput.clockMinute) } : undefined },
