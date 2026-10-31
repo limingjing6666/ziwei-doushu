@@ -1,0 +1,548 @@
+{
+  "e0004": {
+    "book": "07-methodology",
+    "topic_key": "d6543d3bdf2eedd9",
+    "lecture": "3",
+    "evidence_hash": "46fb5c0ef33c183f99eb4a5cde08f540f6e18f5280c60e5e092dd92c098c0f87"
+  },
+  "e0005": {
+    "book": "07-methodology",
+    "topic_key": "d6543d3bdf2eedd9",
+    "lecture": "3",
+    "evidence_hash": "2a82c1d42b4068bba85a7bda96db212398bf25d4d0c780b1ede9346931bacaf2"
+  },
+  "e0041": {
+    "book": "02-palaces",
+    "topic_key": "c1a2287c76252f94",
+    "lecture": "3",
+    "evidence_hash": "f0859211ce77506826fd8b85ab0645cb5adfc17c6a5a7858006f8ceacbfdbf2d"
+  },
+  "e0058": {
+    "book": "07-methodology",
+    "topic_key": "d6543d3bdf2eedd9",
+    "lecture": "3",
+    "evidence_hash": "049c8f97b8d310d17d3555cfc17653f619b7ddef1e98dfa73bda7509750e9d47"
+  },
+  "e0063": {
+    "book": "02-palaces",
+    "topic_key": "c1a2287c76252f94",
+    "lecture": "3",
+    "evidence_hash": "3eef201d902cb66b376cd04efb516977162c8a8e01fda2fab8e6b0784239613e"
+  },
+  "e0094": {
+    "book": "07-methodology",
+    "topic_key": "d6543d3bdf2eedd9",
+    "lecture": "3",
+    "evidence_hash": "17c830bdc9e79381bab7ba442a1c8e23cae869f1d5e6efc7c3c26d1ee652bea0"
+  },
+  "e0102": {
+    "book": "02-palaces",
+    "topic_key": "8653e4801fa1a4aa",
+    "lecture": "3",
+    "evidence_hash": "967f86203b1a26ba2d7d78cabbfde3f7cfce72a75057ba12ac75a96420562897"
+  },
+  "e0104": {
+    "book": "02-palaces",
+    "topic_key": "8e4121259489fd38",
+    "lecture": "3",
+    "evidence_hash": "fde82a18569dbcb847a811004d8093c2612a71497069d621f13761ebe3664996"
+  },
+  "e0183": {
+    "book": "04-sihua",
+    "topic_key": "8c34a69782f17d9e",
+    "lecture": "5",
+    "evidence_hash": "b8c1be1d81361e7deda72bf3b1d79d1b83452bf3c0f712e37a20a48a84a19144"
+  },
+  "e0185": {
+    "book": "04-sihua",
+    "topic_key": "8f3389e3a15441e9",
+    "lecture": "5",
+    "evidence_hash": "9eebf893a3fb1485821922806f8d9b70c725c6c370dcf7ee1803d78c77a1711c"
+  },
+  "e0186": {
+    "book": "04-sihua",
+    "topic_key": "8f3389e3a15441e9",
+    "lecture": "5",
+    "evidence_hash": "382d7153e585876f43423b62c5c7340ca8ef3e1c74ec96091e84dfcf66a759d2"
+  },
+  "e0188": {
+    "book": "04-sihua",
+    "topic_key": "8f3389e3a15441e9",
+    "lecture": "5",
+    "evidence_hash": "abf175c55a7ce94770ef8e15cf4831216d63b808aaac81de8717e3b434341d01"
+  },
+  "e0196": {
+    "book": "04-sihua",
+    "topic_key": "6ed1824ad3127c99",
+    "lecture": "5",
+    "evidence_hash": "cf3c5c8760be89a7742ee673b453e8522d6d5002772f48f0ec62c61c3c9a1b71"
+  },
+  "e0197": {
+    "book": "04-sihua",
+    "topic_key": "6ed1824ad3127c99",
+    "lecture": "5",
+    "evidence_hash": "d64f52c7a5b339096c8de11631cb3a2c6cfb47e2796cd7d7d654563005f2428c"
+  },
+  "e0201": {
+    "book": "04-sihua",
+    "topic_key": "2c04bd944032d459",
+    "lecture": "5",
+    "evidence_hash": "8a546c9f7167e0028e5a4d4f354188afd5b8e40cf53479bb7181e0a5ddad3abc"
+  },
+  "e0203": {
+    "book": "02-palaces",
+    "topic_key": "8653e4801fa1a4aa",
+    "lecture": "5",
+    "evidence_hash": "d8f465b32c6c22c0bd31085f29eda8209bf461ebe283c756c3af33b1d640b6c8"
+  },
+  "e0204": {
+    "book": "04-sihua",
+    "topic_key": "2c04bd944032d459",
+    "lecture": "5",
+    "evidence_hash": "d8f465b32c6c22c0bd31085f29eda8209bf461ebe283c756c3af33b1d640b6c8"
+  },
+  "e0205": {
+    "book": "04-sihua",
+    "topic_key": "2c04bd944032d459",
+    "lecture": "5",
+    "evidence_hash": "6f6a2c015b07220c18275015c923abc115da89622e284431cd6ed49284ac1b3c"
+  },
+  "e0206": {
+    "book": "04-sihua",
+    "topic_key": "2c04bd944032d459",
+    "lecture": "5",
+    "evidence_hash": "f54207caf34d169e8d37dba127753bea760edf894cf9fe80df3c6ae082cd0a90"
+  },
+  "e0214": {
+    "book": "04-sihua",
+    "topic_key": "2c04bd944032d459",
+    "lecture": "5",
+    "evidence_hash": "1b1b1b2efd3fcccdbfd64f287b048fd0ff1572f44a8b3ff7da54f7270204d4c6"
+  },
+  "e0336": {
+    "book": "01-stars",
+    "topic_key": "4131dd3289f6bb68",
+    "lecture": "7",
+    "evidence_hash": "d21936b4574e55c262c57c3cecf248be8a0c6837f3970c97ab094440fed5c195"
+  },
+  "e0337": {
+    "book": "01-stars",
+    "topic_key": "4131dd3289f6bb68",
+    "lecture": "7",
+    "evidence_hash": "5e8cebd92c15211a767cbfe2253aecfd6a1a2e87cbd46be8bcf814500c35a0c7"
+  },
+  "e0338": {
+    "book": "07-methodology",
+    "topic_key": "6d4b94149c65dc1d",
+    "lecture": "7",
+    "evidence_hash": "2d474a479f0bd0dacdc57f1d73fc08901baf78e5c9e03812f961a955de34595b"
+  },
+  "e0356": {
+    "book": "03-patterns",
+    "topic_key": "e7d341069ed51a62",
+    "lecture": "7",
+    "evidence_hash": "99fa71e6e23dae7bb0e91c04c5ff767beda4815d30e846e534b239d65ef44256"
+  },
+  "e0358": {
+    "book": "03-patterns",
+    "topic_key": "e7d341069ed51a62",
+    "lecture": "7",
+    "evidence_hash": "071cd3acb70a4227ef2f29ed691b83d019dd5b483366e63db5bd6a8c594c8df5"
+  },
+  "e0364": {
+    "book": "01-stars",
+    "topic_key": "0bc7b5c0d1ce5f29",
+    "lecture": "7",
+    "evidence_hash": "e71295347c55b141873b4c0f2272eaf69258d71ba9eeacfeceeef2efe92ec5bf"
+  },
+  "e0365": {
+    "book": "03-patterns",
+    "topic_key": "e7d341069ed51a62",
+    "lecture": "7",
+    "evidence_hash": "e71295347c55b141873b4c0f2272eaf69258d71ba9eeacfeceeef2efe92ec5bf"
+  },
+  "e0394": {
+    "book": "01-stars",
+    "topic_key": "a0b4ef273f910d83",
+    "lecture": "7",
+    "evidence_hash": "06b19997f1fa5b9e56233da8610ca76b9e56e06a68317ae0c58d2ecf2964f846"
+  },
+  "e0397": {
+    "book": "07-methodology",
+    "topic_key": "38be42736686ea3c",
+    "lecture": "7",
+    "evidence_hash": "3a2051558686e11966d8341b8aa6ad5eed43777a90858bef827cb78ae8f4d040"
+  },
+  "e0399": {
+    "book": "07-methodology",
+    "topic_key": "38be42736686ea3c",
+    "lecture": "7",
+    "evidence_hash": "ad6b7630691a56a34f72624df3bd020df19acfd13f1c6cf0b4adf8c6ed4ecd64"
+  },
+  "e0424": {
+    "book": "07-methodology",
+    "topic_key": "38be42736686ea3c",
+    "lecture": "7",
+    "evidence_hash": "128f06750e46b7df9ff5a866976b8ff23f5cddd5458d5dd95bd734d2f6e0c34f"
+  },
+  "e0434": {
+    "book": "01-stars",
+    "topic_key": "4131dd3289f6bb68",
+    "lecture": "7",
+    "evidence_hash": "163aa7496e565fbbd9b226bb29b26c1772ac31af7fbd6e6ff3b593e8a0ffce4d"
+  },
+  "e0445": {
+    "book": "01-stars",
+    "topic_key": "8abaa7a5d17b781e",
+    "lecture": "7",
+    "evidence_hash": "51df1e8c74db46042359bc5319c924c5fc65868b2d8696470c279036aff7cbe0"
+  },
+  "e0446": {
+    "book": "01-stars",
+    "topic_key": "8abaa7a5d17b781e",
+    "lecture": "7",
+    "evidence_hash": "33ff89807ed713295919d9c49e7966c778347ec5d8a5129538b01400cd20cede"
+  },
+  "e0448": {
+    "book": "03-patterns",
+    "topic_key": "e7d341069ed51a62",
+    "lecture": "7",
+    "evidence_hash": "aee206fd806ab711bccdade03ee36d8508fedf33fb1c73a7737b0f204fe1f8b6"
+  },
+  "e0449": {
+    "book": "01-stars",
+    "topic_key": "8abaa7a5d17b781e",
+    "lecture": "7",
+    "evidence_hash": "c0484e73e990ab40f89c5d8bf20fea45c7fe8f53af3c4ef1be8f4a3c0f5ae7fa"
+  },
+  "e0450": {
+    "book": "03-patterns",
+    "topic_key": "e7d341069ed51a62",
+    "lecture": "7",
+    "evidence_hash": "c8323f739fd74b2a8522a5f5ab2e4ce82cb45d3fdd27ae802f9a74c5fb165c72"
+  },
+  "e0479": {
+    "book": "07-methodology",
+    "topic_key": "38be42736686ea3c",
+    "lecture": "9",
+    "evidence_hash": "a08dc18cb4c04e94f482cc0b917ae93e07472dc0d3fcc4534d39782a309b6ad3"
+  },
+  "e0487": {
+    "book": "02-palaces",
+    "topic_key": "c9e35113a9c53eb4",
+    "lecture": "9",
+    "evidence_hash": "77518c737a2bf1321b6461af6673cd54152347ce87427efe36311f3209e61b62"
+  },
+  "e0488": {
+    "book": "02-palaces",
+    "topic_key": "c9e35113a9c53eb4",
+    "lecture": "9",
+    "evidence_hash": "2f14fa4d5ac090852dc89cc6e08590c503d805636c843c0e0097d60228722561"
+  },
+  "e0490": {
+    "book": "02-palaces",
+    "topic_key": "c9e35113a9c53eb4",
+    "lecture": "9",
+    "evidence_hash": "2b0cb098cfa4ee46a687197f3fa690c82bca5f14284e3ef006ee602e368222c4"
+  },
+  "e0499": {
+    "book": "04-sihua",
+    "topic_key": "6ed1824ad3127c99",
+    "lecture": "9",
+    "evidence_hash": "ac5d04d706b683bfa62d47dd5fb6468caf64f523a3d8d4e4bd2bd709e84168e6"
+  },
+  "e0506": {
+    "book": "01-stars",
+    "topic_key": "530b3ea3cb8833c6",
+    "lecture": "9",
+    "evidence_hash": "77b8640ca9b362b297609ceb751e90120b4b252d7a5bb70ddd3bd3ec60d13106"
+  },
+  "e0507": {
+    "book": "07-methodology",
+    "topic_key": "38be42736686ea3c",
+    "lecture": "9",
+    "evidence_hash": "722b068a7086e28a6c36b3061edbeddc3a7b1254937f173196331c6c5dda3326"
+  },
+  "e0538": {
+    "book": "07-methodology",
+    "topic_key": "38be42736686ea3c",
+    "lecture": "9",
+    "evidence_hash": "dcf3c886d1aeb98227184588474710a80d3849520ab914407aab84f138a9891a"
+  },
+  "e0550": {
+    "book": "02-palaces",
+    "topic_key": "8653e4801fa1a4aa",
+    "lecture": "9",
+    "evidence_hash": "5bc6e6251fc5b2f2827909a6944badec5bbbf0664b62a30ef27269ae7754ea94"
+  },
+  "e0619": {
+    "book": "01-stars",
+    "topic_key": "530b3ea3cb8833c6",
+    "lecture": "11",
+    "evidence_hash": "69aa6ebb0d029ed5f41f79dcf69d24e341b0ae477d9487af4a41336ae17c805d"
+  },
+  "e0622": {
+    "book": "01-stars",
+    "topic_key": "530b3ea3cb8833c6",
+    "lecture": "11",
+    "evidence_hash": "f8790f9afb19d0dec8a97f0e95cf64f4def2ee8a492616b3453f3fbe02ab7eb3"
+  },
+  "e0630": {
+    "book": "07-methodology",
+    "topic_key": "6d4b94149c65dc1d",
+    "lecture": "11",
+    "evidence_hash": "37ee76118067b52804b609928200dcd56a613d464e0695dae92a715808b9fbdb"
+  },
+  "e0632": {
+    "book": "01-stars",
+    "topic_key": "4131dd3289f6bb68",
+    "lecture": "11",
+    "evidence_hash": "0353cd5fddfa42a602a937ea7af422232e75c94960ea8ea42e4d75b058e1eff3"
+  },
+  "e0729": {
+    "book": "07-methodology",
+    "topic_key": "6d4b94149c65dc1d",
+    "lecture": "11",
+    "evidence_hash": "77c05df34a8a4d71f624b17b6f33bccccc2f1fa337e2b3827cde6ea99960da85"
+  },
+  "e0734": {
+    "book": "07-methodology",
+    "topic_key": "38be42736686ea3c",
+    "lecture": "11",
+    "evidence_hash": "80810d474e5eaf9b2c5c2c0c5553f1e74caef83af1b2f07a5bbd39619e550646"
+  },
+  "e0737": {
+    "book": "02-palaces",
+    "topic_key": "fa1c1a32c665db47",
+    "lecture": "11",
+    "evidence_hash": "c201f3c9a624dbb467a107355cc34e8deefcbb44dba2b4640fa8b121845d983a"
+  },
+  "e0740": {
+    "book": "02-palaces",
+    "topic_key": "c1a2287c76252f94",
+    "lecture": "11",
+    "evidence_hash": "3aae1169c7017a0519658f2df0ed0b626df1573f0daf5be7a2fdf55f16412a87"
+  },
+  "e0742": {
+    "book": "07-methodology",
+    "topic_key": "38be42736686ea3c",
+    "lecture": "11",
+    "evidence_hash": "ae17f5a31eb25ed326599772525503a06c2bcb3499a89b14ae2110ee196421f2"
+  },
+  "e0763": {
+    "book": "01-stars",
+    "topic_key": "a0b4ef273f910d83",
+    "lecture": "13",
+    "evidence_hash": "c66d438ecbfc4dd7b0d4a09cc5744d5881553b6c0e730b6a0ef603b61cccea48"
+  },
+  "e0774": {
+    "book": "07-methodology",
+    "topic_key": "38be42736686ea3c",
+    "lecture": "13",
+    "evidence_hash": "95ec79afec638f5e674c2c4716234c34888275cf44c93cb0c2e34e1b61b79374"
+  },
+  "e0777": {
+    "book": "03-patterns",
+    "topic_key": "e7d341069ed51a62",
+    "lecture": "13",
+    "evidence_hash": "fd9da3faf8bdbfe8ce48e48ab6124f77ce521ec47dc2cbe37f787c1f7202cbe4"
+  },
+  "e0778": {
+    "book": "03-patterns",
+    "topic_key": "e7d341069ed51a62",
+    "lecture": "13",
+    "evidence_hash": "06d53d4c898b44e4bc15c05c5c1858dcdf959a0256700ecbb0ffa4fe1d3bee74"
+  },
+  "e0821": {
+    "book": "03-patterns",
+    "topic_key": "e7d341069ed51a62",
+    "lecture": "13",
+    "evidence_hash": "2d3d7b9dffb5e84f07a2ca6ca6404bf4c575d7445a12b9f45abaf14208548d2f"
+  },
+  "e0860": {
+    "book": "02-palaces",
+    "topic_key": "c1a2287c76252f94",
+    "lecture": "13",
+    "evidence_hash": "ddf832a465a234fc3afe356e7f5521a7aa2e22d8126c4e2e244b1cc7cdeb956a"
+  },
+  "e0889": {
+    "book": "03-patterns",
+    "topic_key": "e7d341069ed51a62",
+    "lecture": "13",
+    "evidence_hash": "06088b57aa945470f6759f9b2c7c80409e119ac53d727242af808cac1fcfe036"
+  },
+  "e0900": {
+    "book": "03-patterns",
+    "topic_key": "e7d341069ed51a62",
+    "lecture": "15",
+    "evidence_hash": "22acd949748fbff11ac0708ae23f5ba1d8f56479d15bef028b769075a186a1bc"
+  },
+  "e0922": {
+    "book": "07-methodology",
+    "topic_key": "38be42736686ea3c",
+    "lecture": "15",
+    "evidence_hash": "9026bed4dc12487ac2c74f221b0b59e5089e01c0ad2277bd9254f0cd3edeebc9"
+  },
+  "e0945": {
+    "book": "03-patterns",
+    "topic_key": "e7d341069ed51a62",
+    "lecture": "15",
+    "evidence_hash": "46e359cfa5d0ceb56c5d702049634be9a9748760d7765291decebeb3dcf3e2fc"
+  },
+  "e0952": {
+    "book": "02-palaces",
+    "topic_key": "8e4121259489fd38",
+    "lecture": "15",
+    "evidence_hash": "ef24084712c1c7f66dce2ebfbef1bc6c271c57119cbf0843b19cfcadeb520363"
+  },
+  "e0984": {
+    "book": "04-sihua",
+    "topic_key": "6ed1824ad3127c99",
+    "lecture": "15",
+    "evidence_hash": "e46cd80e230602b14044545732e05790f7b521f2266473d968b20d7aedd00184"
+  },
+  "e1041": {
+    "book": "02-palaces",
+    "topic_key": "5653725f40b49162",
+    "lecture": "17",
+    "evidence_hash": "5464fae321b58065c58851ea6071ad5873defc9d9e7f65b95f16648cfb21a32a"
+  },
+  "e1127": {
+    "book": "07-methodology",
+    "topic_key": "38be42736686ea3c",
+    "lecture": "17",
+    "evidence_hash": "95592bb3b6b5771523e198213c0cfa9ecb0a14e1f24469fa55f0371db0d131c9"
+  },
+  "e1152": {
+    "book": "04-sihua",
+    "topic_key": "2c04bd944032d459",
+    "lecture": "17",
+    "evidence_hash": "58ed7d5ea0d2bd86cba0ffd7ea3068d3165ab62b7298aa083c748d237dd5a116"
+  },
+  "e1191": {
+    "book": "07-methodology",
+    "topic_key": "38be42736686ea3c",
+    "lecture": "19",
+    "evidence_hash": "5c270ac65c7d2d01e469611c96dba22f9c202b5b46daebd4d2c7208e43eeb5e8"
+  },
+  "e1198": {
+    "book": "07-methodology",
+    "topic_key": "38be42736686ea3c",
+    "lecture": "19",
+    "evidence_hash": "f84dc7f2580aa236b86dc64d583915b889024a9830db62e24384eca9868f6415"
+  },
+  "e1294": {
+    "book": "07-methodology",
+    "topic_key": "6d4b94149c65dc1d",
+    "lecture": "19",
+    "evidence_hash": "50a4809e0d0f3db924437f3883f5db9570a57ba5e4a1c04f9207fab9e70a64c7"
+  },
+  "e1316": {
+    "book": "04-sihua",
+    "topic_key": "6ed1824ad3127c99",
+    "lecture": "21",
+    "evidence_hash": "f621d1570973d011d7453f7bc4b298dbc7dd72c3486014f023de693cab08e02b"
+  },
+  "e1380": {
+    "book": "04-sihua",
+    "topic_key": "8c34a69782f17d9e",
+    "lecture": "21",
+    "evidence_hash": "327bc8414c81a14a1b0dcda6cc22817366e3dd952ba6780cda55f868e9181ca3"
+  },
+  "e1381": {
+    "book": "04-sihua",
+    "topic_key": "6ed1824ad3127c99",
+    "lecture": "21",
+    "evidence_hash": "2c45d5405b4cea3d34ef8f12424e6d496cd3a5eadfaa400788cd44a0921a2430"
+  },
+  "e1384": {
+    "book": "02-palaces",
+    "topic_key": "c9e35113a9c53eb4",
+    "lecture": "21",
+    "evidence_hash": "5636e636c02d4a5b2fb94fcf047f853e92cc21971c773063c395a5fe60efd96f"
+  },
+  "e1385": {
+    "book": "04-sihua",
+    "topic_key": "6ed1824ad3127c99",
+    "lecture": "21",
+    "evidence_hash": "f0b3eda76305d1a66fd8226b8a2efdbea0690d2d6ad72d27c85b9bfc169d1682"
+  },
+  "e1400": {
+    "book": "02-palaces",
+    "topic_key": "5653725f40b49162",
+    "lecture": "21",
+    "evidence_hash": "9d9c963b980d99e5c53f1c956614d8647c56f67cdb820ca87d1a1487038ed851"
+  },
+  "e1453": {
+    "book": "04-sihua",
+    "topic_key": "8c34a69782f17d9e",
+    "lecture": "23",
+    "evidence_hash": "25b83facaff5a203d53b92a0384f2078b34a0fdebfa4a66d58123366c5397b26"
+  },
+  "e1479": {
+    "book": "07-methodology",
+    "topic_key": "6d4b94149c65dc1d",
+    "lecture": "23",
+    "evidence_hash": "c44c21677dcc1f39df1bb3d36ced415351b8c6058ac563828972109844883bd9"
+  },
+  "e1490": {
+    "book": "02-palaces",
+    "topic_key": "a3a208896938fe52",
+    "lecture": "23",
+    "evidence_hash": "4b22fdab192bab31c4affb881c769815e5d9641298ba246b490ee3219c9b0946"
+  },
+  "e1536": {
+    "book": "07-methodology",
+    "topic_key": "38be42736686ea3c",
+    "lecture": "25",
+    "evidence_hash": "7a4d6708ae2edbb1ff74191c63b5178f74e9db6039121a20194e448d93753eca"
+  },
+  "e1556": {
+    "book": "04-sihua",
+    "topic_key": "6ed1824ad3127c99",
+    "lecture": "25",
+    "evidence_hash": "4a80dd02242c6a3916032a1b81af383196ef3d094628f35918c2c25b2d607a31"
+  },
+  "e1589": {
+    "book": "04-sihua",
+    "topic_key": "2c04bd944032d459",
+    "lecture": "25",
+    "evidence_hash": "ab7a08f2c13c213567942fbfeeab8b95288a0ba89e7217c80f73d51570f84b74"
+  },
+  "e1677": {
+    "book": "04-sihua",
+    "topic_key": "6ed1824ad3127c99",
+    "lecture": "27",
+    "evidence_hash": "022d14530a597f7cd9f38d186b9f04a0c3a14be342d1d7738d7acb1c4b03e0ce"
+  },
+  "e1727": {
+    "book": "07-methodology",
+    "topic_key": "38be42736686ea3c",
+    "lecture": "29",
+    "evidence_hash": "f98d2a8c551105c89b6da67cebe3f95d288b08cb1e9e762712b977a76156ee74"
+  },
+  "e1842": {
+    "book": "04-sihua",
+    "topic_key": "8c34a69782f17d9e",
+    "lecture": "48",
+    "evidence_hash": "4831ec70ac3899f2951b19c5401a68a478ed0538d6c7905b0fc8332562428fee"
+  },
+  "e1846": {
+    "book": "04-sihua",
+    "topic_key": "8c34a69782f17d9e",
+    "lecture": "48",
+    "evidence_hash": "af590ba99fe352a2bf8a23d4173eea31645b9d352404da1559fe76e5dcdaf7f6"
+  },
+  "e1847": {
+    "book": "04-sihua",
+    "topic_key": "8c34a69782f17d9e",
+    "lecture": "48",
+    "evidence_hash": "b12f8eaae48dfaba408f01fce9ee81dfbf27872bc015d3bd428e9cfc784d7d65"
+  },
+  "e1848": {
+    "book": "04-sihua",
+    "topic_key": "8c34a69782f17d9e",
+    "lecture": "48",
+    "evidence_hash": "7333e97b6bfe6a7bc0e01bb890d655e18f303e2fc887d36cf8bcb574ee9fb69e"
+  }
+}

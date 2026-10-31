@@ -2,8 +2,8 @@
 Ziwei Doushu Open Sample Dataset v3.0 & Open Interpretation Dataset v4.0 — License
 
 ================================================================
-简版：可自由使用，含商业用途；唯一要求是保留来源标注。
-Short version: free to use, including commercially. Attribution required.
+简版：按 CC BY 4.0 使用，含商业用途；须署名、附许可链接并标明修改。
+Short version: CC BY 4.0 permits commercial use; credit, license link and change notices required.
 ================================================================
 
 适用范围
@@ -12,7 +12,8 @@ Short version: free to use, including commercially. Attribution required.
     · `v4.0-13d`：解读数据集 v4.0（year-1950 … year-2026.jsonl.zst、
       ziwei-interp-v4-all.tar、MANIFEST.json 及校验文件）。
   仓库内的**代码**另行适用根目录 LICENSE（MIT）；
-  仓库内的**古籍原文**（骨髓赋、紫微斗数全集 / 全书）属公有领域。
+  历史古籍原典的公有领域地位，不自动适用于仓库内的现代整理稿。
+  当前书库未经版本逐字校勘，不据书名声明全部文本为公版。
 
 授权条款
   本数据集以 Creative Commons Attribution 4.0 International（CC BY 4.0）
@@ -25,7 +26,7 @@ Short version: free to use, including commercially. Attribution required.
 
   无需付费、无需申请、无需事先告知。
 
-唯一要求：保留来源标注
+署名与许可义务（以 CC BY 4.0 正式文本为准）
   在合理的位置注明（按你用的版本写）：
 
     本项目使用了 紫微斗数开源样本数据集 v3.0（518,400 条）
@@ -34,14 +35,15 @@ Short version: free to use, including commercially. Attribution required.
     来源：https://github.com/Renhuai123/ziwei-doushu
     作者：王多鱼AI
 
-  放在哪里都可以：网页的关于 / 数据来源 / 页脚；模型卡或数据集卡的
+  还须附 CC BY 4.0 许可链接、标明所作修改，不暗示作者背书，
+  不施加妨碍许可权利的附加限制。建议放在网页的关于 / 数据来源 / 页脚；模型卡或数据集卡的
   Training Data 字段；论文的参考文献或致谢；二次发布数据集的 README 或
   metadata 文件。
 
 引文不在授权范围内
-  解读文本中引用的倪海厦《天纪》原话，是为说明断语出处而注明集数与时间码的
-  简短引用，著作权归原权利人，不属于本数据集的授权范围；要把这些原话单独成批
-  使用，按仓库 docs/tianji-ziwei/LICENSE.md（CC BY-NC-SA 4.0）处理。
+  上游解读中可能包含第三方现代作品引文，其著作权归原权利人，
+  不属于本数据集的授权范围。整理者无权为第三方作品授予使用许可。
+  本站已删除讲课语料并对衍生库进行过滤；自动检测不能代替权利审查。
   《紫微斗数全书》等古籍原文属公有领域。
 
 免责声明

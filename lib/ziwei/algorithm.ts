@@ -10,7 +10,7 @@ import { BRANCHES, STEMS } from './constants';
 import { schoolStarBrightness, type BrightnessSchool } from './school-data';
 import { SCHOOL_AX } from './school-tables.generated';
 import { DEFAULT_LEAP_MONTH } from './school-config';
-// 飞星派工具仅供导出，不再在排盘时调用（倪师《天纪 03》：四化星永远固定不动）
+// 飞星派工具仅供导出；本命排盘不主动叠加运限四化
 // import { detectSelfSihua, getSiHuaByStem } from './sihua';
 
 // 紫微斗数主流派（中州派/全书派/主流排盘软件）采用"正月初一换年"规则（农历年口径）。
@@ -25,13 +25,13 @@ import { DEFAULT_LEAP_MONTH } from './school-config';
 // ★ 星曜亮度修正（2026-05-08）
 // iztro 默认亮度表与《紫微斗数全书》存在 24 处差异（14 主星 + 6 辅星），
 // 已通过 config.brightness 全量覆写修正。
-// 数组索引从寅起：0=寅 1=卯 2=辰 3=巳 4=午 5=未 6=申 7=酉 8=戌 9=亥 10=子 11=丑
+// 数组从寅起，索引依次为 BRANCHES 循环左移两位后的顺序。
 // 交叉验证来源：紫微取象派全书解读、令东来庙旺表、iztro 官方文档、金标准盘
 // ★ 抽成具名常量（2026-06-11）：供 setBrightnessSchool('default') 显式还原，根治「切流派后全局亮度泄漏」。
 //   必须完整覆盖全部 14 主星——流派表（schoolBrightnessTableToIztroFormat）覆写 14 主星，
 //   若此处缺某主星键，切流派后该星被污染却无键可盖回（实测：武曲/廉贞/巨门/破军 曾缺失）。
 const DEFAULT_BRIGHTNESS: Record<string, string[]> = {
-    //            寅     卯     辰     巳     午     未     申     酉     戌     亥     子     丑
+    // 数组位置 0..11，对应上文约定的寅起循环。
     // ── 紫微系六星 ──────────────────────────────────────────
     // 紫微：寅宫 旺→庙（全书：庙于寅午丑未）
     '紫微': ['庙','旺','得','旺','庙','庙','旺','旺','得','旺','平','庙'],
@@ -461,7 +461,7 @@ export function generateChart(
   const iztroGender = gender === 'male' ? '男' : '女';
 
   // 闰月处理（流派分歧：归本月 / 归下月 / 前后半分）
-  // 默认 = DEFAULT_LEAP_MONTH（2026-09-05 起 split：主流排盘默认口径「月中分界」，150 组金标准盘对照验证；倪师派归下月可经流派抽屉切 next-month）
+  // 默认 = DEFAULT_LEAP_MONTH（2026-09-05 起 split：主流排盘默认口径「月中分界」，150 组金标准盘对照验证；可选口径归下月可经流派抽屉切 next-month）
   // 非 split 时先算农历，闰月才切 byLunar；非闰月仍走 bySolar，与 split 行为完全一致
   const leapMode = opts?.leapMonth ?? DEFAULT_LEAP_MONTH;
   const effectiveLunar = resolveEffectiveLunarDate(year, month, day, leapMode);
@@ -612,7 +612,7 @@ export function generateChart(
   const ziweiPalace = palaces.find(p => p.stars.some(s => s.name === '紫微' && s.type === 'major'));
   const ziweiPos    = ziweiPalace?.branch ?? 0;
 
-  // ── 大限数组（倪师《天纪》正统：四化永远固定，大限只看宫位移动）──
+  // ── 大限数组（本命标记固定，大限单列宫位）──
   // 不再生成 daXians[].siHua / stemIndex / stemName（飞星派字段已下线）
   const daXians: DaXian[] = palaces
     .filter(p => p.daXianAge)
@@ -624,7 +624,7 @@ export function generateChart(
       palaceName:   p.name,
     }));
 
-  // 宫干自化已下线（倪师不主张飞星派宫干自化论）
+  // 起盘不默认叠加宫干自化
 
   const currentDaXianIndex = daXians.findIndex(
     dx => currentAge >= dx.startAge && currentAge <= dx.endAge,

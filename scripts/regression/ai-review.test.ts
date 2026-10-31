@@ -26,7 +26,7 @@ async function main() {
   try {
     for (const [key, profile] of Object.entries(STAR_DB)) {
       for (const [field, content] of Object.entries(profile) as [string, string][]) {
-        assert.doesNotMatch(content, /天纪|倪师|倪海厦|倪先生|B\s*站|bilibili|BV\w+|\d{1,2}[:：]\d{2}|�/i, `${key}/${field}`);
+        assert.doesNotMatch(content, /\u5929\u7eaa|\u502a\u5e08|\u502a\u6d77\u53a6|\u502a\u5148\u751f|B\s*站|bilibili|BV\w+|\d{1,2}[:：]\d{2}|�/i, `${key}/${field}`);
         for (const [open, close] of [['「', '」'], ['『', '』'], ['“', '”'], ['（', '）']]) {
           assert.equal(content.split(open).length, content.split(close).length, `${key}/${field}: unbalanced ${open}`);
         }
@@ -41,7 +41,7 @@ async function main() {
       const data = getKnowledge(star, topic);
       assert.ok(data.exists && (data.parsed.dingdiao || data.parsed.lundian), `${star}/${topic}`);
     }
-    assert.equal(safeReference('公开内容。\n\n倪先生说「第一句。第二句。」\n\nB站第5讲。'), '公开内容。');
+    assert.equal(safeReference('公开内容。\n\n\u502a\u5148\u751f说「第一句。第二句。」\n\nB站第5讲。'), '公开内容。');
     assert.equal(safeReference('引用「第一句。第二句」（bIlIbIlI p05）。'), '');
     assert.deepEqual(await collect(stream(': ping\rdata: 一\rdata: 二\r\rdata: [DONE]')), ['一\n二', '[DONE]']);
     assert.deepEqual(await collect(stream(('data: 小\n\n').repeat(120000))), Array(120000).fill('小'));
@@ -75,7 +75,10 @@ async function main() {
     for (const suffix of ['', 'data: {"choices":[{"finish_reason":"length"}]}\n\ndata: [DONE]\n\n', 'data: {"error":"private upstream details"}\n\n', 'data: invalid\n\n']) {
       globalThis.fetch = async () => sse(visible + suffix);
       let partial = '';
-      await assert.rejects(consumeAiResponse(await streamDeepSeek(req, 'test', []), text => { partial = text; }), /解读暂时中断/);
+      const response = await streamDeepSeek(req, 'test', []);
+      const wire = await response.clone().text();
+      assert.ok(wire.endsWith('data: [DONE]\n\n'), 'truncation/errors must still terminate the SSE protocol');
+      await assert.rejects(consumeAiResponse(response, text => { partial = text; }), /解读暂时中断/);
       assert.match(partial, /命宫天府/); assert.doesNotMatch(partial, /private/);
     }
     globalThis.fetch = async () => sse('data: [DONE]\n\n');
@@ -96,6 +99,9 @@ async function main() {
       assert.equal(payload.messages.filter((m: { role: string }) => m.role === 'system').length, 1);
       assert.ok(!JSON.stringify(payload).includes('injected-system'));
       assert.ok(JSON.stringify(payload).includes('命宫'));
+      const context = JSON.parse(payload.messages[1].content.split('\n').slice(1).join('\n'));
+      assert.ok(context.references.length <= 6000, 'actual route reference budget');
+      if (context.chartB) assert.ok(context.references.includes('A方法[') && context.references.includes('B方法['));
       return sse(visible + 'data: [DONE]\n\n');
     };
     for (const response of [await interpret(post({ chart, messages: [{ role: 'system', content: 'injected-system' }, { role: 'user', content: '请解读' }] })), await heming(post({ chartA: chart, chartB: chart, question: '相处建议' }))]) {

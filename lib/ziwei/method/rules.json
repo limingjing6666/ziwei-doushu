@@ -1,0 +1,499 @@
+[
+  {
+    "id": "structure",
+    "claim": "先建立目标宫的关联图，再讨论某颗星的意义；不要从孤立位置直接下结论。",
+    "condition": {},
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e0041",
+      "e0063",
+      "e0740",
+      "e0742",
+      "e0922",
+      "e1198"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "life-time",
+    "claim": "把长期行为线索与阶段变化分开交代，避免用某年的压力描述整个人生。",
+    "condition": {},
+    "polarity": "neutral",
+    "confidence": "low",
+    "source_ids": [
+      "e0479",
+      "e0507",
+      "e0538"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "decade",
+    "claim": "判断年度变化前，先确定所属大限的背景；短期信号不能独立推翻阶段主线。",
+    "condition": {},
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e1191",
+      "e1536",
+      "e1727"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "opportunity",
+    "claim": "同样的配置处在学习期或就业期，讨论的机会不同；先核对年龄与现实角色。",
+    "condition": {},
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e0734",
+      "e0774",
+      "e1127"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "context",
+    "claim": "同一组出生信息不保证相同经历；个人经历与选择须另行询问，不能从盘上补造。",
+    "condition": {},
+    "polarity": "caution",
+    "confidence": "high",
+    "source_ids": [
+      "e1294",
+      "e1479",
+      "e0729"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "palace",
+    "claim": "星性要翻译成该宫的具体议题，不把本人的特征直接套给亲属。",
+    "condition": {},
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e0737",
+      "e0860"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "marriage",
+    "claim": "关系问题须同时核对互动期待与内在感受，不能只凭夫妻宫决定相处结果。",
+    "condition": {
+      "palaces": [
+        "夫妻",
+        "福德"
+      ]
+    },
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e0102",
+      "e0550",
+      "e0104",
+      "e0952"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "body",
+    "claim": "身宫可提示后续投入较多的领域；作为重心线索，而非固定职业或身份。",
+    "condition": {},
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e0487",
+      "e0488",
+      "e0490",
+      "e1384"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "sihua-order",
+    "claim": "把四化落点列为优先检查项，再追踪它们关联的宫位主题。",
+    "condition": {},
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e0183",
+      "e1380",
+      "e1453"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "fixed",
+    "claim": "本命四化只是固定标签；年份变化另开分析层，不能宣称原有星曜换了位置。",
+    "condition": {},
+    "polarity": "neutral",
+    "confidence": "low",
+    "source_ids": [
+      "e0185",
+      "e0186",
+      "e0188"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "brightness",
+    "claim": "先核对当前盘的亮度，再谈星性发挥；不能只按吉曜或煞曜的分类决定结论。",
+    "condition": {},
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e0336",
+      "e0337",
+      "e0434",
+      "e0632",
+      "e0338"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "mixed",
+    "claim": "有利配置里仍可能有制约，压力配置里也可能有可用支持；两面都要列出来。",
+    "condition": {},
+    "polarity": "caution",
+    "confidence": "high",
+    "source_ids": [
+      "e0338",
+      "e0630",
+      "e0337"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "ziwei-help",
+    "claim": "紫微的统筹意象要检查辅弼协作条件，不能把一颗紫微等同现实地位。",
+    "condition": {
+      "stars": [
+        "紫微"
+      ],
+      "relation": "trine",
+      "support_any": [
+        "左辅",
+        "右弼"
+      ]
+    },
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e0506",
+      "e0619",
+      "e0622",
+      "e0394",
+      "e0763"
+    ],
+    "classical_overlap": {
+      "work": "紫微斗数全书",
+      "topic": "紫微与辅佐配置的关系；方法重合，非引文验证"
+    }
+  },
+  {
+    "id": "lucun",
+    "claim": "禄存可用来讨论储备偏好；财帛位置的表现还需结合实际收支核对。",
+    "condition": {
+      "stars": [
+        "禄存"
+      ],
+      "palaces": [
+        "命宫",
+        "财帛"
+      ]
+    },
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e0445",
+      "e0446",
+      "e1041",
+      "e1400"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "luma",
+    "claim": "禄曜与天马的关联可提示资源和活动范围相连；收益仍有行动成本与现实条件。",
+    "condition": {
+      "stars": [
+        "天马"
+      ],
+      "relation": "trine",
+      "support_any": [
+        "禄存"
+      ],
+      "sihua_any": [
+        "禄"
+      ]
+    },
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e0448",
+      "e0449",
+      "e0450"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "ke-meaning",
+    "claim": "化科不只对应考试，须根据人生阶段与落宫区分学习、专业认可或公众评价。",
+    "condition": {
+      "sihua": [
+        "科"
+      ]
+    },
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e0196",
+      "e0197",
+      "e0499",
+      "e1316",
+      "e1385",
+      "e1677"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "ke-lu",
+    "claim": "科与禄发生结构关联时，可讨论专业服务如何取得资源，不保证职业收入。",
+    "condition": {
+      "sihua": [
+        "科",
+        "禄"
+      ],
+      "relation": "trine"
+    },
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e0984",
+      "e1381",
+      "e1556"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "quan",
+    "claim": "化权的主导意象要落到具体领域；个人主见与工作中的管理责任不能混为一谈。",
+    "condition": {
+      "sihua": [
+        "权"
+      ]
+    },
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e0201",
+      "e0204",
+      "e0205",
+      "e1152",
+      "e1589"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "ke-no-quan",
+    "claim": "有专业认可不等于拥有组织管理权，科的线索与权的线索需要分别核对。",
+    "condition": {
+      "sihua": [
+        "科"
+      ],
+      "absent_sihua": [
+        "权"
+      ]
+    },
+    "polarity": "caution",
+    "confidence": "low",
+    "source_ids": [
+      "e0206",
+      "e0214"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "quan-spouse",
+    "claim": "关系里见权的线索，可把讨论落到决策参与和责任分配，不按性别决定谁服从。",
+    "condition": {
+      "palaces": [
+        "夫妻"
+      ],
+      "sihua": [
+        "权"
+      ]
+    },
+    "polarity": "neutral",
+    "confidence": "low",
+    "source_ids": [
+      "e0203",
+      "e0204"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "lu-ji",
+    "claim": "资源线索与牵挂信号并存时，先列出收益和管理负担，再讨论取舍。",
+    "condition": {
+      "sihua": [
+        "禄",
+        "忌"
+      ],
+      "relation": "same"
+    },
+    "polarity": "caution",
+    "confidence": "low",
+    "source_ids": [
+      "e1842",
+      "e1846"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "ke-ji",
+    "claim": "认可与压力的线索交会时，可讨论目标冲突和优先级，但不强迫用户放弃某个人生目标。",
+    "condition": {
+      "sihua": [
+        "科",
+        "忌"
+      ],
+      "relation": "same"
+    },
+    "polarity": "caution",
+    "confidence": "low",
+    "source_ids": [
+      "e1846",
+      "e1847",
+      "e1848"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "pattern-first",
+    "claim": "先抓住总格的主线，再筛选对问题有帮助的小组合，避免堆砌名称制造矛盾。",
+    "condition": {},
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e0356",
+      "e0358",
+      "e0945"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "juri",
+    "claim": "巨日类组合必须复核两星亮度及会照位置；名称相似不代表成立条件相同。",
+    "condition": {
+      "stars": [
+        "巨门",
+        "太阳"
+      ],
+      "relation": "trine",
+      "bright": true,
+      "patterns": [
+        "巨日"
+      ]
+    },
+    "polarity": "neutral",
+    "confidence": "high",
+    "source_ids": [
+      "e0777",
+      "e0778",
+      "e0821",
+      "e0889",
+      "e0900"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "kui-yue",
+    "claim": "夹贵需要魁钺位于目标宫两侧；两星仅在关联范围出现时不能称为相夹。",
+    "condition": {
+      "stars": [
+        "天魁",
+        "天钺"
+      ],
+      "relation": "adjacent",
+      "patterns": [
+        "魁钺"
+      ]
+    },
+    "polarity": "neutral",
+    "confidence": "low",
+    "source_ids": [
+      "e0364",
+      "e0365"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "single-year",
+    "claim": "年度细看可先抓本宫与对宫；这是一种简化的观察法，不替代阶段背景核查。",
+    "condition": {},
+    "polarity": "neutral",
+    "confidence": "low",
+    "source_ids": [
+      "e0424"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "leap",
+    "claim": "闰月归到下一月属于一种排盘口径；需明确设置，不把它说成唯一算法。",
+    "condition": {},
+    "polarity": "caution",
+    "confidence": "low",
+    "source_ids": [
+      "e0397"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "midnight",
+    "claim": "子时日期的切换存在口径差异，边界出生应比较方案，不能从单处教材强改默认算法。",
+    "condition": {},
+    "polarity": "caution",
+    "confidence": "low",
+    "source_ids": [
+      "e0399"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "validate",
+    "claim": "把判断当成待核对的假设，记录现实反馈；不以一次巧合证明体系有效。",
+    "condition": {},
+    "polarity": "neutral",
+    "confidence": "low",
+    "source_ids": [
+      "e0004",
+      "e0005",
+      "e0058",
+      "e0094"
+    ],
+    "classical_overlap": null
+  },
+  {
+    "id": "movement",
+    "claim": "迁移主题遇禄，可讨论外部资源机会；是否离开本地仍须依据现实成本决定。",
+    "condition": {
+      "palaces": [
+        "迁移"
+      ],
+      "sihua": [
+        "禄"
+      ]
+    },
+    "polarity": "neutral",
+    "confidence": "low",
+    "source_ids": [
+      "e1490"
+    ],
+    "classical_overlap": null
+  }
+]

@@ -5,6 +5,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ALL_BOOKS, getChapter } from '@/lib/classics';
+import { pageMetadata } from '@/lib/brand';
+import { CLASSICS_NOTICE } from '@/lib/classics/types';
 
 export async function generateStaticParams() {
   return ALL_BOOKS.flatMap(b =>
@@ -16,10 +18,8 @@ export async function generateMetadata({ params }: { params: Promise<{ book: str
   const { book: bookSlug, chapter: chIdx } = await params;
   const result = getChapter(bookSlug, parseInt(chIdx));
   if (!result) return {};
-  return {
-    title: `${result.chapter.title} · 《${result.book.title}》· 紫微斗数古籍`,
-    description: result.chapter.subtitle || `《${result.book.title}》${result.chapter.title}原文`,
-  };
+  return pageMetadata(`${result.chapter.title} · 《${result.book.title}》主题整理`,
+    CLASSICS_NOTICE, `/library/${bookSlug}/${chIdx}`);
 }
 
 export default async function ChapterPage({ params }: { params: Promise<{ book: string; chapter: string }> }) {
@@ -61,6 +61,8 @@ export default async function ChapterPage({ params }: { params: Promise<{ book: 
             </div>
           )}
         </div>
+
+        <p role="note" style={{ fontSize: '12px', color: 'var(--tx-2)', lineHeight: 1.8, marginBottom: '20px' }}>{CLASSICS_NOTICE}</p>
 
         {/* 段落 */}
         <div style={{ background: 'var(--bg-card)', borderRadius: '14px', border: '1px solid rgba(184,146,42,0.2)', padding: '32px 28px' }}>
@@ -115,7 +117,7 @@ export default async function ChapterPage({ params }: { params: Promise<{ book: 
                   {p.translation}
                 </div>
               )}
-              {p.niNote && (
+              {p.readingNote && (
                 <div style={{
                   marginTop: '8px',
                   marginLeft: '36px',
@@ -126,8 +128,8 @@ export default async function ChapterPage({ params }: { params: Promise<{ book: 
                   color: 'var(--tx-2)',
                   lineHeight: 1.8,
                 }}>
-                  <span style={{ fontSize: '10px', color: 'var(--ji)', marginRight: '6px' }}>倪师注</span>
-                  {p.niNote}
+                  <span style={{ fontSize: '10px', color: 'var(--ji)', marginRight: '6px' }}>阅读提示</span>
+                  {p.readingNote}
                 </div>
               )}
             </div>

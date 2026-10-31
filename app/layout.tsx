@@ -4,20 +4,27 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { SITE_URL } from '@/lib/site';
+import { SITE_TITLE, SITE_SLOGAN } from '@/lib/brand';
 
 export const metadata: Metadata = {
-  title: '紫微命盘 · 倪海厦正宗紫微斗数',
-  description: '基于倪海厦正宗紫微斗数体系，AI深度解读您的命盘格局、大限流年、感情事业财富健康全方位解析',
-  keywords: '紫微斗数, 倪海厦, 紫微斗数全集, 紫微斗数全书, 骨髓赋, 命盘, 命理, 14主星, 12宫位',
+  title: SITE_TITLE,
+  description: '三合四化 · 古法排盘 · AI 解读。基于传统三合派紫微斗数，结合四化飞星，分层阅读星宫结构与运限主题，仅供文化学习参考。',
+  keywords: '天机盘, 紫微斗数, 三合四化, 紫微斗数全集, 紫微斗数全书, 骨髓赋, 命盘, 命理, 14主星, 12宫位',
   metadataBase: new URL(SITE_URL),
+  manifest: '/manifest.webmanifest',
+  twitter: {
+    card: 'summary',
+    title: SITE_TITLE,
+    description: SITE_SLOGAN,
+  },
   alternates: {
     canonical: '/',
   },
   openGraph: {
-    title: '紫微命盘 · 倪海厦正宗紫微斗数',
-    description: '基于倪海厦正宗紫微斗数体系，AI深度解读您的命盘格局、大限流年、感情事业财富健康全方位解析',
+    title: SITE_TITLE,
+    description: '三合四化 · 古法排盘 · AI 解读。基于传统三合派紫微斗数，结合四化飞星，分层阅读星宫结构与运限主题，仅供文化学习参考。',
     url: SITE_URL,
-    siteName: '紫微研究',
+    siteName: SITE_TITLE,
     locale: 'zh_CN',
     type: 'website',
   },
@@ -40,6 +47,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org', '@type': 'WebSite',
+          name: SITE_TITLE, url: SITE_URL,
+          description: SITE_SLOGAN,
+        }) }} />
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('ziwei-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);else document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();` }} />
       </head>
       <body className="min-h-screen">

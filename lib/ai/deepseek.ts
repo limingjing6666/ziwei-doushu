@@ -15,6 +15,9 @@ export async function streamDeepSeek(request: Request, system: string, messages:
     upstream = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: process.env.DEEPSEEK_MODEL || 'deepseek-flash', stream: true,
+        // Keep the bounded budget for the visible reading, not hidden reasoning.
+        // Other explicitly configured models retain their own default behavior.
+        ...((process.env.DEEPSEEK_MODEL || 'deepseek-flash') === 'deepseek-flash' ? { thinking: { type: 'disabled' } } : {}),
         messages: [{ role: 'system', content: system }, ...messages], max_tokens: 2400 }),
       signal: abort.signal, cache: 'no-store',
     });

@@ -25,6 +25,7 @@ import {
   SLUG_TO_STAR,
 } from '@/lib/seo/knowledge';
 import { SITE_URL } from '@/lib/site';
+import { pageMetadata, SITE_TITLE, SITE_SLOGAN } from '@/lib/brand';
 
 // 允许动态参数：如果某个 star/topic 组合不在 generateStaticParams 列表中
 // 也允许运行时按需渲染，避免中文 URL 编码问题导致 404
@@ -43,22 +44,12 @@ export async function generateMetadata({ params }: { params: Promise<{ star: str
   const data = getKnowledge(star, topic as TopicKey);
   if (!data.exists) return {};
 
-  const title = `${star}入${data.palaceName}宫 · ${data.topicLabel} · 传统星性参考`;
+  const title = `${star}入${data.palaceName.replace(/宫$/, '')}宫 · ${data.topicLabel} · 传统星性参考`;
   const description = data.parsed.dingdiao
-    || `${star}入${data.palaceName}宫的紫微斗数解读 — 基于开源解读数据集与传统星性，仅供学习参考。`;
+    || `${star}入${data.palaceName.replace(/宫$/, '')}宫的紫微斗数解读 — 基于开源解读数据集与传统星性，仅供学习参考。`;
 
   return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-      type: 'article',
-      url: `${SITE_URL}/knowledge/${slug}/${topic}`,
-    },
-    alternates: {
-      canonical: `${SITE_URL}/knowledge/${slug}/${topic}`,
-    },
+    ...pageMetadata(title, description, `/knowledge/${slug}/${topic}`, true),
     keywords: [
       '紫微斗数', '传统星性', star, data.palaceName, data.topicLabel,
       `${star}${data.palaceName}`, `${star}入${data.palaceName}`,
@@ -83,12 +74,12 @@ export default async function KnowledgePage({ params }: { params: Promise<{ star
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
-    headline: `${star}入${data.palaceName}宫 · ${data.topicLabel}`,
-    description: data.parsed.dingdiao,
-    author: { '@type': 'Organization', name: '紫微研究' },
+    headline: `${star}入${data.palaceName.replace(/宫$/, '')}宫 · ${data.topicLabel}`,
+    description: `${SITE_SLOGAN}。${data.parsed.dingdiao || '传统星性参考'}`,
+    author: { '@type': 'Organization', name: SITE_TITLE },
     publisher: {
       '@type': 'Organization',
-      name: '紫微研究',
+      name: SITE_TITLE,
       url: SITE_URL,
     },
     datePublished: '2026-04-28',
@@ -125,7 +116,7 @@ export default async function KnowledgePage({ params }: { params: Promise<{ star
           <span style={{ margin: '0 8px' }}>/</span>
           <span>{star}</span>
           <span style={{ margin: '0 8px' }}>·</span>
-          <span style={{ color: 'var(--ac)' }}>{data.palaceName}宫</span>
+          <span style={{ color: 'var(--ac)' }}>{data.palaceName.replace(/宫$/, '')}宫</span>
         </nav>
 
         {/* 标题区 */}
@@ -134,7 +125,7 @@ export default async function KnowledgePage({ params }: { params: Promise<{ star
             {data.topicLabel} · 传统星性参考
           </div>
           <h1 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 700, color: 'var(--tx-0)', letterSpacing: '0.1em', lineHeight: 1.2 }}>
-            {star}入{data.palaceName}宫
+            {star}入{data.palaceName.replace(/宫$/, '')}宫
           </h1>
           {STAR_BRIEF_SEO[star] && (
             <p style={{ fontSize: '13px', color: 'var(--tx-2)', marginTop: '14px', lineHeight: 1.8 }}>
@@ -234,7 +225,7 @@ export default async function KnowledgePage({ params }: { params: Promise<{ star
         </Section>
 
         {/* 内链：同 topic 其他主星 */}
-        <Section title={`其他主星入${data.palaceName}宫的解读`} minimal>
+        <Section title={`其他主星入${data.palaceName.replace(/宫$/, '')}宫的解读`} minimal>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {otherStarsForTopic.slice(0, 13).map(s => (
               <Link
@@ -276,7 +267,7 @@ export default async function KnowledgePage({ params }: { params: Promise<{ star
 
       {/* 页脚 */}
       <footer style={{ borderTop: '1px solid rgba(184,146,42,0.15)', padding: '20px 24px', textAlign: 'center', fontSize: '11px', color: 'var(--tx-3)', letterSpacing: '0.1em' }}>
-        <div style={{ marginBottom: '6px' }}>紫微研究 · 传统星性参考 · 仅供学习参考</div>
+        <div style={{ marginBottom: '6px' }}>天机盘 · 传统星性参考 · 仅供学习参考</div>
         <div style={{ opacity: 0.85 }}>本平台不构成任何医疗、投资、法律或重大决策建议</div>
         <div>部分断语来自 <a href="https://github.com/Renhuai123/ziwei-doushu">紫微斗数开源解读数据集 v4.0</a>（<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>），作者：王多鱼AI；已提取、去重并过滤引文。</div>
       </footer>

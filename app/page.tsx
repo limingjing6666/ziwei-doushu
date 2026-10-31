@@ -90,8 +90,8 @@ const STARS = [
 const FEATURES = [
   {
     tag: '排盘体系',
-    title: '倪海厦正宗\n紫微斗数',
-    subtitle: '非简化版，严格遵循倪海厦老师传承',
+    title: '传统三合\n紫微斗数',
+    subtitle: '以传统三合为基础，结合四化飞星',
     points: [
       '纳音五行局起盘，不采用网络简化算法',
       '命宫逆数生时、身宫顺数生时，严格对齐教学规则',
@@ -106,13 +106,13 @@ const FEATURES = [
       '十四主星完整入宫，主星关系清楚可读',
       '辅星与煞星同屏呈现，避免关键信息缺失',
       '庙旺利陷亮度分级，快速识别强弱',
-      '点击任意主星即可查看倪海厦老师对该星的详细解读',
+      '点击主星查看星性、组合条件与阅读提示',
     ],
   },
   {
     tag: 'AI 解读',
     title: '深度解盘\n不止于算',
-    subtitle: '倪海厦体系知识库 × Claude AI',
+    subtitle: '传统星宫知识库 × AI 分析',
     points: [
       '命格分析：从命宫主星出发，结合三方四正，给出全面的性格与人生格局判断',
       '六大维度解读：事业方向、感情婚姻、财运模式、健康注意、家庭关系、子女缘分',
@@ -123,10 +123,10 @@ const FEATURES = [
   {
     tag: '格局识别',
     title: '自动检测\n命盘格局',
-    subtitle: '从星曜组合中发现你的命中注定',
+    subtitle: '从组合条件理解倾向与限制',
     points: [
       '自动识别11种经典格局：紫府同宫、杀破狼格、机月同梁、廉相格、武曲七杀等',
-      '辅弼夹命、日月夹命等特殊格局精准检测，并给出倪海厦体系下的标准解读',
+      '识别辅弼、日月等组合，说明成立条件与参考范围',
       '四化入命宫迁移宫的特殊状况自动标注，提示需关注的人生议题',
       '格局按吉凶等级分层展示，让你一目了然自己命盘中的优势与挑战',
     ],
@@ -146,30 +146,30 @@ const SECTIONS = [
     note: '',
   },
   {
-    key: 'tianji',
-    name: '天纪',
-    en: 'Tian Ji',
-    desc: '紫微 · 周易 · 奇门遁甲',
+    key: 'structure',
+    name: '星宫',
+    en: 'Structure',
+    desc: '主星 · 宫位 · 联动阅读',
     status: 'soon' as const,
     when: '6 月',
     icon: '⊙',  // 圆+内点（古文"日"），与 ◉ 同字宽
     note: '',
   },
   {
-    key: 'diji',
-    name: '地纪',
-    en: 'Di Ji',
-    desc: '倪师未竟之业 · 后辈补注',
+    key: 'timing',
+    name: '运限',
+    en: 'Timing',
+    desc: '十年主题 · 年度观察',
     status: 'soon' as const,
     when: '6 月',
     icon: '⊞',  // 方+井（地/田视觉），与 ⊙ 同字宽
-    note: '遗稿研读',
+    note: '分层阅读',
   },
   {
-    key: 'renji',
-    name: '人纪',
-    en: 'Ren Ji',
-    desc: '内经 · 伤寒 · 金匮 · 针灸',
+    key: 'practice',
+    name: '实践',
+    en: 'Practice',
+    desc: '记录 · 核对 · 调整选择',
     status: 'soon' as const,
     when: '7 月',
     icon: '⊕',  // 圆+十字（医道/阴阳调和），与 ⊙/⊞ 同字宽
@@ -177,24 +177,12 @@ const SECTIONS = [
   },
 ];
 
-// ─── 倪海厦核心教义 ──────────────────────────────────────
-const NI_TEACHINGS = [
-  {
-    title: '命宫为本，三方为用',
-    body: '倪师始终强调，看命必先看命宫。命宫主星决定一个人的基本格局与天生性格，三方（财帛、官禄、迁移）则决定此人的「用武之地」。四宫联动才是完整的人生图景。',
-  },
-  {
-    title: '对宫借星，不可忽视',
-    body: '倪师的独到之处在于重视「对宫」。任何宫位若为空宫，必须借对宫星曜来论断，命宫的对面是迁移宫，两者互相影响，这是很多初学者容易忽略的关键。',
-  },
-  {
-    title: '四化才是命运的手',
-    body: '星曜只是基础，四化（化禄、化权、化科、化忌）才是决定运势好坏的关键。同一颗星，有化禄与有化忌，人生轨迹可以截然不同。倪师反复强调：不看四化，命盘只解了一半。',
-  },
-  {
-    title: '大限十年，运势有节',
-    body: '倪师将人生划分为12个大限，每个大限10年。他认为人在不同的大限宫位，际遇完全不同。了解自己现在走的是哪个大限、该宫位有何星曜，才能真正把握当下的运势。',
-  },
+// ─── 传统方法论 ──────────────────────────────────────────
+const METHOD_TEACHINGS = [
+  { title: '从个人到处境', body: '先读命宫的行为偏好，再把收入、工作与外部机会放在同一张关系图中。单颗星只能提出线索，不能独立决定结论。' },
+  { title: '空宫仍有关系', body: '没有主星不表示这个领域空白。可参考对宫的配置，但要区分参照与实际坐星，同时检查本宫辅曜及会照条件。' },
+  { title: '星性与四化合读', body: '星曜提供主题，禄权科忌提示资源、责任、认可与牵挂。落点和时间层都要明确，不能看到一个标记就推断整段人生。' },
+  { title: '先长周期，再看年份', body: '本命描述底层倾向，大限提供阶段背景，流年只补充年度线索。长短周期不一致时先交代分歧，不把一年的压力放大成终身结论。' },
 ];
 
 // ─── 主题色彩 helper ─────────────────────────────────────
@@ -299,7 +287,7 @@ function FeatureVisual({ index, colors: c }: { index: number; colors: ReturnType
           })}
         </div>
         <p className="text-[10px] tracking-widest transition-colors duration-300"
-          style={{ color: c.textFaint }}>倪海厦排盘法</p>
+          style={{ color: c.textFaint }}>传统三合排盘</p>
       </div>
     );
   }
@@ -482,7 +470,7 @@ export default function HomePage() {
         }}>
         <div className="text-[11px] sm:text-xs tracking-[0.3em] sm:tracking-[0.4em] font-medium transition-colors duration-300 flex-shrink-0"
           style={{ color: c.goldSolid }}>
-          紫微命盘
+          天机盘
         </div>
         <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
           <ThemeToggle />
@@ -512,7 +500,7 @@ export default function HomePage() {
             className="flex items-center justify-center gap-3 mb-8">
             <div className="h-px w-12" style={{ background: `linear-gradient(to right, transparent, ${c.goldLine})` }} />
             <span className="text-[11px] tracking-[0.45em] transition-colors duration-300" style={{ color: c.tagText }}>
-              紫微斗数 · 倪海厦体系
+              天机盘 · AI 紫微命盘
             </span>
             <div className="h-px w-12" style={{ background: `linear-gradient(to left, transparent, ${c.goldLine})` }} />
           </motion.div>
@@ -527,7 +515,7 @@ export default function HomePage() {
                 fontSize: 'clamp(56px, 10vw, 124px)',
                 letterSpacing: '0.07em',
               }}>
-              紫微命盘
+              天机盘
             </h1>
           </motion.div>
 
@@ -535,7 +523,7 @@ export default function HomePage() {
             transition={{ duration: 0.7, delay: 0.45 }}
             className="text-base md:text-lg tracking-[0.18em] mb-2"
             style={{ color: c.textSecond, fontWeight: 500 }}>
-            紫微为门 · 天地人为路 · 倪海厦为师
+            三合四化 · 古法排盘 · AI 解读
           </motion.p>
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.55 }}
@@ -547,7 +535,7 @@ export default function HomePage() {
             transition={{ duration: 0.7, delay: 0.65 }}
             className="text-sm max-w-xl mx-auto leading-relaxed mb-10"
             style={{ color: c.textMuted }}>
-            输入出生年月日时，生成专属紫微斗数命盘 — 后续天纪、地纪、人纪学习模块陆续开放。
+            填写出生信息，查看星宫结构与阶段主题，让每一条解读都有可核对的依据。
           </motion.p>
 
           {/* CTA */}
@@ -646,10 +634,10 @@ export default function HomePage() {
             <div className="h-px w-12" style={{ background: `linear-gradient(to left, transparent, ${c.goldLine})` }} />
           </div>
           <div className="text-2xl lg:text-3xl font-bold mb-2 tracking-[0.15em]" style={{ color: c.textPrimary }}>
-            倪师方法论 · 渐次展开
+            传统紫微 · 分层学习
           </div>
           <div className="text-xs lg:text-sm tracking-[0.1em]" style={{ color: c.textMuted }}>
-            从紫微入门，逐步开放天纪 / 地纪 / 人纪学习模块
+            从起盘入门，沿星宫、运限与实践逐步深入
           </div>
         </FadeIn>
 
@@ -812,7 +800,7 @@ export default function HomePage() {
             <div className="text-center mb-10">
               <div className="flex items-center justify-center gap-3 mb-6">
                 <div className="h-px w-12" style={{ background: `linear-gradient(to right, transparent, ${c.goldLine})` }} />
-                <span className="text-[10px] tracking-[0.5em] uppercase" style={{ color: c.tagText }}>Ni Haixia · Philosophy</span>
+                <span className="text-[10px] tracking-[0.5em] uppercase" style={{ color: c.tagText }}>Perspective · Choice</span>
                 <div className="h-px w-12" style={{ background: `linear-gradient(to left, transparent, ${c.goldLine})` }} />
               </div>
               <h2 className={`grad-text ${theme === 'dark' ? 'grad-text-dark' : 'grad-text-light'} font-bold mb-5 tracking-tight`}
@@ -820,16 +808,16 @@ export default function HomePage() {
                 天 · 地 · 人
               </h2>
               <p className="max-w-2xl mx-auto text-sm leading-relaxed" style={{ color: c.textSecond }}>
-                倪海厦老师的核心命运观：命运从来不是人生的全部。<br />
-                他将影响人生的力量分为三个同等重要的维度。
+                命盘提供观察角度，但不能替你做决定。<br />
+                阅读时兼顾个人起点、现实环境与选择，不为三者分配固定权重。
               </p>
             </div>
           </FadeIn>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
             {[
-              { glyph: '天', label: '先天命运', pct: '⅓', color: c.goldSolid, borderColor: c.goldLine, desc: '紫微斗数所揭示的，是一个人的先天命盘格局——出生时间决定的星曜布局、五行局数、命宫主星。这只是命运的三分之一，是人生的底色，而非全貌。', sub: '命盘 · 星曜 · 五行' },
-              { glyph: '地', label: '地理环境', pct: '⅓', color: 'rgba(96,165,250,0.9)', borderColor: 'rgba(96,165,250,0.3)', desc: '你所在的地理环境、城市、国家、风水格局，乃至家庭背景与社会结构，共同构成了命运的第二个维度。同一命盘，生在不同地方，际遇可以天壤之别。', sub: '地域 · 风水 · 环境' },
-              { glyph: '人', label: '人心意念', pct: '⅓', color: 'rgba(100,216,139,0.9)', borderColor: 'rgba(100,216,139,0.3)', desc: '个人的意志、心态、选择与行动，才是改变命运最主动的力量。倪师强调：了解命盘是为了更好地做人，而不是坐等命运安排。精进自己，是最强的破局之道。', sub: '意志 · 选择 · 行动' },
+              { glyph: '天', label: '先天命运', pct: '参考', color: c.goldSolid, borderColor: c.goldLine, desc: '起盘把出生信息转换为传统星宫符号。这些符号适合讨论偏好，不是个人价值的评分，不能替代真实经历。', sub: '命盘 · 星曜 · 五行' },
+              { glyph: '地', label: '地理环境', pct: '参考', color: 'rgba(96,165,250,0.9)', borderColor: 'rgba(96,165,250,0.3)', desc: '家庭资源、社会条件与工作环境都会影响机会。阅读命盘时，应补充现实背景，避免把环境差异归结为个人命数。', sub: '地域 · 风水 · 环境' },
+              { glyph: '人', label: '人心意念', pct: '参考', color: 'rgba(100,216,139,0.9)', borderColor: 'rgba(100,216,139,0.3)', desc: '把解读变成一个可尝试的小行动：约一次沟通、学习一项技能或调整资源安排。结果要回到生活中检验，不必服从星曜标签。', sub: '意志 · 选择 · 行动' },
             ].map((item, i) => (
               <FadeIn key={item.glyph} delay={0.1 + i * 0.12}>
                 <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.1 }}
@@ -839,7 +827,7 @@ export default function HomePage() {
                     <div className="text-5xl font-bold leading-none" style={{ color: item.color }}>{item.glyph}</div>
                     <div className="text-right">
                       <div className="text-2xl font-bold" style={{ color: item.color }}>{item.pct}</div>
-                      <div className="text-[9px] mt-0.5 tracking-widest" style={{ color: c.textMuted }}>of life</div>
+                      <div className="text-[9px] mt-0.5 tracking-widest" style={{ color: c.textMuted }}>perspective</div>
                     </div>
                   </div>
                   <div className="mb-3">
@@ -855,15 +843,15 @@ export default function HomePage() {
           <FadeIn delay={0.3}>
             <div className="mt-10 text-center">
               <p className="text-sm leading-relaxed" style={{ color: c.textSecond }}>
-                「命运不是人生的全部，加上地理位置和人念，才是。」
+                把注意力放回今天能调整的一件事，比等待一个预言更有帮助。
               </p>
-              <p className="mt-2 text-[10px] tracking-widest" style={{ color: c.tagText }}>— 倪海厦</p>
+              <p className="mt-2 text-[10px] tracking-widest" style={{ color: c.tagText }}>— 天机盘 · 阅读提示</p>
             </div>
           </FadeIn>
         </div>
       </section>
 
-      {/* ══ 倪海厦介绍 ════════════════════════════════════ */}
+      {/* ══ 方法论介绍 ════════════════════════════════════ */}
       <section className="relative z-10 flex items-center px-6 md:px-10 lg:px-14 py-20" style={{ minHeight: '82svh' }}>
         <WeakBoundary line={c.navBorder} />
         <div className="mx-auto w-full" style={{ maxWidth: '1280px' }}>
@@ -871,16 +859,16 @@ export default function HomePage() {
             <div className="text-center mb-10">
               <div className="flex items-center justify-center gap-3 mb-6">
                 <div className="h-px w-12" style={{ background: `linear-gradient(to right, transparent, ${c.goldLine})` }} />
-                <span className="text-[10px] tracking-[0.5em] uppercase" style={{ color: c.tagText }}>Master · 1953 – 2012</span>
+                <span className="text-[10px] tracking-[0.5em] uppercase" style={{ color: c.tagText }}>Method · Evidence</span>
                 <div className="h-px w-12" style={{ background: `linear-gradient(to left, transparent, ${c.goldLine})` }} />
               </div>
               <h2 className={`grad-text ${theme === 'dark' ? 'grad-text-dark' : 'grad-text-light'} font-bold mb-6 tracking-tight`}
                 style={{ fontSize: 'clamp(32px, 4vw, 48px)' }}>
-                倪海厦老师
+                传统紫微斗数方法论
               </h2>
               <p className="max-w-2xl mx-auto leading-relaxed text-sm" style={{ color: c.textSecond }}>
-                当代华人圈最具影响力的中医与术数大家之一<br />
-                美国汉唐中医学院创办人 ·「人纪」「天纪」两大教学体系传世
+                先提出可核对的判断，再说明支持与限制<br />
+                以三合结构为基础，把四化与运限作为分层线索
               </p>
             </div>
           </FadeIn>
@@ -890,9 +878,9 @@ export default function HomePage() {
               style={{ border: `1px solid ${c.niBorder}`, background: c.niBg, boxShadow: c.cardShadow }}>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 {[
-                  { label: '生于', value: '1954年', sub: '台湾' },
-                  { label: '离世', value: '2012年', sub: '1月31日 · 享年58' },
-                  { label: '传承', value: '紫微斗数', sub: '经方中医 · 易经' },
+                  { label: '结构', value: '三合', sub: '命财官迁联读' },
+                  { label: '变化', value: '四化', sub: '资源与压力落点' },
+                  { label: '节奏', value: '运限', sub: '阶段优先 · 年度补充' },
                 ].map(item => (
                   <div key={item.label} className="text-center rounded-xl px-4 py-3"
                     style={{ border: `1px solid ${c.niDivider}`, background: 'rgba(255,255,255,0.02)' }}>
@@ -905,45 +893,34 @@ export default function HomePage() {
               <div className="h-px mb-8" style={{ background: c.niDivider }} />
               <div className="space-y-4 text-sm leading-relaxed max-w-3xl mx-auto" style={{ color: c.textSecond }}>
                 <p>
-                  <strong style={{ color: c.goldSolid }}>生平履历</strong>：
-                  倪海厦先生（1954–2012）出生于台湾，早年师承多位中医名家，专研经方派（《伤寒论》传承）。
-                  中年赴美行医，在美国创立<strong>汉唐中医学院</strong>，二十余年间系统传授中医与传统术数。
-                  2012 年 1 月 31 日因肝癌在台湾离世，享年 58 岁。
+                  <strong style={{ color: c.goldSolid }}>阅读起点</strong>：
+                  先整理主星、亮度与辅助配置，再确定问题涉及的宫位。双星组合先看组合，不把单星结论机械相加。
                 </p>
                 <p>
-                  <strong style={{ color: c.goldSolid }}>教学体系</strong>：
-                  倪师将毕生所学整理为两大公开教学系列。
-                  <strong>「人纪」</strong>涵盖《针灸大成》《神农本草经》《黄帝内经》《伤寒论》《金匮要略》——
-                  这是「人之纪」，奠定中医学习的完整路径；
-                  <strong>「天纪」</strong>涵盖紫微斗数与《易经》——这是「天之纪」，是术数研究的体系化成果。
-                  两者相合，是倪师留给后世最完整的传承。
+                  <strong style={{ color: c.goldSolid }}>关联结构</strong>：
+                  对照目标宫与三合、对宫，分清支持和压力来自哪里。空宫借星属于参照，不是把星移到本宫。
                 </p>
                 <p>
-                  <strong style={{ color: c.goldSolid }}>紫微立场</strong>：
-                  倪师在紫微斗数上明确属<strong>南派三合派</strong>，主张「以命宫为本、以三方四正为用、以四化为纲」。
-                  他在《天纪》课程中明言：「<em>飞星（四化）飞来飞去太复杂，不搞这个，毕竟大道至简</em>」——
-                  这一立场将其与繁琐的飞星派清晰区分。
+                  <strong style={{ color: c.goldSolid }}>时间层次</strong>：
+                  大限优先提供阶段背景，再讨论年度差异。缺少所选年份或运限信息，就保留空白。
                 </p>
                 <p>
-                  <strong style={{ color: c.goldSolid }}>治学态度</strong>：
-                  倪师反对死记硬背口诀，强调「理解原理胜过背诵」「逻辑可复核胜过神秘玄学」。
-                  这种态度让紫微斗数从师徒密传的封闭体系，走向系统化、可验证、可学习的现代知识体系。
+                  <strong style={{ color: c.goldSolid }}>依据核对</strong>：
+                  在多个主题中复现的方法才提高内部置信；单处经验必须标明限制。内部置信不代表现实预测概率。
                 </p>
                 <p>
-                  <strong style={{ color: c.goldSolid }}>当代影响</strong>：
-                  倪师的讲课视频在 B 站、YouTube 与各大平台广泛流传，是新一代命理与中医爱好者公认的入门必修。
-                  他不仅是紫微斗数的传承者，更是把传统命理与中医带入现代知识体系的关键人物之一。
+                  <strong style={{ color: c.goldSolid }}>表达方式</strong>：
+                  先说最值得关注的一点，再展示命盘推导，最后列出可执行的选择。不用术语堆砌制造神秘感。
                 </p>
                 <p style={{ fontSize: '11px', color: c.textMuted, fontStyle: 'italic', marginTop: '12px' }}>
-                  本平台所有解读基于倪师《天纪》公开教学讲义、《紫微斗数全书》明版、传统三合派古籍整理而成，
-                  仅作文化与个人成长参考。倪师本人与本平台无任何商业关联。
+                  本站独立整理传统规则，不代表任何讲授者授权或背书。传统术数不等于科学测量，不能代替专业意见。
                 </p>
               </div>
             </div>
           </FadeIn>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {NI_TEACHINGS.map((teaching, i) => (
+            {METHOD_TEACHINGS.map((teaching, i) => (
               <FadeIn key={i} delay={0.1 + i * 0.08}>
                 <motion.div whileHover={{ y: -3 }} transition={{ duration: 0.1 }}
                   className="rounded-xl p-6 h-full"
@@ -983,7 +960,7 @@ export default function HomePage() {
                 紫微合盘
               </h2>
               <p className="text-sm leading-relaxed mb-8 max-w-lg mx-auto" style={{ color: c.textSecond }}>
-                输入两个人的出生信息，AI 基于倪海厦体系分析夫妻宫互参、命宫兼容性与三方四正交互，<br className="hidden md:block" />
+                输入两个人的出生信息，AI 对照双方的关系期待、行动偏好和三合结构，<br className="hidden md:block" />
                 给出感情匹配度、合伙可行性与最佳相处建议。
               </p>
               <div className="flex justify-center gap-3 flex-wrap mb-6">
@@ -1025,14 +1002,14 @@ export default function HomePage() {
           </h2>
           <p className="text-sm mb-10 max-w-md mx-auto leading-relaxed" style={{ color: c.textSecond }}>
             输入出生年月日时，在几秒内生成你的专属命盘<br />
-            再由 AI 按倪海厦体系为你深度解读
+            再由 AI 分层说明星宫依据与行动建议
           </p>
           <motion.button
             whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
             onClick={() => router.push('/chart')}
             className="px-14 py-4 font-semibold text-base tracking-widest rounded-full"
             style={{ background: c.ctaBg, color: c.ctaText }}>
-            免费起盘
+            立即起盘
           </motion.button>
           <div className="mt-4 flex flex-wrap gap-3 justify-center">
             <motion.a
@@ -1057,7 +1034,7 @@ export default function HomePage() {
                 background: 'transparent',
                 textDecoration: 'none',
               }}>
-              📜 古籍原典库 →
+              📜 古籍对读库 →
             </motion.a>
           </div>
         </FadeIn>
@@ -1071,7 +1048,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto mb-8">
           <div className="text-[9px] tracking-[0.3em] text-center mb-4 uppercase"
             style={{ color: c.textMuted, opacity: 0.6 }}>
-            倪师方法论 · 学术体系
+            天机盘 · 传统方法工具箱
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {SECTIONS.map(s => {
@@ -1106,7 +1083,7 @@ export default function HomePage() {
 
         <div className="text-center">
           <p className="text-[10px] tracking-wider mb-3" style={{ color: c.footerText }}>
-            紫微命盘 · 基于倪海厦正宗体系 · 仅供参考，命运掌握在自己手中
+            天机盘 · AI 紫微命盘 · 三合四化 · 古法排盘 · AI 解读
           </p>
           <p className="text-[10px] tracking-wider mb-3 max-w-2xl mx-auto leading-relaxed"
             style={{ color: c.footerText, opacity: 0.85 }}>

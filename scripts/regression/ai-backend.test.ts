@@ -28,7 +28,7 @@ async function main() {
       for (const topic of ['overview', 'love', 'wealth', 'career'] as const) assert.ok(getKnowledge(star, topic).exists);
     }
     assert.ok(Object.keys(STAR_DB).some(k => k.startsWith('空宫借:')));
-    assert.doesNotMatch(JSON.stringify(STAR_DB), /天纪|倪师|倪海厦|bilibili|BV\w+|\d{1,2}[:：]\d{2}/);
+    assert.doesNotMatch(JSON.stringify(STAR_DB), /\u5929\u7eaa|\u502a\u5e08|\u502a\u6d77\u53a6|bilibili|BV\w+|\d{1,2}[:：]\d{2}/);
     assert.throws(() => normalizeChart([]), errorStatus(400));
     const partial = normalizeChart({ palaces: [null, { stars: [null, { name: '紫微', type: 'major' }] }] });
     assert.equal(partial.palaces.length, 1);
@@ -95,12 +95,22 @@ async function main() {
     globalThis.fetch = async (_url, init) => {
       const sent = JSON.parse(init!.body as string);
       assert.equal(sent.model, 'deepseek-flash'); assert.equal(sent.stream, true);
+      assert.equal(sent.max_tokens, 2400, 'prompt length control must not shrink the completion safety margin');
+      assert.deepEqual(sent.thinking, { type: 'disabled' });
       return new Response(fragmented('data: {"choices":[{"delta":{"reasoning_content":"不可见"}}]}\n\ndata: {"choices":[{"delta":{"content":"命宫天府，重视积累。"}}]}\n\ndata: [DONE]\n\n'));
     };
     const response = await streamDeepSeek(req, 'test', []);
     assert.match(response.headers.get('content-type')!, /text\/event-stream/);
     const wire = await response.text();
     assert.match(wire, /"delta":\{"text":"命宫天府/); assert.ok(wire.endsWith('data: [DONE]\n\n')); assert.doesNotMatch(wire, /不可见|reasoning/);
+    process.env.DEEPSEEK_MODEL = 'custom-model';
+    globalThis.fetch = async (_url, init) => {
+      const sent = JSON.parse(init!.body as string);
+      assert.equal(sent.model, 'custom-model'); assert.equal(sent.thinking, undefined);
+      return new Response(fragmented('data: {"choices":[{"delta":{"content":"完成"}}]}\n\ndata: [DONE]\n\n'));
+    };
+    await (await streamDeepSeek(req, 'test', [])).text();
+    delete process.env.DEEPSEEK_MODEL;
     globalThis.fetch = async () => new Response('private error must not leak', { status: 401 });
     await assert.rejects(streamDeepSeek(req, 'test', []), errorStatus(502));
     globalThis.fetch = async () => new Response(fragmented('data: {"choices":[{"delta":{"content":"部分"}}]}\n\n'));

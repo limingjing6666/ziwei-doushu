@@ -5,6 +5,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ALL_BOOKS, getBookBySlug } from '@/lib/classics';
+import { pageMetadata } from '@/lib/brand';
+import { CLASSICS_NOTICE } from '@/lib/classics/types';
 
 export async function generateStaticParams() {
   return ALL_BOOKS.map(b => ({ book: b.slug }));
@@ -14,10 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ book: str
   const { book: slug } = await params;
   const book = getBookBySlug(slug);
   if (!book) return {};
-  return {
-    title: `《${book.title}》· ${book.dynasty} · 紫微斗数古籍原典库`,
-    description: book.intro,
-  };
+  return pageMetadata(`《${book.title}》主题整理`, book.intro, `/library/${slug}`);
 }
 
 export default async function BookPage({ params }: { params: Promise<{ book: string }> }) {
@@ -53,6 +52,8 @@ export default async function BookPage({ params }: { params: Promise<{ book: str
             {book.intro}
           </p>
         </div>
+
+        <p role="note" style={{ fontSize: '12px', color: 'var(--tx-2)', lineHeight: 1.8, marginBottom: '20px' }}>{CLASSICS_NOTICE}</p>
 
         {/* 章节目录 */}
         <div style={{ background: 'var(--bg-card)', borderRadius: '14px', border: '1px solid rgba(184,146,42,0.2)', overflow: 'hidden' }}>

@@ -6,7 +6,7 @@ import zstandard
 STARS = '紫微 天机 太阳 武曲 天同 廉贞 天府 太阴 贪狼 巨门 天相 天梁 七杀 破军'.split()
 FIELDS = dict(overview='mingGong', personality='personality', love='fuQi', career='guanLu', wealth='caiBo', health='jiE', family='xiongDi', children='ziNv', move='qianYi', friends='jiaoYou', home='tianZhai', spirit='fuDe', parents='fuMu')
 # Never split inside quotes/parentheses: dropping half an attributed sentence leaves orphan text.
-RESTRICTED = re.compile(r'天纪|倪师|倪海厦|倪先生|B\s*站|bilibili|BV[\w]+|第\s*\d+\s*[集讲]|[pP]\d{2}|\d{1,2}[:：]\d{2}|同集|上集|下集', re.I)
+RESTRICTED = re.compile(r'\u5929\u7eaa|\u502a\u5e08|\u502a\u6d77\u53a6|\u502a\u5148\u751f|B\s*站|bilibili|BV[\w]+|第\s*\d+\s*[集讲]|[pP]\d{2}|\d{1,2}[:：]\d{2}|同集|上集|下集', re.I)
 UNSAFE = re.compile(r'死别|死期|夭|埋尸|坟|冢|自杀|残疾|大灾|必离|离婚|克[夫妻三]|淫|荡|刑克|重大灾|治不好的病')
 # Dataset-specific overlays must not become unconditional generic star knowledge.
 OVERLAY = re.compile(r'化[禄权科忌]|本盘|你这盘|当前大限')
