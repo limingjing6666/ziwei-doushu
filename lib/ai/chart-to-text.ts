@@ -3,10 +3,9 @@ import { getSiHuaByStem } from '@/lib/ziwei/sihua';
 import { buildAgeFacts, type AgeFacts } from '@/lib/ziwei/facts';
 import type { ZiweiChart } from '@/lib/ziwei/types';
 import { normalizeChart, normalizeView } from './input';
+import { isMarriageQuestion, isHealthQuestion } from './intent';
 
-export const isMarriageQuestion = (s: string) => /婚|感情|对象|恋爱|伴侣|love/.test(s);
-export const isHealthQuestion = (s: string) => /健康|身体|体质|疾|病|health/.test(s);
-export const isNumericSensitive = (s: string) => isMarriageQuestion(s) || isHealthQuestion(s) || /流年|哪一年|什么时候|几岁|年份/.test(s);
+export { isMarriageQuestion, isHealthQuestion, isNumericSensitive } from './intent';
 
 export function ageFactsToText(f: AgeFacts, question = ''): string {
   const dx = f.currentDecadal, selected = f.selected;

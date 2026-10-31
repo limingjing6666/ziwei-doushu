@@ -1,6 +1,6 @@
 import { createPlaceholderBuffer } from './postprocess';
 import { encodeDelta, readSseData } from './sse';
-import { repairAnswer, type Rewriter } from './repair';
+import { codeRepair, repairAnswer, type Rewriter } from './repair';
 import { logIssues, validateAnswer, type ValidationInput } from './validate';
 
 export const BUFFER_HEARTBEAT_MS = 10000;
@@ -24,8 +24,9 @@ export function consistencyStream(upstream: Response, input: Omit<ValidationInpu
       try {
         for await (const frame of source) {
           if (frame === '[DONE]') {
+            signal.throwIfAborted();
             if (options.buffered) {
-              const result = terminal ? buffer.push(full) + buffer.finish() : await repairAnswer({ ...input, text: full }, { deadline: options.deadline, rewrite: options.rewrite });
+              const result = terminal ? codeRepair({ ...input, text: full }) : await repairAnswer({ ...input, text: full }, { deadline: options.deadline, rewrite: options.rewrite, signal });
               for (let i = 0; i < result.length; i += OUTPUT_CHUNK_CHARS) delta(result.slice(i, i + OUTPUT_CHUNK_CHARS));
             } else {
               const tail = buffer.finish(); delta(tail); full += tail;
@@ -47,8 +48,10 @@ export function consistencyStream(upstream: Response, input: Omit<ValidationInpu
         }
         throw new Error('missing terminal frame');
       } catch {
-        if (options.buffered && full) delta(buffer.push(full) + buffer.finish());
-        send('data: {"error":"解读暂时中断，请稍后重试。"}\n\ndata: [DONE]\n\n');
+        if (!signal.aborted) {
+          if (options.buffered && full) delta(codeRepair({ ...input, text: full }));
+          send(`data: ${options.buffered && terminal ? terminal : '{"error":"解读暂时中断，请稍后重试。"}'}\n\ndata: [DONE]\n\n`);
+        }
       } finally {
         clearInterval(timer);
         if (!cancelled) controller.close();

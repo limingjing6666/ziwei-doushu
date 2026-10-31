@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { generateChart } from '../../lib/ziwei/algorithm';
 import { annualRomanceStars, buildAgeFacts, buildAgeWhitelist, factAstrolabe, getMarriageCandidates, getHealthYears } from '../../lib/ziwei/facts';
-import { chartToText } from '../../lib/ai/chart-to-text';
+import { chartToText, isNumericSensitive } from '../../lib/ai/chart-to-text';
+import { compatibilityFacts } from '../../lib/ai/facts';
 import { normalizeChart } from '../../lib/ai/input';
 import { fillPlaceholders, createPlaceholderBuffer } from '../../lib/ai/postprocess';
 import { NORMAL_CLOSING, HEALTH_CLOSING, validateAnswer, numericReferences } from '../../lib/ai/validate';
@@ -25,6 +26,164 @@ const wire = (s: string) => new Response(new ReadableStream<Uint8Array>({ start(
 const input = (text: string, question = '什么时候能结婚') => ({ text, facts, mode: 'followup', question });
 const types = (text: string, question?: string) => validateAnswer(input(text, question)).map(i => i.type);
 const ending = (text: string) => `${text}\n\n${NORMAL_CLOSING}`;
+
+async function fixRegressions() {
+  // R1: preserve identities for basic ages, selected ages, birth years and health placeholders.
+  const chartB = generateChart({ year: 2000, month: 5, day: 15, hour: 4, gender: 'female', birthTimeKnown: true });
+  const factsB = buildAgeFacts(chartB, { ...opts, selectedYear: 2033 });
+  const pair = compatibilityFacts(facts, factsB);
+  assert.equal(factsB.currentAge, 27);
+  const pairInput = (text: string, question = '感情匹配度如何') => ({ text: ending(text), question, facts: pair, mode: 'followup' });
+  const basics = `甲方当前虚岁 37，所选年龄 ${facts.selected!.nominalAge}岁，出生于1990年。乙方当前虚岁 27，所选年龄 ${factsB.selected!.nominalAge}岁，出生于2000年。`;
+  for (const question of ['感情匹配度如何', '什么时候结婚', '健康与大限']) {
+    const answer = pairInput(basics, question);
+    assert.ok(!validateAnswer(answer).some(i => i.type === 'age-not-in-facts'), question);
+    const repaired = codeRepair(answer);
+    assert.ok(repaired.includes(basics));
+  }
+  assert.ok(!validateAnswer(pairInput('乙方27岁。', '婚期')).some(i => i.type === 'age-not-in-facts'));
+  for (const text of ['乙方当前虚岁 37。', `乙方所选年龄 ${facts.selected!.nominalAge}岁。`, '乙方出生于1990年。', '甲方当前虚岁 27。', 'B方当前虚岁 37。']) {
+    const value = pairInput(text);
+    assert.ok(validateAnswer(value).some(i => i.type === 'age-not-in-facts'), text);
+    const repaired = codeRepair(value);
+    assert.match(repaired, /这一点目前无法确定/);
+    assert.ok(!repaired.includes(pair.marriage.rangeText), 'never substitute a marriage range for an age');
+    assert.ok(!validateAnswer({ ...value, text: repaired }).some(i => i.type === 'age-not-in-facts'));
+  }
+  const scopedHealth = fillPlaceholders('乙方：{{HEALTH_YEARS}}', pair);
+  assert.equal(scopedHealth, `乙方：${factsB.health.entries.map(e => `${e.year}年（虚岁 ${e.nominalAge}）`).join('、') || '目前无法确定'}`);
+  assert.match(fillPlaceholders('{{HEALTH_YEARS}}', pair), /甲方：.*乙方：/);
+  assert.match(fillPlaceholders('{{HEALTH_YEARS_B}}', pair), /^乙方：/);
+  assert.ok(validateAnswer(pairInput('乙方当前虚岁 27岁适合结婚。', '婚期')).some(i => i.type === 'age-not-in-facts'));
+  assert.match(codeRepair(pairInput('甲方当前虚岁37。乙方当前虚岁999。当前虚岁27。')), /乙方：这一点目前无法确定。当前虚岁27/);
+  for (let split = 0; split <= '乙方：{{HEALTH_YEARS}}'.length; split++) {
+    const buffer = createPlaceholderBuffer(pair);
+    const source = '乙方：{{HEALTH_YEARS}}';
+    assert.equal(buffer.push(source.slice(0, split)) + buffer.push(source.slice(split)) + buffer.finish(), scopedHealth);
+  }
+  let rewriteFacts = '';
+  await repairAnswer(pairInput('乙方当前虚岁999。'), { deadline: Date.now() + 20000, rewrite: async (_targets, f) => { rewriteFacts = f; return []; } });
+  assert.match(rewriteFacts, /甲方 A/); assert.match(rewriteFacts, /乙方 B/);
+  assert.match(rewriteFacts, /出生公历年：2000/); assert.match(rewriteFacts, /当前虚岁：27/);
+  assert.match(rewriteFacts, new RegExp(`所选流年：2033年；虚岁 ${factsB.selected!.nominalAge}`));
+
+  // R2: mentioning 大限 in the question cannot whitelist health predictions in its interior.
+  const question = '请结合所选大限流年讲健康';
+  const decade = facts.decadals.find(d => d.startYear <= 2099 && d.endYear >= 2099)!;
+  const decadeText = `大限范围是虚岁 ${decade.startAge}–${decade.endAge}（公历 ${decade.startYear}–${decade.endYear}）。`;
+  const healthInput = (text: string) => ({ ...input(text, question), text: `可以多留意。${text}\n\n${HEALTH_CLOSING}` });
+  assert.ok(!validateAnswer(healthInput(decadeText)).some(i => i.type === 'age-not-in-facts'));
+  assert.ok(!validateAnswer(healthInput(`大限开始于${decade.startYear}年。`)).some(i => i.type === 'age-not-in-facts'));
+  for (const text of ['2099年需要关注身体。', '大限中2099年需要关注身体。', `${decadeText}2099年需要关注身体。`, '大限开始于2095年需要关注身体。', '大限2095–2104年是健康关键年份。']) {
+    const value = healthInput(text);
+    assert.ok(validateAnswer(value).some(i => i.type === 'age-not-in-facts'));
+    assert.doesNotMatch(codeRepair(value), /2099|2095年需要|2095–2104年是健康/);
+  }
+  const notHealth = Array.from({ length: 15 }, (_, i) => 2024 + i).find(y => !facts.health.years.includes(y))!;
+  assert.ok(validateAnswer(healthInput(`所选流年${notHealth}年需要关注身体。`)).some(i => i.type === 'age-not-in-facts'));
+  const selectedHealth = factsB.health.entries.find(e => !facts.health.years.includes(e.year));
+  if (selectedHealth) {
+    assert.ok(!validateAnswer(pairInput(`乙方${selectedHealth.year}年需要关注身体。`, '健康')).some(i => i.type === 'age-not-in-facts'));
+    assert.ok(validateAnswer(pairInput(`甲方${selectedHealth.year}年需要关注身体。`, '健康')).some(i => i.type === 'age-not-in-facts'));
+  }
+
+  // R3: every buffered exit, including no DONE and failed reads, is deterministic and safe.
+  let rewriteCalls = 0;
+  const noRewrite = async () => { rewriteCalls++; throw new Error('must not call a model'); };
+  const bad = '可以争取。婚期999岁。保留其它分析。';
+  for (const [suffix, error] of [
+    ['data: {"finish_reason":"length"}\n\ndata: [DONE]\n\n', /截断/],
+    ['data: {"error":"原有中断通知"}\n\ndata: [DONE]\n\n', /中断/],
+    ['', /中断/],
+    ['data: {"finish_reason":"length"}\n\n', /截断/],
+    ['data: {"error":"原有中断通知"}\n\n', /中断/],
+  ] as const) {
+    let visible = '';
+    const response = consistencyStream(wire(encodeDelta(bad) + suffix), input('', '婚期'), { buffered: true, deadline: Date.now() + 30000, rewrite: noRewrite });
+    const raw = await response.clone().text();
+    if (suffix.includes('原有中断通知')) assert.match(raw, /原有中断通知/);
+    if (suffix.includes('length')) assert.match(raw, /"finish_reason":"length"/);
+    await assert.rejects(consumeAiResponse(response, text => { visible = text; }), error);
+    assert.doesNotMatch(visible, /999/); assert.match(visible, /保留其它分析/);
+    assert.ok(!validateAnswer(input(visible, '婚期')).some(i => i.type === 'age-not-in-facts'));
+  }
+  let reads = 0, visible = '';
+  const broken = new Response(new ReadableStream<Uint8Array>({ pull(c) {
+    if (reads++ === 0) c.enqueue(encoder.encode(encodeDelta('保留分析。2099年需要关注身体。')));
+    else c.error(new Error('private read failure'));
+  } }, { highWaterMark: 0 }), { headers: { 'Content-Type': 'text/event-stream' } });
+  await assert.rejects(consumeAiResponse(consistencyStream(broken, input('', question), { buffered: true, deadline: Date.now() + 30000, rewrite: noRewrite }), text => { visible = text; }), /中断/);
+  assert.match(visible, /保留分析/); assert.doesNotMatch(visible, /2099|private/);
+  const expired = consistencyStream(wire(encodeDelta(bad) + 'data: [DONE]\n\n'), input('', '婚期'), { buffered: true, deadline: 0, rewrite: noRewrite });
+  await consumeAiResponse(expired, text => { visible = text; }); assert.doesNotMatch(visible, /999/);
+  assert.equal(rewriteCalls, 0);
+
+  // R4: handler-level buffering of real numeric questions; ordinary questions stream before DONE.
+  const sensitiveQuestions = ['我当前走哪个大限？', '我走哪个大运？', '我现在多少岁？', '几岁适合创业？', '当前年龄？', '哪几年适合创业？', '哪一年适合创业？', '何时适合创业？', '什么时候创业？', '明年事业如何？', '今年事业如何？', '2030年事业如何？', '何时结婚？', '婚期如何？', '健康如何？', '身体如何？', '疾病风险？'];
+  const ordinaryQuestions = ['换工作', '伴侣', '总览'];
+  const request = (q: string, mode = 'followup') => new Request('http://localhost/api/interpret', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-real-ip': 'fix-regressions' }, body: JSON.stringify({ chart, mode, messages: [{ role: 'user', content: q }] }) });
+  for (const q of [...sensitiveQuestions, ...ordinaryQuestions]) {
+    const sensitive = sensitiveQuestions.includes(q);
+    assert.equal(isNumericSensitive(q), sensitive, q);
+    let finish!: () => void;
+    globalThis.fetch = async (_url, init) => {
+      assert.equal(JSON.parse(init!.body as string).stream, true, 'valid answers need no rewrite');
+      return new Response(new ReadableStream<Uint8Array>({ start(c) {
+        c.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: sensitive ? '可以先做准备。999岁。' : '可以先做准备。2030年供参考。' } }] })}\n\n`));
+        finish = () => { c.enqueue(encoder.encode((sensitive ? 'data: {"choices":[{"finish_reason":"length"}]}\n\n' : '') + 'data: [DONE]\n\n')); c.close(); };
+      } }));
+    };
+    // Use a terminal length frame for sensitive tests: it also proves handler failure paths are safe, with no rewrite fetch.
+    const response = await handleAi(request(q, q === '总览' ? 'overview' : q === '伴侣' ? 'detail' : 'followup'), 'interpret');
+    const reader = response.body!.getReader();
+    const first = reader.read();
+    const state = await Promise.race([first.then(() => 'early'), new Promise<string>(resolve => setTimeout(() => resolve('waiting'), 10))]);
+    assert.equal(state, sensitive ? 'waiting' : 'early', q);
+    finish();
+    let output = new TextDecoder().decode((await first).value);
+    assert.match(output, /可以先做准备/);
+    for (;;) { const chunk = await reader.read(); if (chunk.done) break; output += new TextDecoder().decode(chunk.value); }
+    assert.doesNotMatch(output, /999/);
+  }
+
+  // Compatibility facts must reach the real handler's validator too (fetch remains mocked).
+  const today = new Date();
+  const liveB = buildAgeFacts(chartB, { currentYear: today.getFullYear(), currentDate: `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`, selectedYear: 2033 });
+  globalThis.fetch = async (_url, init) => {
+    assert.equal(JSON.parse(init!.body as string).stream, true, 'correct B facts must not trigger a rewrite');
+    return wire(`data: ${JSON.stringify({ choices: [{ delta: { content: `乙方当前虚岁 ${liveB.currentAge}，所选年龄 ${liveB.selected!.nominalAge}岁，出生于2000年。候选{{MARRIAGE_YEARS}}。` } }] })}\n\ndata: [DONE]\n\n`);
+  };
+  const pairResponse = await handleAi(new Request('http://localhost/api/heming', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-real-ip': 'fix-pair' }, body: JSON.stringify({ chartA: chart, chartB, viewA: { year: 2030 }, viewB: { year: 2033 }, question: '婚期', mode: 'followup' }) }), 'heming');
+  let pairOutput = '';
+  await consumeAiResponse(pairResponse, text => { pairOutput = text; });
+  assert.match(pairOutput, new RegExp(`乙方当前虚岁 ${liveB.currentAge}，所选年龄 ${liveB.selected!.nominalAge}岁，出生于2000年`));
+
+  // R5: cancel after upstream DONE aborts the active second fetch, without aborting the Request.
+  const requestAbort = new AbortController();
+  let markStarted!: () => void;
+  const started = new Promise<void>(resolve => { markStarted = resolve; });
+  let rewriteSignal: AbortSignal | undefined, calls = 0;
+  globalThis.fetch = async (_url, init) => {
+    calls++;
+    if (JSON.parse(init!.body as string).stream) return wire(`data: ${JSON.stringify({ choices: [{ delta: { content: bad } }] })}\n\ndata: [DONE]\n\n`);
+    rewriteSignal = init!.signal as AbortSignal;
+    markStarted();
+    return new Promise<Response>((_resolve, reject) => {
+      rewriteSignal!.addEventListener('abort', () => reject(new Error('cancelled rewrite')), { once: true });
+    });
+  };
+  const response = await handleAi(new Request(request('婚期'), { signal: requestAbort.signal }), 'interpret');
+  await Promise.race([started, new Promise((_, reject) => setTimeout(() => reject(new Error('rewrite never started')), 1000))]);
+  assert.equal(calls, 2); assert.equal(rewriteSignal!.aborted, false);
+  await response.body!.cancel();
+  assert.equal(rewriteSignal!.aborted, true); assert.equal(requestAbort.signal.aborted, false);
+  const alreadyCancelled = new AbortController(); alreadyCancelled.abort();
+  let afterCancelCalls = 0;
+  await repairAnswer(input(bad), { deadline: Date.now() + 20000, signal: alreadyCancelled.signal, rewrite: async () => { afterCancelCalls++; return []; } });
+  assert.equal(afterCancelCalls, 0);
+  await assert.rejects(deepSeekRewriter(alreadyCancelled.signal)([], '', 20000));
+  assert.equal(calls, 2, 'transport checks cancellation before fetch');
+}
 
 async function main() {
   for (let i = 0; i < 12; i++) assert.deepEqual(annualRomanceStars(i), { hongluan: (15 - i) % 12, tianxi: (21 - i) % 12 });
@@ -173,7 +332,8 @@ async function main() {
     const splitWire = consistencyStream(wire(encodeDelta('可考虑{') + encodeDelta('{MARRIAGE_') + encodeDelta('YEARS}}。') + 'data: [DONE]\n\n'), { facts, mode: 'followup', question: '事业' }, { buffered: false, deadline: 0, rewrite: async () => [] });
     await consumeAiResponse(splitWire, s => { streamText = s; }); assert.equal(streamText, '可考虑2030、2032、2043 年。');
     const partial = consistencyStream(wire(encodeDelta('保留部分。') + 'data: {"error":"解读暂时中断"}\n\ndata: [DONE]\n\n'), { facts, mode: 'followup', question: '健康' }, { buffered: true, deadline: 0, rewrite: async () => [] });
-    await assert.rejects(consumeAiResponse(partial, s => { emitted = s; }), /中断/); assert.equal(emitted, '保留部分。');
+    await assert.rejects(consumeAiResponse(partial, s => { emitted = s; }), /中断/); assert.equal(emitted, `保留部分。\n\n${HEALTH_CLOSING}`);
+    await fixRegressions();
     // Keep unknown/malformed upstream framing errors out of user content.
     const frames: string[] = [];
     for await (const f of readSseData(wire(': ping\n\n' + encodeDelta('正常') + 'data: [DONE]\n\n').body!)) frames.push(f);

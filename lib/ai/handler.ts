@@ -1,6 +1,7 @@
 import { chartToText, crossTransformations, viewToText, isNumericSensitive, isHealthQuestion } from './chart-to-text';
 import { streamDeepSeek, deepSeekRewriter } from './deepseek';
 import { buildAgeFacts } from '@/lib/ziwei/facts';
+import { compatibilityFacts } from './facts';
 import { glossaryForChart } from '@/lib/glossary';
 import { consistencyStream } from './consistency-stream';
 import { AiError, normalizeChart, normalizeMessages, normalizeView, readBody, text } from './input';
@@ -38,9 +39,7 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     const factsB = b ? buildAgeFacts(b, { currentYear, currentDate, selectedYear: viewB!.year }) : undefined;
     // A is the single marriage candidate source in compatibility mode, not a spliced third range.
     if (factsB && !factsB.birthTimeKnown) factsA.marriage = { unavailable: true, reason: '乙方出生时辰未知，目前无法确定共同婚期', rangeText: '', years: [], candidates: [] };
-    const facts = factsB ? { ...factsA, birthTimeKnown: factsA.birthTimeKnown && factsB.birthTimeKnown,
-      health: { years: [...factsA.health.years, ...factsB.health.years], entries: [...factsA.health.entries, ...factsB.health.entries] },
-      whitelist: { ages: [...factsA.whitelist.ages, ...factsB.whitelist.ages], years: [...factsA.whitelist.years, ...factsB.whitelist.years], ageRanges: [...factsA.whitelist.ageRanges, ...factsB.whitelist.ageRanges], yearRanges: [...factsA.whitelist.yearRanges, ...factsB.whitelist.yearRanges] } } : factsA;
+    const facts = factsB ? compatibilityFacts(factsA, factsB) : factsA;
     const chartA = chartToText(a, { facts: factsA, question });
     const chartB = b ? chartToText(b, { facts: factsB, question: isHealthQuestion(question) ? '健康' : '' }) : undefined;
     const references = retrieveKnowledge(a, b);

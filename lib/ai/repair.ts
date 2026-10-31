@@ -1,4 +1,4 @@
-import { ageFactsToText, isMarriageQuestion, isHealthQuestion } from './chart-to-text';
+import { repairFactsToText, subjectAt } from './facts';
 import { fillPlaceholders } from './postprocess';
 import { firstSentence } from './jargon';
 import { closingFor, closingPattern, logIssues, validateAnswer, type AnswerIssue, type ValidationInput } from './validate';
@@ -37,19 +37,33 @@ export function codeRepair(input: ValidationInput, numericFallback = true): stri
   let text = fillPlaceholders(input.text, input.facts).replace(/\{\{[^{}]*(?:\}\}|$)/g, '');
   if (numericFallback) {
     const issues = validateAnswer({ ...input, text });
-    const marriage = isMarriageQuestion(input.question), health = isHealthQuestion(input.question);
-    const fallback = marriage ? input.facts.marriage.rangeText || '目前无法确定'
-      : health ? input.facts.health.entries.map(e => `${e.year}年（虚岁 ${e.nominalAge}）`).join('、') || '目前无法确定'
-        : input.facts.currentAge ? `虚岁 ${input.facts.currentAge}` : '目前无法确定';
-    for (const issue of issues.filter(i => i.type === 'age-not-in-facts').reverse()) text = text.slice(0, issue.start) + fallback + text.slice(issue.end);
-    if (validateAnswer({ ...input, text }).some(i => i.type === 'marriage-no-candidate')) text += `\n\n可重点观察的候选范围：${fallback}。`;
+    // Never splice a marriage/health envelope into a person's basic age. Drop the untrusted
+    // sentence as a unit, leaving neighbouring analysis intact; coalesce multiple bad references.
+    const spans: { start: number; end: number }[] = [];
+    for (const issue of issues.filter(i => i.type === 'age-not-in-facts')) {
+      const before = [...text.slice(0, issue.start).matchAll(/[。！？\n]/g)].at(-1);
+      const after = /[。！？\n]/.exec(text.slice(issue.end));
+      const span = { start: before ? before.index! + 1 : 0, end: after ? issue.end + after.index + 1 : text.length };
+      const last = spans.at(-1);
+      if (last && span.start < last.end) last.end = Math.max(last.end, span.end);
+      else spans.push(span);
+    }
+    for (const span of spans.reverse()) {
+      const sentence = text.slice(span.start, span.end);
+      const subject = input.facts.subjects && subjectAt(sentence, sentence.length);
+      const label = subject ? subject === 'A' ? '甲方：' : '乙方：' : '';
+      text = text.slice(0, span.start) + label + '这一点目前无法确定。' + text.slice(span.end);
+    }
+    if (validateAnswer({ ...input, text }).some(i => i.type === 'marriage-no-candidate')) {
+      text += `\n\n可重点观察的候选范围：${input.facts.subjects ? '甲方' : ''}${input.facts.marriage.rangeText}。`;
+    }
   }
   const closing = closingFor(text, input.question);
   return `${text.replace(closingPattern(), '').trim()}\n\n${closing}`;
 }
-export type Rewriter = (targets: RepairTarget[], factsText: string, timeoutMs: number) => Promise<string[]>;
+export type Rewriter = (targets: RepairTarget[], factsText: string, timeoutMs: number, signal?: AbortSignal) => Promise<string[]>;
 /** One batch call max, never regenerate the whole answer. Insufficient time => deterministic fallback. */
-export async function repairAnswer(input: ValidationInput, options: { deadline: number; rewrite: Rewriter; now?: () => number }): Promise<string> {
+export async function repairAnswer(input: ValidationInput, options: { deadline: number; rewrite: Rewriter; now?: () => number; signal?: AbortSignal }): Promise<string> {
   const now = options.now ?? Date.now;
   const clean = (raw: string) => {
     let unknown = 0;
@@ -62,11 +76,12 @@ export async function repairAnswer(input: ValidationInput, options: { deadline: 
   const issues = validateAnswer({ ...input, text }); logIssues(issues);
   const originalFirst = firstSentence(text);
   const targets = planRepairs(text, issues);
-  if (targets.length && options.deadline - now() >= REWRITE_RESERVE_MS) try {
-    const replacements = await options.rewrite(targets, ageFactsToText(input.facts, input.question), Math.max(1, options.deadline - now() - 1000));
+  if (targets.length && !options.signal?.aborted && options.deadline - now() >= REWRITE_RESERVE_MS) try {
+    const replacements = await options.rewrite(targets, repairFactsToText(input.facts, input.question), Math.max(1, options.deadline - now() - 1000), options.signal);
+    options.signal?.throwIfAborted();
     text = replaceTargets(text, targets, replacements);
     text = clean(text);
-  } catch { /* no private provider errors/user text in telemetry; code fallback retains full answer */ }
+  } catch { /* No private provider errors/user text in telemetry; deterministic safe fallback. */ }
   if (validateAnswer({ ...input, text }).some(i => i.type === 'first-sentence-jargon')) text = originalFirst + text.slice(firstSentence(text).length);
   const result = codeRepair({ ...input, text });
   logIssues(validateAnswer({ ...input, text: result }));
