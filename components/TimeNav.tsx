@@ -2,6 +2,16 @@
 import { motion } from 'framer-motion';
 import { STEMS, SI_HUA_TABLE } from '@/lib/ziwei/constants';
 import type { ZiweiChart } from '@/lib/ziwei/types';
+import type { AiView } from '@/lib/ai/input';
+import Term from './Term';
+
+export function buildAiView(chart: ZiweiChart, view: TimeView, year: number): AiView & { transformations: Record<string, unknown> } {
+  const dx = chart.daXians[chart.currentDaXianIndex];
+  const p = dx && chart.palaces.find(p => p.branch === dx.palaceBranch);
+  return { type: view === 'mingpan' ? 'natal' : view === 'daxian' ? 'decadal' : 'yearly', year,
+    decadal: dx && p ? { startAge: dx.startAge, endAge: dx.endAge, palaceName: dx.palaceName, stem: p.stem } : undefined,
+    transformations: { natal: chart.palaces.flatMap(p => p.stars.filter(s => s.siHua).map(s => ({ star: s.name, siHua: s.siHua, palace: p.name }))), decadal: p ? buildSiHuaOverlay(p.stem) : {}, yearly: buildSiHuaOverlay(getYearStemIndex(year)) } };
+}
 
 export type TimeView = 'mingpan' | 'daxian' | 'liunian';
 
@@ -74,7 +84,8 @@ export default function TimeNav({
   const overlayInfo = getOverlayInfo();
 
   return (
-    <div className="mb-3">
+    <div className="time-nav mb-3">
+      <div className="flex gap-3 text-xs mb-2 flex-wrap"><Term name="本命" /><Term name="大限" /><Term name="流年" /><Term name="四化" /></div>
       {/* Tab 行 */}
       <div
         className="flex items-center rounded-xl p-1 gap-1"
@@ -118,8 +129,8 @@ export default function TimeNav({
           {/* 年份 +/- */}
           <div className="flex items-center gap-0.5">
             <button
-              onClick={e => { e.stopPropagation(); onYearChange(liunianYear - 1); if (view !== 'liunian') onViewChange('liunian'); }}
-              className="text-[9px] w-4 h-4 flex items-center justify-center rounded"
+              onClick={e => { e.stopPropagation(); onYearChange(Math.max(1900, liunianYear - 1)); if (view !== 'liunian') onViewChange('liunian'); }}
+              aria-label="上一年" className="text-sm w-7 h-10 flex items-center justify-center rounded"
               style={{ color: 'var(--t-faint)' }}
             >
               ‹
@@ -132,8 +143,8 @@ export default function TimeNav({
               {liunianYear}
             </span>
             <button
-              onClick={e => { e.stopPropagation(); onYearChange(liunianYear + 1); if (view !== 'liunian') onViewChange('liunian'); }}
-              className="text-[9px] w-4 h-4 flex items-center justify-center rounded"
+              onClick={e => { e.stopPropagation(); onYearChange(Math.min(2100, liunianYear + 1)); if (view !== 'liunian') onViewChange('liunian'); }}
+              aria-label="下一年" className="text-sm w-7 h-10 flex items-center justify-center rounded"
               style={{ color: 'var(--t-faint)' }}
             >
               ›

@@ -1,5 +1,6 @@
 'use client';
 import { motion } from 'framer-motion';
+import Term from './Term';
 import type { ZiweiChart } from '@/lib/ziwei/types';
 import { BRANCHES, STEMS } from '@/lib/ziwei/constants';
 import { detectPatterns, getMingGongSummary } from '@/lib/ziwei/patterns';
@@ -87,7 +88,7 @@ export default function ChartSummary({ chart }: ChartSummaryProps) {
 
           <div className="ml-auto text-right">
             <div className="text-[9px] mb-1" style={{ color: 'var(--t-faint)', opacity: 0.85 }}>五行局 · 当前大限</div>
-            <div className="text-[11px]" style={{ color: 'var(--t-text2)' }}>{chart.wuxingJuName}</div>
+            <div className="text-[11px]" style={{ color: 'var(--t-text2)' }}><Term name={chart.wuxingJuName} /></div>
             {currentDx && (
               <div className="text-[11px] text-purple-500 mt-0.5">
                 {currentDx.startAge}~{currentDx.endAge}岁 · {currentDx.palaceName}
@@ -104,7 +105,7 @@ export default function ChartSummary({ chart }: ChartSummaryProps) {
             {chart.lunarInfo.lunarMonth}月{chart.lunarInfo.lunarDay}日
           </span>
           <span>{STEMS[chart.lunarInfo.yearStem]}{BRANCHES[chart.lunarInfo.yearBranch]}年 · {BRANCHES[chart.birthInfo.hour]}时</span>
-          <span>命宫{BRANCHES[chart.mingGongBranch]} · 身宫{BRANCHES[chart.shenGongBranch]}</span>
+          <span><Term name="命宫" />{BRANCHES[chart.mingGongBranch]} · <Term name="身宫" />{BRANCHES[chart.shenGongBranch]}</span>
         </div>
       </div>
       </motion.div>
@@ -119,7 +120,7 @@ export default function ChartSummary({ chart }: ChartSummaryProps) {
         <div className="card-glass rounded-xl p-4">
           <div className="text-[10px] tracking-widest mb-3 flex items-center gap-2" style={{ color: 'var(--t-faint)' }}>
             <span style={{ color: 'var(--t-gold)', opacity: 0.6 }}>◆</span>
-            本命四化
+            本命<Term name="四化" />
           </div>
           <div className="grid grid-cols-2 gap-2">
             {siHuaSummary.map(({ name, siHua, palaceName }) => {
@@ -138,7 +139,7 @@ export default function ChartSummary({ chart }: ChartSummaryProps) {
                   <span className="font-medium">{name}</span>
                   <div className="flex items-center gap-1.5 text-right">
                     <span style={{ opacity: 0.6 }} className="text-[9px]">{palaceName.replace('宫', '')}</span>
-                    <span className="font-bold">化{siHua}</span>
+                    <Term name={`化${siHua}`} />
                   </div>
                 </div>
               );
@@ -235,7 +236,7 @@ export default function ChartSummary({ chart }: ChartSummaryProps) {
       <div className="card-glass rounded-xl p-4">
         <div className="text-[10px] tracking-widest mb-3 flex items-center gap-2" style={{ color: 'var(--t-faint)' }}>
           <span className="text-purple-500/60">◎</span>
-          大限运程
+          <Term name="大限">大限运程</Term>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {chart.daXians.slice(0, 9).map((dx, i) => {
