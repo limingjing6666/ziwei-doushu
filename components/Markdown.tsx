@@ -7,15 +7,24 @@ function inline(text: string, renderText: (text: string) => ReactNode): ReactNod
   let last = 0;
   for (const m of text.matchAll(tokens)) {
     const index = m.index!;
-    result.push(renderText(text.slice(last, index)));
+    result.push(<React.Fragment key={`text-${index}`}>{renderText(text.slice(last, index))}</React.Fragment>);
     result.push(m[2] !== undefined ? <strong key={index}>{renderText(m[2])}</strong> : m[3] !== undefined ? <em key={index}>{renderText(m[3])}</em> : <code key={index}>{m[4]}</code>);
     last = index + m[0].length;
   }
-  result.push(renderText(text.slice(last)));
+  result.push(<React.Fragment key="tail">{renderText(text.slice(last))}</React.Fragment>);
   return result;
 }
 export default function Markdown({ text, streaming, renderText = value => value }: { text: string; streaming?: boolean; renderText?: (text: string) => ReactNode }) {
-  const lines = text.replace(/\r\n?/g, '\n').split('\n');
+  // Rendering-only recovery: explicit bold boundaries are unambiguous; for
+  // hash headings use a separator or a short title followed by a prose opener.
+  const lines = text.replace(/\r\n?/g, '\n').split('\n').flatMap(line => {
+    const bold = line.match(/^\*\*(【[^】\n]+】|[^*。！？\n]{1,24})\*\*(.*)$/);
+    if (bold) return [`### ${bold[1]}`, ...(bold[2].trim() ? [bold[2].trimStart()] : [])];
+    const hash = line.match(/^(#{1,3})\s*(.+)$/);
+    if (!hash) return [line];
+    const glued = hash[2].match(/^(.{2,20}?)(?:[：:]\s*|\s+(?=\S)|(?=正文|你|双方|两人|甲方|乙方|这段|这个|当前|今年|从命盘|在相处))(.+)$/);
+    return glued ? [`${hash[1]} ${glued[1]}`, glued[2]] : [`${hash[1]} ${hash[2]}`];
+  });
   const nodes: ReactNode[] = [];
   for (let i = 0; i < lines.length;) {
     const heading = lines[i].match(/^(#{1,3})\s+(.+)/);

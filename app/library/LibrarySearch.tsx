@@ -22,11 +22,12 @@ export default function LibrarySearch({
   const router = useRouter();
   const query = value.trim();
 
-  const submit = (event?: FormEvent<HTMLFormElement>) => {
+  const submit = (event?: FormEvent<HTMLFormElement>, input = value) => {
     event?.preventDefault();
-    if (!query) return;
+    const submitted = input.trim();
+    if (!submitted) return;
     startTransition(() => {
-      router.push(`/library/search?q=${encodeURIComponent(query)}`);
+      router.push(`/library/search?q=${encodeURIComponent(submitted)}`);
     });
   };
 
@@ -50,6 +51,7 @@ export default function LibrarySearch({
         type="search"
         value={value}
         onChange={(event) => setValue(event.target.value)}
+        onKeyDown={event => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); submit(undefined, event.currentTarget.value); } }}
         placeholder="搜索古籍原文（繁转简），如：七杀朝斗 / 紫微 / 化忌"
         autoComplete="off"
         enterKeyHint="search"
