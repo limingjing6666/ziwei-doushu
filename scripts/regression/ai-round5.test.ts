@@ -57,7 +57,7 @@ async function main() {
     assert.equal(output, longClean, `${buffered}/${split}`);
   }
 
-  const length = '全文（含小标题与括号解释）800–950汉字，硬上限1100字';
+  const length = '全文（含小标题与括号解释）700–900汉字，硬上限1000字，小节不超过5个且每节不超过170字，建议每条不超过60字';
   for (const text of [INTERPRET_SYSTEM, HEMING_SYSTEM, readFileSync('lib/ai/handler.ts', 'utf8')]) {
     assert.ok(text.includes(length));
     assert.doesNotMatch(text, /700–1000|1200字/);

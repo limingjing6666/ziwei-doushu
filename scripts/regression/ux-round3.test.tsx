@@ -136,7 +136,7 @@ async function main() {
         const payload = JSON.parse(init!.body as string);
         assert.equal(payload.max_tokens, expected);
         const lengthRule = (mode === 'overview'
-          ? '整盘总览全文（含小标题与括号解释）800–950汉字，硬上限1100字，写到上限前收束；独立健康/感情/婚姻/事业专题600–1000字，详细给出宫位星曜依据和数据支持的时间点。'
+          ? '整盘总览全文（含小标题与括号解释）700–900汉字，硬上限1000字，小节不超过5个且每节不超过170字，建议每条不超过60字，写到上限前收束；独立健康/感情/婚姻/事业专题600–1000字，详细给出宫位星曜依据和数据支持的时间点。'
           : mode === 'detail' ? '单项解读目标400–700汉字，充分展开所选宫位/星曜/四化的依据与建议。'
             : '追问目标400–800汉字，充分回答当前问题并给足依据。') + endingRule;
         assert.equal(payload.messages[0].content, `${INTERPRET_SYSTEM}\n【本次篇幅硬约束】${lengthRule}\n${UNKNOWN_TIME_RULE}`);
@@ -160,7 +160,7 @@ async function main() {
     globalThis.fetch = async (_url, init) => {
       const payload = JSON.parse(init!.body as string);
       assert.equal(payload.max_tokens, 2400);
-      assert.equal(payload.messages[0].content, `${HEMING_SYSTEM}\n【本次篇幅硬约束】合盘总览全文（含小标题与括号解释）800–950汉字，硬上限1100字。${endingRule}`);
+      assert.equal(payload.messages[0].content, `${HEMING_SYSTEM}\n【本次篇幅硬约束】合盘总览全文（含小标题与括号解释）700–900汉字，硬上限1000字，小节不超过5个且每节不超过170字，建议每条不超过60字。${endingRule}`);
       const context = JSON.parse(payload.messages[1].content.split('\n')[1]);
       assert.match(context.chartA, /2031/); assert.match(context.selectedViewA, /所选流年：2031年/);
       assert.match(context.chartB, /2040/); assert.match(context.selectedViewB, /所选流年：2040年/);
