@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ALL_BOOKS, getBookBySlug } from "@/lib/classics";
-import { CLASSICS_NOTICE } from "@/lib/classics/types";
+import { CLASSICS_NOTICE, CLASSICS_SOURCE } from "@/lib/classics/types";
 import { pageMetadata } from "@/lib/brand";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { buttonClasses } from "@/components/ui/Button";
@@ -26,7 +26,7 @@ export async function generateMetadata({
   const { book: slug } = await params;
   const book = getBookBySlug(slug);
   if (!book) return {};
-  return pageMetadata(`《${book.title}》主题整理`, book.intro, `/library/${slug}`);
+  return pageMetadata(`《${book.title}》古籍原文（繁转简）`, book.intro, `/library/${slug}`);
 }
 
 export default async function BookPage({
@@ -57,7 +57,7 @@ export default async function BookPage({
       <div className="grid gap-8 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-12">
         <aside className="self-start lg:sticky lg:top-24">
           <div className="surface-card p-6">
-            <p className="eyebrow">古籍主题整理</p>
+            <p className="eyebrow">古籍原文（繁转简）</p>
             <h1 className="mt-2 font-serif text-[26px] font-semibold leading-snug tracking-[0.04em] text-ink">
               《{book.title}》
             </h1>
@@ -77,7 +77,7 @@ export default async function BookPage({
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-4">
-                <dt className="shrink-0 text-ink-3">整理段数</dt>
+                <dt className="shrink-0 text-ink-3">原文段数</dt>
                 <dd className="text-right font-mono tabular-nums text-ink-2">
                   {paragraphCount}
                 </dd>
@@ -108,6 +108,9 @@ export default async function BookPage({
             className="mb-6 rounded-sm border border-line/15 bg-surface-2/40 p-4 text-[12px] leading-relaxed text-ink-2"
           >
             {CLASSICS_NOTICE}
+          </p>
+          <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-ink-2">
+            原文来源：<a href={CLASSICS_SOURCE} className="text-cinnabar">维基文库《紫微斗数全书》（{CLASSICS_SOURCE}）</a>，CC BY-SA 4.0，繁转简，未逐字校勘。
           </p>
 
           <div className="flex flex-wrap items-baseline justify-between gap-3">

@@ -1,12 +1,12 @@
 /**
  * /library — 古籍对读库索引
  *
- * 全文搜索 + 三部书目卡 + 关于本库（含 CLASSICS_NOTICE 与校勘/署名说明）。
+ * 全文搜索 + 书目卡 + 关于本库（含 CLASSICS_NOTICE 与校勘/署名说明）。
  */
 
 import Link from "next/link";
 import { ALL_BOOKS, TOTAL_PARAGRAPHS } from "@/lib/classics";
-import { CLASSICS_NOTICE } from "@/lib/classics/types";
+import { CLASSICS_NOTICE, CLASSICS_SOURCE } from "@/lib/classics/types";
 import LibrarySearch from "./LibrarySearch";
 import { PageHeader, SectionHeading } from "@/components/ui/PageHeader";
 import { buttonClasses } from "@/components/ui/Button";
@@ -15,7 +15,7 @@ import { pageMetadata } from "@/lib/brand";
 
 export const metadata = pageMetadata(
   "古籍对读库",
-  "传统主题整理与检索；未校勘内容不作为古籍原文。",
+  "维基文库《紫微斗数全书》古籍原文（繁转简）与检索，未逐字校勘。",
   "/library",
 );
 
@@ -25,7 +25,7 @@ export default function LibraryHomePage() {
       <PageHeader
         eyebrow="古籍对读"
         title="古籍对读库"
-        description={`收录 ${ALL_BOOKS.length} 部古籍的主题整理，共 ${TOTAL_PARAGRAPHS} 段。可全文检索，也可按书目逐章对读；所涉均为历史文献，本库含现代整理，尚未完成版本逐字校勘。`}
+        description={`收录 ${ALL_BOOKS.length} 部古籍原文（繁转简），共 ${TOTAL_PARAGRAPHS} 段。可全文检索，也可按书目逐章对读；所涉均为历史文献，尚未完成版本逐字校勘。`}
         actions={
           <Link href="/library/search" className={buttonClasses("secondary", "sm")}>
             全文检索
@@ -37,14 +37,14 @@ export default function LibraryHomePage() {
       <section className="mt-8 max-w-2xl" aria-label="古籍全文检索">
         <LibrarySearch />
         <p className="mt-2 text-[12px] text-ink-3">
-          直接检索已收录的整理稿正文，命中词会在结果中高亮。
+          直接检索已收录的古籍原文（繁转简），命中词会在结果中高亮。
         </p>
       </section>
 
       <section className="mt-12" aria-labelledby="library-books">
         <SectionHeading
           title="收录书目"
-          description="书名、朝代、作者与规模；进入书目可逐章阅读整理稿。"
+          description="书名、朝代、作者与规模；进入书目可逐章阅读古籍原文（繁转简）。"
         />
         <ul
           id="library-books"
@@ -97,9 +97,9 @@ export default function LibraryHomePage() {
             关于本库
           </h2>
           <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-ink-2">
-            所涉古籍为历史文献；本库含现代整理，尚未完成版本逐字校勘。
+            所涉古籍为历史文献；本库收录古籍原文（繁转简），尚未完成版本逐字校勘。
             <br />
-            古籍摘录与现代释义分开阅读，版本和文字仍需持续核校。
+            底本未标明，版本和文字仍需持续核校。
             <br />
             如发现任何错误请联系我们。
           </p>
@@ -108,6 +108,9 @@ export default function LibraryHomePage() {
             className="mt-3 max-w-3xl text-[13px] leading-relaxed text-ink-2"
           >
             {CLASSICS_NOTICE}
+          </p>
+          <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-ink-2">
+            原文来源：<a href={CLASSICS_SOURCE} className="text-cinnabar">维基文库《紫微斗数全书》（{CLASSICS_SOURCE}）</a>，CC BY-SA 4.0，繁转简，未逐字校勘。
           </p>
         </div>
       </section>

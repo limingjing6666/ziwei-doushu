@@ -33,7 +33,7 @@ export default function LibrarySearch({
   return (
     <form
       role="search"
-      aria-label="古籍整理稿全文检索"
+      aria-label="古籍原文（繁转简）全文检索"
       onSubmit={submit}
       className="surface-card flex items-center gap-2 p-2 focus-within:border-cinnabar/50"
     >
@@ -50,7 +50,7 @@ export default function LibrarySearch({
         type="search"
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        placeholder="搜索主题整理，如：七杀朝斗 / 双禄朝垣 / 化忌"
+        placeholder="搜索古籍原文（繁转简），如：七杀朝斗 / 紫微 / 化忌"
         autoComplete="off"
         enterKeyHint="search"
         className="h-10 w-full min-w-0 flex-1 bg-transparent px-2 text-[15px] text-ink placeholder:text-ink-3"

@@ -10,7 +10,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Book } from "@/lib/classics/types";
 import { ALL_BOOKS, getChapter } from "@/lib/classics";
-import { CLASSICS_NOTICE } from "@/lib/classics/types";
+import { CLASSICS_NOTICE, CLASSICS_SOURCE } from "@/lib/classics/types";
 import { pageMetadata } from "@/lib/brand";
 import { cn } from "@/lib/ui/cn";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
@@ -33,10 +33,10 @@ export async function generateMetadata({
   params: Promise<{ book: string; chapter: string }>;
 }) {
   const { book: bookSlug, chapter: chIdx } = await params;
-  const result = getChapter(bookSlug, parseInt(chIdx));
+  const result = getChapter(bookSlug, /^\d+$/.test(chIdx) ? Number(chIdx) : NaN);
   if (!result) return {};
   return pageMetadata(
-    `${result.chapter.title} · 《${result.book.title}》主题整理`,
+    `${result.chapter.title} · 《${result.book.title}》古籍原文（繁转简）`,
     CLASSICS_NOTICE,
     `/library/${bookSlug}/${chIdx}`,
   );
@@ -99,7 +99,7 @@ export default async function ChapterPage({
   params: Promise<{ book: string; chapter: string }>;
 }) {
   const { book: bookSlug, chapter: chIdx } = await params;
-  const result = getChapter(bookSlug, parseInt(chIdx));
+  const result = getChapter(bookSlug, /^\d+$/.test(chIdx) ? Number(chIdx) : NaN);
   if (!result) notFound();
 
   const { book, chapter, chapterIdx } = result;
@@ -189,6 +189,9 @@ export default async function ChapterPage({
               className="mt-6 rounded-sm border border-line/15 bg-surface-2/40 p-4 text-[12px] leading-relaxed text-ink-2"
             >
               {CLASSICS_NOTICE}
+            </p>
+            <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-ink-2">
+              原文来源：<a href={CLASSICS_SOURCE} className="text-cinnabar">维基文库《紫微斗数全书》（{CLASSICS_SOURCE}）</a>，CC BY-SA 4.0，繁转简，未逐字校勘。
             </p>
 
             <div className="mt-8 divide-y divide-line/10">
