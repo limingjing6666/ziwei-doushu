@@ -120,7 +120,10 @@ export interface KnowledgeData {
 export function getKnowledge(star: string, topic: TopicKey): KnowledgeData {
   const profile = STAR_DB[star] as StarContent | undefined;
   const field = TOPIC_TO_FIELD[topic];
-  const content = profile && field ? (profile[field] as string | undefined) ?? '' : '';
+  // Keep existing /health URLs, but never publish legacy star-to-disease claims.
+  const content = profile && topic === 'health'
+    ? '**【一句话定调】**\n\n先核对实际作息、压力与情绪，不用星曜判断身体状况。\n\n**【核心论断】**\n\n疾厄宫在这里仅作身心状态与生活节奏的传统象义。可以记录近期休息是否充足、压力来自哪里、哪些安排让自己更放松，再结合现实感受调整节奏。星曜不能确定个人的身体状况；如有身体不适，请以专业医生意见为准。'
+    : profile && field ? (profile[field] as string | undefined) ?? '' : '';
   return {
     star,
     topic,

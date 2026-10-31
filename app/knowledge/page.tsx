@@ -17,7 +17,7 @@ export default function KnowledgeHomePage() {
   const STAR_DESCRIPTIONS_QUICK = STAR_BRIEF_SEO;
 
   return (
-    <div style={{ background: 'var(--bg-page)', minHeight: '100vh' }}>
+    <div className="knowledge-page" style={{ background: 'var(--bg-page)', minHeight: '100vh' }}>
       {/* 顶栏 */}
       <div className="px-6 py-4 flex items-center justify-between"
         style={{ borderBottom: '1px solid rgba(184,146,42,0.15)', background: 'var(--bg-page)' }}>

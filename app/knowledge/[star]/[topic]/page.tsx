@@ -90,7 +90,7 @@ export default async function KnowledgePage({ params }: { params: Promise<{ star
   };
 
   return (
-    <div style={{ background: 'var(--bg-page)', minHeight: '100vh' }}>
+    <div className="knowledge-page" style={{ background: 'var(--bg-page)', minHeight: '100vh' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       {/* 顶栏 */}
@@ -186,7 +186,7 @@ export default async function KnowledgePage({ params }: { params: Promise<{ star
             display: 'inline-block',
             padding: '12px 28px',
             background: 'linear-gradient(135deg, #d4a948 0%, #b8922a 100%)',
-            color: 'white',
+            color: '#020810',
             borderRadius: '999px',
             fontSize: '14px',
             fontWeight: 600,
@@ -265,12 +265,6 @@ export default async function KnowledgePage({ params }: { params: Promise<{ star
         </div>
       </article>
 
-      {/* 页脚 */}
-      <footer style={{ borderTop: '1px solid rgba(184,146,42,0.15)', padding: '20px 24px', textAlign: 'center', fontSize: '11px', color: 'var(--tx-3)', letterSpacing: '0.1em' }}>
-        <div style={{ marginBottom: '6px' }}>天机盘 · 传统星性参考 · 仅供学习参考</div>
-        <div style={{ opacity: 0.85 }}>本平台不构成任何医疗、投资、法律或重大决策建议</div>
-        <div>部分断语来自 <a href="https://github.com/Renhuai123/ziwei-doushu">紫微斗数开源解读数据集 v4.0</a>（<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>），作者：王多鱼AI；已提取、去重并过滤引文。</div>
-      </footer>
     </div>
   );
 }
@@ -294,7 +288,7 @@ function Section({ title, children, gradient, minimal }: { title: string; childr
       <div style={{
         background: gradient
           ? 'linear-gradient(135deg, rgba(212,169,72,0.12) 0%, rgba(184,146,42,0.04) 100%)'
-          : 'white',
+          : 'var(--bg-card)',
         border: '1px solid rgba(184,146,42,0.15)',
         borderRadius: '10px',
         padding: minimal ? '14px 18px' : '20px 22px',
