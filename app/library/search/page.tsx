@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { redirect } from 'next/navigation';
 import { searchClassics, getParagraphById } from "@/lib/classics";
-import { CLASSICS_NOTICE } from "@/lib/classics/types";
+import { CLASSICS_NOTICE, CLASSICS_SOURCE } from "@/lib/classics/types";
 import { pageMetadata } from "@/lib/brand";
 import LibrarySearch from "../LibrarySearch";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
@@ -88,11 +88,11 @@ export default async function SearchPage({
                 条匹配
               </span>
               <span className="text-[12px]">
-                仅检索已收录的整理稿，最多显示 50 条
+                仅检索已收录的古籍原文（繁转简），最多显示 50 条
               </span>
             </>
           ) : (
-            <span>输入关键词，检索已收录的古籍整理段落。</span>
+            <span>输入关键词，检索已收录的古籍原文（繁转简）。</span>
           )}
         </div>
       </div>
@@ -103,6 +103,9 @@ export default async function SearchPage({
       >
         {CLASSICS_NOTICE}
       </p>
+      <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-ink-2">
+        原文来源：<a href={CLASSICS_SOURCE} className="text-cinnabar">维基文库《紫微斗数全书》（{CLASSICS_SOURCE}）</a>，CC BY-SA 4.0，繁转简，未逐字校勘。
+      </p>
 
       <div className="mt-8 max-w-3xl">
         {hits.length === 0 ? (
@@ -112,7 +115,7 @@ export default async function SearchPage({
             description={
               q
                 ? "我们持续补充内容中。可以换一个更短的关键词，或直接点选下面的建议词。"
-                : "可检索整理稿正文中的星曜、格局与宫位名，例如七杀朝斗、双禄朝垣、化忌。"
+                : "可检索古籍原文（繁转简）中的星曜、格局与宫位名，例如七杀朝斗、双禄朝垣、化忌。"
             }
             action={<SuggestionLinks />}
           />

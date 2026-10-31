@@ -1,18 +1,20 @@
 /**
  * 古籍原典查询库 — 类型定义
  *
- * 设计：主题整理以静态数据打包；未完成版本校勘，不据目录名认定权利。
+ * 设计：古籍原文（繁转简）以静态数据打包；来源和版本信息随书保留。
  * Next.js 启动时一次性加载到内存，零 DB 依赖
  */
 
-export const CLASSICS_NOTICE = '本页是未经版本逐字校勘的主题整理稿，含现代说明，不作为所署古籍的原文或公版授权证明；请与可靠影印版本对读，不据此推断健康、收益或关系结果。';
+export const CLASSICS_NOTICE = '原文据维基文库《紫微斗数全书》整理（CC BY-SA 4.0），繁体转简体，未逐字校勘，可能有错讹；仅供对读参考，不构成对任何健康、感情或收益结果的判断。';
+
+export const CLASSICS_SOURCE = 'https://zh.wikisource.org/wiki/紫微斗數全書';
 
 export interface Paragraph {
   /** 段落唯一 id（用于锚点跳转） */
   id: string;
   /** 段落序号（章节内） */
   idx: number;
-  /** 整理稿段落；不自动视为古籍原文 */
+  /** 古籍原文段落（繁转简，未逐字校勘） */
   text: string;
   /** 现代翻译（可选，未来填充） */
   translation?: string;
@@ -39,8 +41,14 @@ export interface Book {
   author: string;
   /** 简介 */
   intro: string;
-  /** 总字数（粗略）*/
+  /** 正文汉字数（不含标点、空白、标题与图表占位说明）*/
   wordCount: number;
+  /** 来源 URL */
+  source?: string;
+  /** 版本说明 */
+  edition?: string;
+  /** 授权说明 */
+  license?: string;
   chapters: Chapter[];
 }
 
@@ -51,6 +59,6 @@ export interface SearchHit {
   paragraphId: string;
   /** 高亮片段（含 <mark> 标签） */
   snippet: string;
-  /** 命中的整理稿文本 */
+  /** 命中的古籍原文文本 */
   text: string;
 }
