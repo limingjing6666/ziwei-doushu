@@ -85,7 +85,7 @@ export default function TimeNav({
 
   return (
     <div className="time-nav mb-3">
-      <div className="flex gap-3 text-xs mb-2 flex-wrap"><Term name="本命" /><Term name="大限" /><Term name="流年" /><Term name="四化" /></div>
+      <div className="flex gap-3 text-xs mb-2 flex-wrap"><span>概念：</span><Term name="本命" /><Term name="大限" /><Term name="流年" /><Term name="四化" /></div>
       {/* Tab 行 */}
       <div
         className="flex items-center rounded-xl p-1 gap-1"
