@@ -89,7 +89,7 @@ async function shot(page, name) { await page.screenshot({ path: `${OUT}/${name}.
       assert.equal(await page.getByRole('button', { name: '选择命宫', exact: true }).getAttribute('aria-pressed'), 'true');
       const star = page.locator('[data-palace-branch] button').filter({ hasText: /^(紫微|天机|太阳|武曲|天同|廉贞|天府|太阴|贪狼|巨门|天相|天梁|七杀|破军)$/ }).first();
       await star.click();
-      await page.getByLabel('星曜本地简介', { exact: true }).waitFor();
+      await page.getByLabel('星曜简介', { exact: true }).waitFor();
       assert.equal(requests.length, 0);
       const term = page.locator('.term-trigger').filter({ hasText: /^四化/ }).first();
       await term.click(); await page.getByRole('dialog', { name: '四化简介' }).waitFor();

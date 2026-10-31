@@ -45,7 +45,7 @@ export default function ResultPage({ chart, onReset }: ResultPageProps) {
           <ChartBoard chart={chart} timeView={view} liunianYear={year} onViewChange={v => { setView(v); setSelectedSiHua(null); }} onYearChange={y => { setYear(y); setSelectedSiHua(null); }} onPalaceSelect={handlePalaceSelect}
             onStarSelect={(star, palace) => { setSelectedStar(star); setSelectedPalace(palace); setSelectedSiHua(null); }}
             onSiHuaClick={(starName, siHua, v) => { setSelectedStar(null); setSelectedSiHua({ starName, siHua, view: v }); }} />
-          {(selectedPalace || selectedSiHua) && <div className="ux-notice mt-3 lg:hidden" aria-label="手机本地简介"><strong><Term name={selectedStar?.name ?? (selectedSiHua ? `化${selectedSiHua.siHua}` : selectedPalace!.name)} /> · 本地简介</strong><p>{termDescription(selectedStar?.name ?? (selectedSiHua ? `化${selectedSiHua.siHua}` : selectedPalace!.name))}</p><p className="text-xs text-ink-3">下方可查看完整简介与 AI 面板，点盘面不会请求 AI。</p></div>}
+          {(selectedPalace || selectedSiHua) && <div className="ux-notice mt-3 lg:hidden" aria-label="手机简介"><strong><Term name={selectedStar?.name ?? (selectedSiHua ? `化${selectedSiHua.siHua}` : selectedPalace!.name)} /> · 简介</strong><p>{termDescription(selectedStar?.name ?? (selectedSiHua ? `化${selectedSiHua.siHua}` : selectedPalace!.name))}</p><p className="text-xs text-ink-3">下方可查看完整简介与 AI 面板。</p></div>}
         </section>
 
         <aside

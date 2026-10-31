@@ -73,8 +73,7 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
         {TOPICS.map(([key, label, question]) => <button key={key} type="button" disabled={loading} aria-pressed={activeTopic === key} onClick={() => { setActiveTopic(key); send(question, ['overview', 'love', 'career', 'health'].includes(key) ? 'overview' : 'followup', true); }} className={cn('inline-flex h-9 items-center rounded-sm border px-2.5 text-[12px] transition-colors disabled:opacity-45', activeTopic === key ? 'border-cinnabar/35 bg-cinnabar/8 font-medium text-cinnabar' : 'border-line/20 text-ink-2 hover:bg-surface-2')}>{label}</button>)}
       </div>
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-3 py-3 sm:px-4">
-        {(selectedPalace || selectedSiHua) && <div className="rounded-sm border border-line/20 bg-surface-2 p-3 text-sm text-ink-2" aria-label="本地静态信息">
-          <p className="mb-2 text-xs text-ink-3">本地简介 · 不消耗 AI 次数</p>
+        {(selectedPalace || selectedSiHua) && <div className="rounded-sm border border-line/20 bg-surface-2 p-3 text-sm text-ink-2" aria-label="简介">
           {selectedPalace && <><h3><Term name={selectedPalace.name} /></h3><p className="my-2">{termDescription(selectedPalace.name)}</p><p>主星：{selectedPalace.stars.filter(s => s.type === 'major').map(s => s.name).join('、') || '空宫，可参考对宫主星'}</p></>}
           {selectedStar && <p className="my-2"><Term name={selectedStar.name} />：{termDescription(selectedStar.name)}</p>}
           {selectedSiHua && <p><Term name={`化${selectedSiHua.siHua}`} />：{termDescription(`化${selectedSiHua.siHua}`)}</p>}
