@@ -7,3 +7,11 @@ dist/
 *.tsbuildinfo
 .DS_Store
 node_modules
+
+# Downloaded source datasets / local extraction environments (never commit)
+*.zst
+*.jsonl
+*.tar
+scripts/build-star-db/data/
+scripts/build-star-db/.venv/
+__pycache__/

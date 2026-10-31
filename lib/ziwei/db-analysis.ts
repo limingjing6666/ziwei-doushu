@@ -1,14 +1,5 @@
-/**
- * lib/ziwei/db-analysis —— 开源占位版（论断内容库不在开源范围）
- *
- * 线上完整版包含 14 主星 × 13 宫位语境的详细命理论断（一句话定调 / 核心论断 /
- * 命盘依据 / 经典出处），属于核心内容、不随排盘引擎开源。此文件仅保留 SEO
- * 知识页框架所需的「类型 + 宫位/主题标签」（紫微斗数通用术语，非独有内容），
- * 论断内容库 STAR_DB 置空 —— 因此知识库详情页会生成 0 条静态路由。
- *
- * 排盘内核（安星算法、四化、格局识别、古籍原文）完全开放，
- * 见 lib/ziwei 下的 algorithm.ts / patterns.ts / sihua.ts 等。
- */
+/** First edition extracted from the CC BY 4.0 v4.0 dataset; not the upstream private library. */
+import { GENERATED_STAR_DB } from './star-db.generated';
 
 export type TopicKey =
   | 'overview' | 'personality' | 'love' | 'career' | 'wealth' | 'health'
@@ -47,8 +38,22 @@ export const TOPIC_LABEL: Record<TopicKey, string> = {
   parents:     '父母长辈',
 };
 
-/**
- * 论断内容库（14 主星 × 各宫位语境的详细断语）——核心内容，不在开源范围。
- * 此处置空；知识库 SEO 页因 `exists=false` 生成 0 条静态详情路由，但列表框架仍可运行。
- */
-export const STAR_DB: Record<string, unknown> = {};
+export interface StarProfile {
+  mingGong?: string;
+  personality?: string;
+  fuQi?: string;
+  guanLu?: string;
+  caiBo?: string;
+  jiE?: string;
+  xiongDi?: string;
+  ziNv?: string;
+  qianYi?: string;
+  jiaoYou?: string;
+  tianZhai?: string;
+  fuDe?: string;
+  fuMu?: string;
+}
+export type StarDatabase = Record<string, StarProfile>;
+
+/** Exact combinations use '+'; empty palaces use '空宫借:' and are never resident stars. */
+export const STAR_DB: StarDatabase = GENERATED_STAR_DB;

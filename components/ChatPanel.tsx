@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ZiweiChart } from '@/lib/ziwei/types';
+import { consumeAiResponse } from '@/lib/ai/client';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -26,6 +27,8 @@ export default function ChatPanel({ chart }: ChatPanelProps) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const requestRef = useRef<AbortController | null>(null);
+  useEffect(() => () => requestRef.current?.abort(), []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -34,7 +37,9 @@ export default function ChatPanel({ chart }: ChatPanelProps) {
   }, [messages]);
 
   const sendMessage = async (text: string) => {
-    if (!text.trim() || loading) return;
+    if (!text.trim() || loading || requestRef.current) return;
+    const abort = new AbortController();
+    requestRef.current = abort;
     const userMsg: Message = { role: 'user', content: text };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
@@ -45,48 +50,29 @@ export default function ChatPanel({ chart }: ChatPanelProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chart, messages: [...messages, userMsg] }),
+        signal: abort.signal,
       });
+      if (abort.signal.aborted) return;
 
-      if (res.status === 404) throw new Error('api-missing');
-      if (!res.ok) throw new Error('请求失败');
-      if (!res.body) throw new Error('无响应流');
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let assistantText = '';
-
-      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') break;
-            try {
-              const parsed = JSON.parse(data);
-              const delta = parsed.delta?.text ?? '';
-              assistantText += delta;
-              setMessages(prev => {
-                const updated = [...prev];
-                updated[updated.length - 1] = { role: 'assistant', content: assistantText };
-                return updated;
-              });
-            } catch { /* skip */ }
-          }
-        }
-      }
+      if (res.ok) setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+      await consumeAiResponse(res, text => {
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: 'assistant', content: text };
+          return updated;
+        });
+      });
     } catch (e) {
-      const missing = e instanceof Error && e.message === 'api-missing';
+      if (abort.signal.aborted) return;
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: missing ? '开源版不含 AI 解读接口（/api/interpret），需要你自己实现后才能用，详见 README「快速开始」。排盘本身不需要任何 API Key。' : '解读失败，请检查API配置或稍后重试。',
+        content: e instanceof Error ? e.message : '解读失败，请稍后重试。',
       }]);
     } finally {
-      setLoading(false);
+      if (requestRef.current === abort) {
+        requestRef.current = null;
+        if (!abort.signal.aborted) setLoading(false);
+      }
     }
   };
 
@@ -95,7 +81,7 @@ export default function ChatPanel({ chart }: ChatPanelProps) {
       {/* 标题 */}
       <div className="px-4 py-3 flex-shrink-0" style={{ borderBottom: '1px solid var(--t-border)' }}>
         <h3 className="text-xs font-medium tracking-widest" style={{ color: 'var(--t-gold)' }}>AI 命盘解读</h3>
-        <p className="text-[10px] mt-0.5" style={{ color: 'var(--t-faint)' }}>倪海厦正宗紫微斗数 · 智慧解析</p>
+        <p className="text-[10px] mt-0.5" style={{ color: 'var(--t-faint)' }}>紫微斗数 · 三合与四化解析</p>
       </div>
 
       {/* 消息列表 */}

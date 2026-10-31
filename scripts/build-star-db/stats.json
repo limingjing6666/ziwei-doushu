@@ -1,0 +1,36 @@
+{
+  "records": 43824,
+  "sources": [
+    {
+      "file": "y1990.zst",
+      "sha256": "d89f446543a2f542c03b8df2e81cfc48cf422b7968bf833d6ceeebfd3f94f4da"
+    },
+    {
+      "file": "year-1950.jsonl.zst",
+      "sha256": "c33c25e04b0352afcaf49d6c25772aab1e9965b31c5fcfb3e10f35434d2ec7be"
+    },
+    {
+      "file": "year-1963.jsonl.zst",
+      "sha256": "f1f8cc6738659bbb743fc8e78acad5ddc67708ad2b8b8999d4f71e17d50b8e63"
+    },
+    {
+      "file": "year-1977.jsonl.zst",
+      "sha256": "63437c18401e72a3bb9efe69f2ea9d2e7987a4044dd6f21a9172895a3fa1ccb6"
+    },
+    {
+      "file": "year-2004.jsonl.zst",
+      "sha256": "f50fdf46cff9460e4e9b2e04124ab95a34c1b28fc2344034efd634303176c3d6"
+    }
+  ],
+  "star_keys": 50,
+  "topic_combinations": 650,
+  "core_palace_combinations": 200,
+  "single_star_core_coverage": 56,
+  "missing": [],
+  "restricted_unique_paragraphs": 225,
+  "restricted_unique_sentences": 228,
+  "restricted_paragraph_occurrences": 295074,
+  "restricted_sentence_occurrences": 388144,
+  "unsafe_or_overlay_sentence_occurrences": 147506,
+  "malformed_paragraph_occurrences": 3460
+}

@@ -13,7 +13,7 @@ export default function PrivacyPage() {
       </header>
       <main style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px 80px', color: 'var(--tx-1)', lineHeight: 1.8 }}>
         <h1 style={{ fontSize: 28, fontWeight: 600, marginBottom: 8 }}>隐私政策</h1>
-        <p style={{ fontSize: 12, color: 'var(--tx-3)', marginBottom: 32 }}>最后更新：2026年4月</p>
+        <p style={{ fontSize: 12, color: 'var(--tx-3)', marginBottom: 32 }}>最后更新：2026年10月</p>
 
       <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>1. 我们收集的信息</h2>
       <p>为提供紫微命盘排盘与解读服务，我们可能收集以下信息：</p>
@@ -39,7 +39,8 @@ export default function PrivacyPage() {
         <li>支付服务商（支付宝 / 微信支付）：处理订单结算</li>
         <li>短信服务商（如阿里云短信）：发送验证码</li>
         <li>云服务商（如 Vercel / Cloudflare / 阿里云）：技术承载</li>
-        <li>AI 解读服务（如 Anthropic Claude）：处理你的"自由追问"对话（已做匿名化）</li>
+        <li>AI 解读服务（DeepSeek）：仅在请求 AI 解读或合盘时，发送必要出生信息、星曜宫位与最近对话用于生成回复；服务端不会主动发送姓名、出生城市或经度。请勿在问题中填写姓名、联系方式等敏感信息。本站 AI 接口不持久保存命盘或对话；第三方处理规则请参阅 DeepSeek 隐私政策。</li>
+        <li>防刷服务（如配置 Upstash）：仅保存 IP 的哈希与短期计数，不向其发送出生信息或对话。</li>
         <li>司法机关或政府部门基于法律法规的合法要求</li>
       </ul>
 

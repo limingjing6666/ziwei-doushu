@@ -1,11 +1,12 @@
 'use client';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import BirthForm, { type BirthFormState } from '@/components/BirthForm';
 import { formToBirthInfo } from '@/lib/ziwei/share';
 import { generateChart as buildChart } from '@/lib/ziwei/algorithm';
 import type { BirthInfo, ZiweiChart } from '@/lib/ziwei/types';
 import { useTheme } from '@/components/ThemeProvider';
+import { consumeAiResponse } from '@/lib/ai/client';
 
 // ─── AiContent 渲染器（与 InsightPanel 一致）────────────────
 function AiContent({ text, streaming }: { text: string; streaming?: boolean }) {
@@ -53,8 +54,6 @@ export default function HemingPage() {
   const isDark = theme === 'dark';
 
   // ─── 双方命盘状态 ─────────────────────────────────────────
-  const [chartA, setChartA] = useState<ZiweiChart | null>(null);
-  const [chartB, setChartB] = useState<ZiweiChart | null>(null);
   // 双方表单状态由 BirthForm onFormSave 同步到此处，统一按钮触发起盘
   const [formA, setFormA] = useState<BirthFormState | null>(null);
   const [formB, setFormB] = useState<BirthFormState | null>(null);
@@ -64,10 +63,11 @@ export default function HemingPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [question, setQuestion] = useState('');
   const [analysisError, setAnalysisError] = useState(false);
-  // 开源版不含 /api/heming：接口 404 时单独说明，而不是让用户反复重试
-  const [apiMissing, setApiMissing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const analysisRef = useRef<HTMLDivElement>(null);
+  const requestRef = useRef<AbortController | null>(null);
+  useEffect(() => () => requestRef.current?.abort(), []);
 
   // ─── 起盘（单次调用，返回 chart 给统一流程使用）──────────
   // 开源版不含后端 /api/generate：直接用本仓库的排盘引擎在浏览器里起盘
@@ -85,68 +85,51 @@ export default function HemingPage() {
 
   // ─── 统一入口：起盘 + 合盘分析 ─────────────────────────────
   const runAnalysis = useCallback(async (q?: string) => {
+    if (requestRef.current && !requestRef.current.signal.aborted) return;
     setFormError(null);
     if (!isFormReady(formA) || !isFormReady(formB)) {
       setFormError('请先填写双方完整出生信息');
       return;
     }
+    const abort = new AbortController();
+    requestRef.current = abort;
     setAnalyzing(true);
     setAnalysis('');
     setAnalysisError(false);
+    setErrorMessage('');
 
     try {
-      // 并行起两张盘（如果还没起）
-      let cA = chartA;
-      let cB = chartB;
-      const [newA, newB] = await Promise.all([
-        cA ? Promise.resolve(cA) : generateChart(formToBirthInfo(formA!)),
-        cB ? Promise.resolve(cB) : generateChart(formToBirthInfo(formB!)),
+      // Always derive both charts from the current forms; cached charts become stale on edits.
+      const [cA, cB] = await Promise.all([
+        generateChart(formToBirthInfo(formA!)),
+        generateChart(formToBirthInfo(formB!)),
       ]);
-      cA = newA;
-      cB = newB;
+      if (abort.signal.aborted) return;
       if (!cA || !cB) {
         setAnalysisError(true);
         setAnalyzing(false);
         return;
       }
-      if (!chartA) setChartA(cA);
-      if (!chartB) setChartB(cB);
-
       const res = await fetch('/api/heming', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chartA: cA, chartB: cB, question: q ?? undefined }),
+        signal: abort.signal,
       });
-      if (res.status === 404) { setApiMissing(true); throw new Error('api-missing'); }
-      if (!res.ok || !res.body) throw new Error();
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let text = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split('\n')) {
-          if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6);
-          if (data === '[DONE]') break;
-          try {
-            const delta = JSON.parse(data).delta?.text ?? '';
-            text += delta;
-            setAnalysis(text);
-          } catch { /* skip */ }
-        }
-      }
+      await consumeAiResponse(res, setAnalysis);
       // scroll to analysis
       setTimeout(() => analysisRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-    } catch {
+    } catch (error) {
+      if (abort.signal.aborted) return;
+      setErrorMessage(error instanceof Error ? error.message : '分析暂时不可用，请重试。');
       setAnalysisError(true);
     } finally {
-      setAnalyzing(false);
+      if (requestRef.current === abort) {
+        requestRef.current = null;
+        if (!abort.signal.aborted) setAnalyzing(false);
+      }
     }
-  }, [chartA, chartB, formA, formB, generateChart]);
+  }, [formA, formB, generateChart]);
 
   const cardStyle = {
     background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.9)',
@@ -196,7 +179,7 @@ export default function HemingPage() {
             紫微合盘
           </h1>
           <p style={{ fontSize: '13px', color: 'var(--tx-3)', lineHeight: 1.6 }}>
-            输入两个人的出生信息，AI 基于倪海厦体系分析双方命盘的缘分匹配度、感情走向与相处建议
+            输入两个人的出生信息，AI 基于三合与四化分析双方命盘的互动模式、感情倾向与相处建议
           </p>
         </div>
 
@@ -244,7 +227,7 @@ export default function HemingPage() {
             <div style={{ textAlign: 'center', padding: '32px 0' }}>
               <div style={{ fontSize: '13px', color: 'var(--tx-3)', marginBottom: '24px', lineHeight: 1.7 }}>
                 填好双方出生信息后，点击下方按钮<br />
-                AI 将基于倪海厦体系深度分析两人缘分匹配度
+                AI 将结合双方星曜与宫位分析相处模式
               </div>
               <button
                 onClick={() => runAnalysis()}
@@ -284,9 +267,7 @@ export default function HemingPage() {
 
           {analysisError && (
             <div style={{ padding: '12px 16px', borderRadius: '10px', border: '1px solid var(--bdr)', background: 'var(--bg-card)', fontSize: '13px', color: 'var(--tx-2)', marginTop: '12px' }}>
-              {apiMissing
-                ? '开源版不含合盘 AI 分析接口（/api/heming），需要你自己实现后才能用。两人的命盘可以分别到「排盘」页（/chart）查看。'
-                : '分析暂时不可用，请重试。'}
+              {errorMessage || '分析暂时不可用，请重试。'}
             </div>
           )}
         </div>

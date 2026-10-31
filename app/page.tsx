@@ -1113,6 +1113,9 @@ export default function HomePage() {
             本平台基于中国传统文化研究，仅提供学习参考。<br className="sm:hidden" />
             不构成任何医疗、投资、法律或重大决策建议。
           </p>
+          <p className="text-[10px] mb-3 leading-relaxed" style={{ color: c.footerText }}>
+            本站部分断语来自 <a href="https://github.com/Renhuai123/ziwei-doushu" style={{ textDecoration: 'underline' }}>紫微斗数开源解读数据集 v4.0</a>（CC BY 4.0），作者：王多鱼AI。已提取、去重并过滤引文。
+          </p>
           <p className="text-[10px] tracking-wider" style={{ color: c.footerText }}>
             <a href="/terms" style={{ color: c.footerText, textDecoration: 'underline' }}>服务条款</a>
             {' · '}

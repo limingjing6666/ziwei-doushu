@@ -2,7 +2,7 @@
  * SEO 知识页 — 数据 helper
  *
  * 14 主星 × 13 topic = 182 个独立 SEO URL
- * 每页都是 STAR_DB 中对应字段的 4 段 markers（一句话定调/核心论断/命盘依据/经典出处）
+ * 读取 STAR_DB 对应字段的 markers；第一版提取库仅包含定调/核心论断
  */
 
 import { STAR_DB } from '@/lib/ziwei/db-analysis';

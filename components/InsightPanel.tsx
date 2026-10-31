@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ZiweiChart, Palace } from '@/lib/ziwei/types';
 import type { TimeView } from './TimeNav';
+import { consumeAiResponse } from '@/lib/ai/client';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -38,7 +39,7 @@ const TOPIC_PROMPTS: Record<string, string> = {
 用一句话概括这个命盘的核心格局与命主气质。
 
 **【主星解读】**
-命宫主星的核心特质，引用倪海厦原话或观点。
+命宫主星的核心特质，用自己的语言说明星性依据。
 
 **【三方四正】**
 财、官、迁三宫的联动分析及整体格局。
@@ -55,7 +56,7 @@ const TOPIC_PROMPTS: Record<string, string> = {
 一句话定性感情命格。
 
 **【夫妻宫分析】**
-夫妻宫主星、四化，以及倪海厦体系的具体解读。
+夫妻宫主星、四化，结合福德宫具体推导。
 
 **【三方联动】**
 相关宫位对感情的影响。
@@ -72,7 +73,7 @@ const TOPIC_PROMPTS: Record<string, string> = {
 一句话定性事业命格，宜任职或宜创业。
 
 **【官禄宫分析】**
-官禄宫主星、四化，以及倪师对这种配置的判断。
+官禄宫主星、四化，说明这种配置的推导依据。
 
 **【财帛宫联动】**
 财运与事业的关系，财路来源分析。
@@ -106,7 +107,7 @@ const TOPIC_PROMPTS: Record<string, string> = {
 疾厄宫星曜与健康含义。
 
 **【主要风险】**
-结合倪海厦子午流注理论，分析主要健康隐患与需关注的部位。
+只给一般作息与压力管理建议，不凭星曜诊断疾病；身体不适应就医。
 
 **【大限健康走势】**
 当下健康趋势与关键时间段。
@@ -117,7 +118,7 @@ const TOPIC_PROMPTS: Record<string, string> = {
   personality: `请深度解析性格特质，按以下结构输出：
 
 **【命宫主星性格】**
-命宫主星的核心性格特质，引用倪师原话。
+命宫主星的核心性格特质，用自己的话解释依据。
 
 **【三方性格综合】**
 财、官、迁三宫对性格的影响，全貌描绘。
@@ -193,6 +194,7 @@ export default function InsightPanel({ chart, selectedPalace, selectedSiHua }: I
   const lastPalaceBranch = useRef<number | undefined>(undefined);
   const lastSiHuaKey = useRef<string | undefined>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const requestRef = useRef<AbortController | null>(null);
 
   // Keep refs in sync
   useEffect(() => { messagesRef.current = messages; }, [messages]);
@@ -210,6 +212,11 @@ export default function InsightPanel({ chart, selectedPalace, selectedSiHua }: I
     if (autoLoaded.current) return;
     autoLoaded.current = true;
     sendMessage(TOPIC_PROMPTS.overview, true);
+    return () => {
+      requestRef.current?.abort();
+      autoLoaded.current = false;
+      loadingRef.current = false;
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Inject palace analysis when palace selected
@@ -229,7 +236,7 @@ export default function InsightPanel({ chart, selectedPalace, selectedSiHua }: I
 ${selectedPalace.name}在命盘中的意义，以及这种星曜配置的整体判断。
 
 **【主星解读】**
-主星在此宫的倪海厦体系解读，引用具体观点。
+主星在此宫的三合与四化解读，用自己的话说明具体依据。
 
 **【三方四正联动】**
 三方四正宫位对此宫的影响。
@@ -257,10 +264,10 @@ ${selectedPalace.name}在命盘中的意义，以及这种星曜配置的整体�
     const prompt = `请分析【${viewLabel}${selectedSiHua.starName}化${selectedSiHua.siHua}】的飞化影响，按以下结构输出：
 
 **【化${selectedSiHua.siHua}基本含义】**
-化${selectedSiHua.siHua}在倪海厦体系中的核心含义，以及${selectedSiHua.starName}化${selectedSiHua.siHua}的特殊含义。
+化${selectedSiHua.siHua}的核心含义，以及${selectedSiHua.starName}化${selectedSiHua.siHua}的特殊含义。
 
 **【落宫影响】**
-${selectedSiHua.starName}化${selectedSiHua.siHua}落在【${palaceName}】，该宫主管的领域受到何种影响，倪师如何解读。
+${selectedSiHua.starName}化${selectedSiHua.siHua}落在【${palaceName}】，该宫主管的领域受到何种影响，请说明推导。
 
 **【三方四正飞化路径】**
 化${selectedSiHua.siHua}入${palaceName}后，对其三方四正（对宫、两个三合宫）的联动影响。
@@ -275,47 +282,33 @@ ${selectedSiHua.starName}化${selectedSiHua.siHua}落在【${palaceName}】，�
   }, [selectedSiHua]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const streamResponse = async (apiMessages: { role: 'user' | 'assistant'; content: string }[]) => {
+    const abort = new AbortController();
+    requestRef.current = abort;
     try {
       const res = await fetch('/api/interpret', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chart, messages: apiMessages }),
+        signal: abort.signal,
       });
-      if (res.status === 404) throw new Error('api-missing');
-      if (!res.ok) throw new Error('请求失败');
-      if (!res.body) throw new Error('无响应流');
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let assistantText = '';
-
-      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split('\n')) {
-          if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6);
-          if (data === '[DONE]') break;
-          try {
-            const delta = JSON.parse(data).delta?.text ?? '';
-            assistantText += delta;
-            setMessages(prev => {
-              const updated = [...prev];
-              updated[updated.length - 1] = { role: 'assistant', content: assistantText };
-              return updated;
-            });
-          } catch { /* skip */ }
-        }
-      }
+      if (abort.signal.aborted) return;
+      if (res.ok) setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+      await consumeAiResponse(res, text => {
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: 'assistant', content: text };
+          return updated;
+        });
+      });
     } catch (e) {
-      const missing = e instanceof Error && e.message === 'api-missing';
-      setMessages(prev => [...prev, { role: 'assistant', content: missing ? '开源版不含 AI 解读接口（/api/interpret），需要你自己实现后才能用，详见 README「快速开始」。排盘本身不需要任何 API Key。' : '解读失败，请稍后重试。' }]);
+      if (abort.signal.aborted) return;
+      setMessages(prev => [...prev, { role: 'assistant', content: e instanceof Error ? e.message : '解读失败，请稍后重试。' }]);
     } finally {
-      setLoading(false);
-      loadingRef.current = false;
+      if (requestRef.current === abort && !abort.signal.aborted) {
+        requestRef.current = null;
+        setLoading(false);
+        loadingRef.current = false;
+      }
     }
   };
 
