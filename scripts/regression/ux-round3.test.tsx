@@ -175,11 +175,14 @@ async function main() {
     assert.equal(lastDelta, '同帧正文');
   } finally { globalThis.fetch = originalFetch; for (const key of Object.keys(process.env)) if (!(key in env)) delete process.env[key]; Object.assign(process.env, env); }
   // 新界面编排契约：恢复组件路径、不自动消费 AI、不抢滚动、保留新组件拆分。
-  for (const name of ['ChartSummary', 'StarDetailPanel']) {
+  for (const name of ['StarDetailPanel']) {
     assert.ok(existsSync(`components/${name}.tsx`));
     assert.equal(existsSync(`experiments/${name}.tsx`), false);
     assert.match(readFileSync('components/chart/ResultPage.tsx', 'utf8'), new RegExp(`<${name} `));
   }
+  // 原项目没有「命盘摘要」卡，结果页不再渲染。
+  assert.equal(existsSync('components/ChartSummary.tsx'), false);
+  assert.doesNotMatch(readFileSync('components/chart/ResultPage.tsx', 'utf8'), /ChartSummary/);
   const panel = readFileSync('components/InsightPanel.tsx', 'utf8');
   assert.doesNotMatch(panel, /scrollIntoView|scrollTo|scrollTop|autoLoaded/);
   assert.match(panel, /AiErrorNotice/);
