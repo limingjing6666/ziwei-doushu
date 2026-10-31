@@ -70,7 +70,7 @@ function engine(chart: ZiweiChart, opts: FactOptions) {
 }
 const unavailable = (reason: string): MarriageFacts => ({ unavailable: true, reason, rangeText: '', years: [], candidates: [] });
 /** Transparent heuristic, NOT a prediction probability:
- * each annual 红鸾/天喜 on annual spouse +4, 命/福德 +2;
+ * each annual 红鸾/天喜 entering natal 夫妻 +4, natal 命 +2 (year-branch placement);
  * each 禄权科 on natal spouse/trine/opposite +2; 忌 on natal spouse -3;
  * annual spouse same/opposite decadal 命 or 夫妻 +2 each (夫妻 = 大命-2);
  * natal spouse each 贪狼/廉贞/天姚/咸池 +0.5. Score descending, ties earlier year.
@@ -87,8 +87,10 @@ export function getMarriageCandidates(chart: ZiweiChart, opts: FactOptions = {})
       const add = (n: number, why: string) => { score += n; reasons.push(`${why}（${n > 0 ? '+' : ''}${n}）`); };
       const branchFor = (n: string) => BRANCHES.indexOf(e.a.palaces[h.yearly.palaceNames.findIndex(p => name(p) === n)]?.earthlyBranch ?? '');
       const romance = annualRomanceStars(BRANCHES.indexOf(h.yearly.earthlyBranch));
-      for (const [star, branch] of [['红鸾', romance.hongluan], ['天喜', romance.tianxi]] as const)
-        for (const p of ['夫妻', '命', '福德']) if (branchFor(p) === branch) add(p === '夫妻' ? 4 : 2, `流年${p}宫逢流年${star}`);
+      for (const [star, branch] of [['红鸾', romance.hongluan], ['天喜', romance.tianxi]] as const) {
+        if (branch === spouse.branch) add(4, `流年${star}入本命夫妻宫`);
+        if (branch === chart.mingGongBranch) add(2, `流年${star}入本命命宫`);
+      }
       for (const t of f.transformations) {
         if (t.mark !== '忌' && [0, 4, 6, 8].some(o => mod(spouse.branch + o) === t.branch)) add(2, `${t.star}流年化${t.mark}在本命${t.palace}，引动夫妻三方四正`);
         if (t.mark === '忌' && t.branch === spouse.branch) add(-3, `${t.star}流年化忌入本命夫妻，感情波折`);

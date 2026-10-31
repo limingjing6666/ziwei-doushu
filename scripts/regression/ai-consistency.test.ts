@@ -190,14 +190,14 @@ async function main() {
   assert.throws(() => annualRomanceStars(12), RangeError);
   const c = getMarriageCandidates(chart, opts);
   assert.deepEqual(c, getMarriageCandidates(chart, opts));
-  assert.deepEqual(c.years, [2030, 2032, 2043]);
-  assert.equal(c.rangeText, '虚岁 41–54（公历 2030–2043）');
+  assert.deepEqual(c.years, [2030, 2042, 2028]);
+  assert.equal(c.rangeText, '虚岁 39–53（公历 2028–2042）');
   assert.equal(c.candidates.length, 3);
-  assert.deepEqual(c.candidates.map(c => c.score), [6, 6, 6]);
-  assert.deepEqual(c.candidates[0].reasons, ['太阳流年化禄在本命夫妻，引动夫妻三方四正（+2）', '太阴流年化科在本命福德，引动夫妻三方四正（+2）', '流年夫妻与大限夫妻同宫或对宫（+2）']);
+  assert.deepEqual(c.candidates.map(c => c.score), [10, 8, 6]);
+  assert.deepEqual(c.candidates[0].reasons, ['流年天喜入本命夫妻宫（+4）', '太阳流年化禄在本命夫妻，引动夫妻三方四正（+2）', '太阴流年化科在本命福德，引动夫妻三方四正（+2）', '流年夫妻与大限夫妻同宫或对宫（+2）']);
   assert.ok(c.candidates.every(c => c.nominalAge === c.year - 1990 + 1 && c.nominalAge >= 35 && c.nominalAge <= 55));
   const peach = { ...chart, palaces: chart.palaces.map(p => p.name === '夫妻' ? { ...p, stars: [...p.stars, { name: '天姚', type: 'minor' as const }, { name: '咸池', type: 'minor' as const }] } : p) };
-  assert.deepEqual(getMarriageCandidates(peach, opts).candidates.map(c => [c.year, c.score]), [[2030, 7], [2032, 7], [2043, 7]]);
+  assert.deepEqual(getMarriageCandidates(peach, opts).candidates.map(c => [c.year, c.score]), [[2030, 11], [2042, 9], [2028, 7]]);
   assert.ok(getMarriageCandidates(peach, opts).candidates[0].reasons.includes('本命夫妻有天姚桃花辅助线索（+0.5）'));
   assert.equal(facts.currentAge, 37);
   assert.equal(facts.currentDecadal?.startAge, 36);
@@ -231,7 +231,7 @@ async function main() {
   assert.doesNotMatch(chartToText(chart, { facts, question: '事业' }), /MARRIAGE|婚期仅允许/);
   assert.doesNotMatch(chartToText(unknown, { facts: buildAgeFacts(unknown, opts), question: '婚期' }), /\{\{MARRIAGE/);
   let removed = 0;
-  assert.equal(fillPlaceholders('A{{MARRIAGE_RANGE}}B{{MARRIAGE_YEARS}}{{UNKNOWN}}', facts, () => removed++), `A${c.rangeText}B2030、2032、2043 年`);
+  assert.equal(fillPlaceholders('A{{MARRIAGE_RANGE}}B{{MARRIAGE_YEARS}}{{UNKNOWN}}', facts, () => removed++), `A${c.rangeText}B${c.years.join('、')} 年`);
   assert.equal(removed, 1);
   for (const source of ['A{{MARRIAGE_RANGE}}B{{MARRIAGE_YEARS}}C', 'x{{HEALTH_YEARS}}y{{UNKNOWN}}']) {
     for (let split = 0; split <= source.length; split++) {
@@ -244,7 +244,7 @@ async function main() {
   const dangling = createPlaceholderBuffer(facts);
   assert.equal(dangling.push('你好{{MARR'), '你好'); assert.equal(dangling.finish(), '');
   const overlong = createPlaceholderBuffer(facts); assert.equal(overlong.push('{{' + 'x'.repeat(41)).length, 43);
-  const valid = ending(`可以积极经营关系。\n\n候选范围是${c.rangeText}，重点是2030、2032、2043 年。`);
+  const valid = ending(`可以积极经营关系。\n\n候选范围是${c.rangeText}，重点是${c.years.join('、')} 年。`);
   assert.deepEqual(types(valid), []);
   for (const first of ['你是火六局，建议结婚。', '命宫化忌，需要等待。', '紫微在庙，适合。', '宫干丙，适合。', '机月同梁，适合。']) assert.ok(types(ending(first)).includes('first-sentence-jargon'));
   for (const first of ['子女宫相关问题可以慢慢沟通。', '命运由你自己把握。', '可以换，但别贸然辞职。', '先调整布局，别陷入焦虑。']) assert.ok(!types(ending(first), '事业').includes('first-sentence-jargon'));
@@ -330,7 +330,7 @@ async function main() {
     await consumeAiResponse(wrapped, s => { emitted = s; }); assert.doesNotMatch(emitted, /999/); assert.ok(emitted.includes(c.rangeText));
     let streamText = '';
     const splitWire = consistencyStream(wire(encodeDelta('可考虑{') + encodeDelta('{MARRIAGE_') + encodeDelta('YEARS}}。') + 'data: [DONE]\n\n'), { facts, mode: 'followup', question: '事业' }, { buffered: false, deadline: 0, rewrite: async () => [] });
-    await consumeAiResponse(splitWire, s => { streamText = s; }); assert.equal(streamText, '可考虑2030、2032、2043 年。');
+    await consumeAiResponse(splitWire, s => { streamText = s; }); assert.equal(streamText, `可考虑${c.years.join('、')} 年。`);
     const partial = consistencyStream(wire(encodeDelta('保留部分。') + 'data: {"error":"解读暂时中断"}\n\ndata: [DONE]\n\n'), { facts, mode: 'followup', question: '健康' }, { buffered: true, deadline: 0, rewrite: async () => [] });
     await assert.rejects(consumeAiResponse(partial, s => { emitted = s; }), /中断/); assert.equal(emitted, `保留部分。\n\n${HEALTH_CLOSING}`);
     await fixRegressions();
@@ -342,15 +342,11 @@ async function main() {
   for (const term of ['宫干', '庙旺利陷', '亮度', '五行局', '命主', '身主', '飞化', '自化', '三方四正', '会照', '借星']) {
     assert.ok(GLOSSARY[term]); assert.ok(GLOSSARY_SHORT[term].length <= 20);
   }
-  // Annual 命/夫妻/福德 have the year's branch parity, whereas annual 红鸾/天喜
-  // have the opposite parity. These exact requested conjunctions cannot trigger.
-  for (let year = 2024; year <= 2035; year++) {
-    const annual = a.horoscope(`${year}-7-1`), romance = annualRomanceStars((year - 4) % 12);
-    for (const p of ['命宫', '夫妻', '福德']) {
-      const branch = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'].indexOf(a.palaces[annual.yearly.palaceNames.indexOf(p as '命宫')].earthlyBranch);
-      assert.ok(![romance.hongluan, romance.tianxi].includes(branch));
-    }
-  }
+  // Annual romance stars activate natal palaces, not parity-incompatible annual palaces.
+  const spouseBranch = chart.palaces.find(p => p.name === '夫妻')!.branch;
+  const cycle = Array.from({ length: 12 }, (_, i) => annualRomanceStars(i));
+  assert.equal(cycle.filter(s => s.hongluan === spouseBranch).length, 1);
+  assert.equal(cycle.filter(s => s.tianxi === spouseBranch).length, 1);
   const glossary = glossaryForChart('火六局 宫干 紫微（庙） 庙旺利陷 命主 身主 飞化');
   assert.ok(glossary.length <= 600); assert.match(glossary, /宫干（/); assert.match(glossary, /火六局（排盘分组与起限数字）/); assert.doesNotMatch(glossary, /化权（/);
   for (const prompt of [INTERPRET_SYSTEM, HEMING_SYSTEM]) {
