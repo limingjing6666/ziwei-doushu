@@ -1,5 +1,8 @@
-import { chartToText, crossTransformations, viewToText } from './chart-to-text';
-import { streamDeepSeek } from './deepseek';
+import { chartToText, crossTransformations, viewToText, isNumericSensitive, isHealthQuestion } from './chart-to-text';
+import { streamDeepSeek, deepSeekRewriter } from './deepseek';
+import { buildAgeFacts } from '@/lib/ziwei/facts';
+import { glossaryForChart } from '@/lib/glossary';
+import { consistencyStream } from './consistency-stream';
 import { AiError, normalizeChart, normalizeMessages, normalizeView, readBody, text } from './input';
 import { retrieveKnowledge } from './knowledge';
 import { INTERPRET_SYSTEM, HEMING_SYSTEM } from './prompts';
@@ -28,14 +31,28 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
       + '第一句直接回答（时辰未知固定首句优先），术语首次出现括号解释；接近上限主动收束并写完整结尾，优先保证最后一行恰好一句轻提示再停笔。';
     if (!process.env.DEEPSEEK_API_KEY) throw new AiError(500, 'AI 解读服务尚未配置，请稍后再试。');
     await checkRateLimit(request);
+    const question = `${text(body.topic, 40)} ${text(body.question, 1000) || [...messages].reverse().find(m => m.role === 'user')?.content || ''}`;
+    const now = new Date(), currentYear = now.getFullYear();
+    const currentDate = `${currentYear}-${now.getMonth() + 1}-${now.getDate()}`;
+    const factsA = buildAgeFacts(a, { currentYear, currentDate, selectedYear: viewA.year });
+    const factsB = b ? buildAgeFacts(b, { currentYear, currentDate, selectedYear: viewB!.year }) : undefined;
+    // A is the single marriage candidate source in compatibility mode, not a spliced third range.
+    if (factsB && !factsB.birthTimeKnown) factsA.marriage = { unavailable: true, reason: '乙方出生时辰未知，目前无法确定共同婚期', rangeText: '', years: [], candidates: [] };
+    const facts = factsB ? { ...factsA, birthTimeKnown: factsA.birthTimeKnown && factsB.birthTimeKnown,
+      health: { years: [...factsA.health.years, ...factsB.health.years], entries: [...factsA.health.entries, ...factsB.health.entries] },
+      whitelist: { ages: [...factsA.whitelist.ages, ...factsB.whitelist.ages], years: [...factsA.whitelist.years, ...factsB.whitelist.years], ageRanges: [...factsA.whitelist.ageRanges, ...factsB.whitelist.ageRanges], yearRanges: [...factsA.whitelist.yearRanges, ...factsB.whitelist.yearRanges] } } : factsA;
+    const chartA = chartToText(a, { facts: factsA, question });
+    const chartB = b ? chartToText(b, { facts: factsB, question: isHealthQuestion(question) ? '健康' : '' }) : undefined;
+    const references = retrieveKnowledge(a, b);
     // Place client-provided chart/reference data in a user message, never interpolate into system instructions.
     const context = b
-      ? `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chartA: chartToText(a), chartB: chartToText(b), selectedViewA: viewToText(viewA, a), selectedViewB: viewToText(viewB, b), reportSummary: text(body.reportSummary, 1600), crossTransformations: crossTransformations(a, b), references: retrieveKnowledge(a, b) })}`
-      : `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chart: chartToText(a), selectedView: viewToText(viewA, a), references: retrieveKnowledge(a) })}`;
-    return await streamDeepSeek(request, `${b ? HEMING_SYSTEM : INTERPRET_SYSTEM}\n【本次篇幅硬约束】${lengthRule}`, [
+      ? `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chartA, chartB, selectedViewA: viewToText(viewA, a), selectedViewB: viewToText(viewB, b), reportSummary: text(body.reportSummary, 1600), crossTransformations: crossTransformations(a, b), references, glossary: glossaryForChart(`${chartA}\n${chartB}\n${references}`) })}`
+      : `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chart: chartA, selectedView: viewToText(viewA, a), references, glossary: glossaryForChart(`${chartA}\n${references}`) })}`;
+    const upstream = await streamDeepSeek(request, `${b ? HEMING_SYSTEM : INTERPRET_SYSTEM}\n【本次篇幅硬约束】${lengthRule}`, [
       { role: 'user', content: context },
-      ...(b ? [...messages, { role: 'user' as const, content: text(body.question, 1000) || '请分析双方的相处模式与建议。' }] : messages.length ? messages : [{ role: 'user' as const, content: '请解读这张命盘的核心特点和实际建议。' }]),
+      ...(b ? [...messages, { role: 'user' as const, content: text(body.question, 1000) || '请分析双方的相处模式与建议。' }] : messages.length ? messages : [{ role: 'user' as const, content: text(body.question, 1000) || '请解读这张命盘的核心特点和实际建议。' }]),
     ], Math.max(1, deadline - Date.now()), maxTokens);
+    return consistencyStream(upstream, { mode: scenario, facts, question }, { buffered: isNumericSensitive(question), deadline, rewrite: deepSeekRewriter(request.signal), signal: request.signal });
   } catch (error) {
     const known = error instanceof AiError;
     return Response.json({ error: known ? error.message : '解读服务暂时不可用，请稍后重试。', ...(known && error.status === 429 ? { retryAfter: error.retryAfter ?? 60, limitKind: error.limitKind ?? 'minute' } : {}) }, {
