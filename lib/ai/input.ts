@@ -1,7 +1,7 @@
 import type { ZiweiChart, Palace, Star } from '@/lib/ziwei/types';
 
 export class AiError extends Error {
-  constructor(public status: number, message: string) { super(message); }
+  constructor(public status: number, message: string, public retryAfter?: number, public limitKind?: 'minute' | 'daily') { super(message); }
 }
 export const isObject = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
 export const text = (x: unknown, max = 100) => typeof x === 'string' ? x.slice(0, max) : '';
@@ -31,6 +31,7 @@ export function normalizeChart(raw: unknown): ZiweiChart & { liunianYear?: numbe
   }));
   const chart = {
     birthInfo: { year: num(birth.year), month: num(birth.month), day: num(birth.day), hour: index(birth.hour, 12),
+      birthTimeKnown: birth.birthTimeKnown === false || raw.birthTimeKnown === false ? false : true,
       // Unknown gender must not silently become male.
       gender: birth.gender === 'male' || birth.gender === 'female' ? birth.gender : undefined,
       origInput: isObject(birth.origInput) ? { year: num(birth.origInput.year), month: num(birth.origInput.month), day: num(birth.origInput.day), clockHour: num(birth.origInput.clockHour), clockMinute: num(birth.origInput.clockMinute) } : undefined },
@@ -44,6 +45,24 @@ export function normalizeChart(raw: unknown): ZiweiChart & { liunianYear?: numbe
     daXians: list(raw.daXians, 12).map(d => ({ startAge: num(d.startAge), endAge: num(d.endAge), palaceBranch: index(d.palaceBranch, 12), palaceName: text(d.palaceName, 20) })),
   };
   return chart as ZiweiChart;
+}
+
+export interface AiView {
+  type: 'natal' | 'decadal' | 'yearly';
+  year: number;
+  decadal?: { startAge: number; endAge: number; palaceName: string; stem: number };
+}
+/** Ignore unknown fields, never accept client-provided instructions as a view. */
+export function normalizeView(raw: unknown, chart: ZiweiChart, currentYear = new Date().getFullYear()): AiView {
+  const v = isObject(raw) ? raw : {};
+  const dx = isObject(v.decadal) ? v.decadal : undefined;
+  const year = Number.isInteger(v.year) && num(v.year) >= 1900 && num(v.year) <= 2100 ? num(v.year) : currentYear;
+  const current = chart.daXians[chart.currentDaXianIndex];
+  const stem = current ? chart.palaces.find(p => p.branch === current.palaceBranch)?.stem : undefined;
+  return { type: ['natal', 'decadal', 'yearly'].includes(text(v.type)) ? v.type as AiView['type'] : 'yearly', year,
+    decadal: dx && num(dx.startAge) >= 0 && num(dx.endAge) >= num(dx.startAge) && num(dx.endAge) <= 150 && index(dx.stem, 10) >= 0
+      ? { startAge: num(dx.startAge), endAge: num(dx.endAge), palaceName: text(dx.palaceName, 20), stem: index(dx.stem, 10) }
+      : current && stem !== undefined ? { startAge: current.startAge, endAge: current.endAge, palaceName: current.palaceName, stem } : undefined };
 }
 
 export interface ChatMessage { role: 'user' | 'assistant'; content: string }

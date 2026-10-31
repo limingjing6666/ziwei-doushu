@@ -1,7 +1,7 @@
 import { AiError, type ChatMessage } from './input';
 import { encodeDelta, readSseData } from './sse';
 
-export async function streamDeepSeek(request: Request, system: string, messages: ChatMessage[], timeoutMs = 55000): Promise<Response> {
+export async function streamDeepSeek(request: Request, system: string, messages: ChatMessage[], timeoutMs = 55000, maxTokens = 2400): Promise<Response> {
   const key = process.env.DEEPSEEK_API_KEY;
   if (!key) throw new AiError(500, 'AI 解读服务尚未配置，请稍后再试。');
   const abort = new AbortController();
@@ -18,7 +18,7 @@ export async function streamDeepSeek(request: Request, system: string, messages:
         // Keep the bounded budget for the visible reading, not hidden reasoning.
         // Other explicitly configured models retain their own default behavior.
         ...((process.env.DEEPSEEK_MODEL || 'deepseek-flash') === 'deepseek-flash' ? { thinking: { type: 'disabled' } } : {}),
-        messages: [{ role: 'system', content: system }, ...messages], max_tokens: 2400 }),
+        messages: [{ role: 'system', content: system }, ...messages], max_tokens: maxTokens }),
       signal: abort.signal, cache: 'no-store',
     });
     if (!upstream.ok || !upstream.body) {
@@ -53,6 +53,10 @@ export async function streamDeepSeek(request: Request, system: string, messages:
           const chunk = JSON.parse(value);
           if (chunk.error) throw new Error('upstream stream error');
           const reason = chunk.choices?.[0]?.finish_reason;
+          if (reason === 'length') {
+            controller.enqueue(encoder.encode('data: {"finish_reason":"length"}\n\ndata: [DONE]\n\n'));
+            controller.close(); cleanup(); await source.return(undefined).catch(() => {}); return;
+          }
           if (reason && reason !== 'stop') throw new Error('upstream response incomplete');
           // Only visible content: reasoning_content is deliberately ignored.
           const content = chunk.choices?.[0]?.delta?.content;
