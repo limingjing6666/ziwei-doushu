@@ -221,15 +221,15 @@ export default function HomePage() {
 
             <blockquote className="mt-8 border-l-2 border-ochre/60 pl-5 sm:pl-6">
               <p className="font-serif text-[clamp(17px,2.2vw,22px)] leading-[1.9] text-ink">
-                看命之要，先看命宫。命宫主星定其格局，三方四正定其用武。次看身宫，身宫定其晚景与依归。再看大限流年，定其一生进退之节。
+                太极星缠，乃群宿众星之主，天门运限，即扶身助命之源，在天则运用无常，在人则命有格局。先明格局，次看众星。
               </p>
               <cite className="mt-3 block text-[12px] not-italic text-ink-3">
-                ——《骨髓赋·总论篇》
+                ——《紫微斗数全书·卷一·斗数骨髓赋》（据维基文库繁转简，未逐字校勘）
               </cite>
             </blockquote>
 
             <p className="mt-6 max-w-2xl text-[14px] leading-[1.9] text-ink-2">
-              方法说明：古籍原文、现代整理与 AI 生成分开标注。本库收录的赋文含现代整理，未逐字校勘，阅读时以原文为先，解释只作参照。
+              方法说明：古籍原文、现代解读与 AI 生成分开标注。古籍库据维基文库《紫微斗数全书》繁转简（CC BY-SA 4.0），未逐字校勘；解释只作参照。
             </p>
           </div>
 
@@ -311,7 +311,7 @@ export default function HomePage() {
                     原文、整理与出处
                   </p>
                   <p className="mt-2 text-[14px] leading-[1.85] text-ink-2">
-                    按书与章节阅读传统赋文，现代整理单独标注，方便与原文逐段对照。
+                    按卷与章节阅读《紫微斗数全书》原文（繁转简，未逐字校勘），方便对读。
                   </p>
                 </div>
                 <div className="flex items-baseline justify-between gap-3 border-t border-line/12 pt-4">
@@ -345,7 +345,7 @@ export default function HomePage() {
 
           <div className="mt-12 border-t border-line/20 pt-6">
             <p className="text-[12px] leading-[1.9] text-ink-3">
-              数据署名：部分断语整理自紫微斗数开源解读数据集 v4.0（CC BY 4.0），作者王多鱼AI；修改后的表述不代表上游作者认可。古籍库文本含现代整理，未逐字校勘。
+              数据署名：部分断语整理自紫微斗数开源解读数据集 v4.0（CC BY 4.0），作者王多鱼AI；修改后的表述不代表上游作者认可。古籍原文据维基文库《紫微斗数全书》（CC BY-SA 4.0）繁转简，未逐字校勘。
             </p>
             <p className="mt-2 text-[12px] leading-[1.9] text-ink-3">
               免责声明：传统术数与 AI 生成内容仅供文化学习与自我观察，不构成医疗、投资、法律或人生重大决策建议。完整说明见{" "}

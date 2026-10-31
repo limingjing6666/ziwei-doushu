@@ -69,7 +69,7 @@ export async function generateMetadata({
       `${star}${data.palaceName}`,
       `${star}入${data.palaceName}`,
       `紫微斗数 ${star}`,
-      "紫微斗数全集",
+      "斗数骨髓赋",
     ],
   };
 }
@@ -264,7 +264,7 @@ export default async function KnowledgePage({
                 想读原典？
               </h2>
               <p className="mt-2 max-w-xl text-[14px] leading-relaxed text-ink-2">
-                古籍库收录了《紫微斗数全集》《紫微斗数全书》《骨髓赋》的主题整理段落，可与本页的星性说法对照阅读。
+                古籍库收录维基文库《紫微斗数全书》通行三卷本原文（繁转简，未逐字校勘），含斗数骨髓赋与女命骨髓赋，可与本页的星性说法对照阅读。
               </p>
               <Link
                 href="/library"

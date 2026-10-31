@@ -49,7 +49,7 @@ export default function TermsPage() {
       <div className="rounded-sm border border-cinnabar/20 bg-cinnabar/5 p-4">
         <p>
           <strong>
-            本站包含独立编写的现代说明、传统文献主题整理及按许可使用的第三方数据，各部分权利分别适用。
+            本站包含现代说明、古籍转录（繁转简）及按许可使用的第三方数据，各部分权利分别适用；维基文库转录内容注明 CC BY-SA 4.0。
           </strong>
         </p>
         <p>

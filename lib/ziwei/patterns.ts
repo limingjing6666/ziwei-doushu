@@ -531,7 +531,7 @@ function detectMingZhuChuHai(chart: ZiweiChart, ming: Palace, patterns: Pattern[
     description: '命未空宫，对宫丑宫日月同辉拱照，号"明珠出海"。主出生平凡、后天努力出头，宜远赴他乡、学术研究或大公司高位，主大富大贵。',
     palaces: ['命宫', dui.name],
     conditions: { required, bonus, breaking },
-    source: '《紫微斗数全集·明珠出海》',
+    source: '《紫微斗数全书·明珠出海》',
   });
 }
 

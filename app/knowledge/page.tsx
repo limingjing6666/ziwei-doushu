@@ -31,7 +31,7 @@ export const metadata = {
     "紫微斗数",
     "天机盘",
     "三合四化",
-    "紫微斗数全集",
+    "斗数骨髓赋",
     "紫微斗数全书",
     "14 主星",
     "12 宫位",
@@ -71,7 +71,7 @@ export default function KnowledgeHomePage() {
       <PageHeader
         eyebrow="星曜知识"
         title="紫微斗数知识库"
-        description={`十四主星 × 十三主题 = ${ARTICLE_COUNT} 项专题整理。每篇说明星曜落在该宫位时的传统解释、判断依据与阅读限制，传统星宫关系与独立白话整理，含公版古籍参考。`}
+        description={`十四主星 × 十三主题 = ${ARTICLE_COUNT} 项专题整理。每篇说明星曜落在该宫位时的传统解释、判断依据与阅读限制，传统星宫关系与现代白话解读，含《紫微斗数全书》原文参考（据维基文库繁转简，未逐字校勘）。`}
         actions={
           <Link href="/library" className={buttonClasses("secondary", "sm")}>
             <IconBook size={15} />
@@ -173,7 +173,7 @@ export default function KnowledgeHomePage() {
         <SectionHeading
           eyebrow="原典"
           title="古籍对读"
-          description="知识库里的星性说法，可以回到古籍整理稿里对照阅读。"
+          description="知识库里的星性说法，可与《紫微斗数全书》原文（繁转简，未逐字校勘）对照阅读。"
           action={
             <Link href="/library" className={buttonClasses("ghost", "sm")}>
               打开古籍库

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   description:
     "天机盘 · AI 紫微命盘。三合四化 · 古法排盘 · AI 解读，分层阅读星宫结构与运限主题，仅供文化学习参考。",
   keywords:
-    "天机盘, 紫微斗数, 三合四化, 紫微斗数全集, 紫微斗数全书, 骨髓赋, 命盘, 命理, 14主星, 12宫位",
+    "天机盘, 紫微斗数, 三合四化, 紫微斗数全书, 斗数骨髓赋, 命盘, 命理, 14主星, 12宫位",
   metadataBase: new URL(SITE_URL),
   manifest: "/manifest.webmanifest",
   twitter: {
