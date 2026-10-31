@@ -19,3 +19,7 @@ __pycache__/
 # External read-only source material must never be reintroduced.
 /docs/tianji-ziwei/
 /lib/nihai/
+
+# Local visual QA artifacts
+/qa-screens/
+/.qa-chrome-profile/

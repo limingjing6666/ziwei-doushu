@@ -1,14 +1,23 @@
-'use client';
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import type { ZiweiChart, Palace } from '@/lib/ziwei/types';
-import type { TimeView } from './TimeNav';
-import { consumeAiResponse } from '@/lib/ai/client';
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import type { Palace, ZiweiChart } from "@/lib/ziwei/types";
+import type { TimeView } from "./TimeNav";
+import { consumeAiResponse } from "@/lib/ai/client";
+import { AiProse } from "@/components/ui/AiProse";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Field";
+import { Spinner } from "@/components/ui/Skeleton";
+import { cn } from "@/lib/ui/cn";
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
-  hidden?: boolean; // don't show user bubble for auto/topic messages
+  /** 自动/主题请求产生的隐藏用户消息，不显示气泡 */
+  hidden?: boolean;
+  /** 该条 assistant 消息是错误提示，用朱砂色单独呈现 */
+  error?: boolean;
 }
 
 interface SelectedSiHua {
@@ -17,19 +26,20 @@ interface SelectedSiHua {
   view: TimeView;
 }
 
-interface InsightPanelProps {
+export interface InsightPanelProps {
   chart: ZiweiChart;
   selectedPalace?: Palace | null;
   selectedSiHua?: SelectedSiHua | null;
+  className?: string;
 }
 
 const TOPICS = [
-  { key: 'overview',     label: '命格' },
-  { key: 'love',        label: '感情' },
-  { key: 'career',      label: '事业' },
-  { key: 'wealth',      label: '财运' },
-  { key: 'health',      label: '健康' },
-  { key: 'personality', label: '性格' },
+  { key: "overview", label: "命格" },
+  { key: "love", label: "感情" },
+  { key: "career", label: "事业" },
+  { key: "wealth", label: "财运" },
+  { key: "health", label: "健康" },
+  { key: "personality", label: "性格" },
 ] as const;
 
 const TOPIC_PROMPTS: Record<string, string> = {
@@ -145,49 +155,20 @@ const PALACE_ROLES: Record<string, string> = {
   '父母宫': '父母关系、文书契约',
 };
 
-/** Render AI markdown: **【Title】** → gold header, **bold** → strong */
-function AiContent({ text, streaming }: { text: string; streaming?: boolean }) {
-  const lines = text.split('\n');
-  return (
-    <div className="space-y-0.5">
-      {lines.map((line, i) => {
-        const sectionMatch = line.match(/^\*\*【(.+?)】\*\*$/);
-        if (sectionMatch) {
-          return (
-            <div key={i} className="pt-3 pb-0.5 first:pt-0">
-              <span className="text-[11px] font-semibold tracking-wide" style={{ color: 'var(--t-gold)' }}>
-                【{sectionMatch[1]}】
-              </span>
-            </div>
-          );
-        }
-        if (line.trim() === '') return <div key={i} className="h-1" />;
-        const parts = line.split(/\*\*(.+?)\*\*/);
-        return (
-          <div key={i} className="text-[11px] leading-relaxed" style={{ color: 'var(--t-text2)' }}>
-            {parts.map((part, j) =>
-              j % 2 === 0
-                ? part
-                : <strong key={j} className="font-medium" style={{ color: 'var(--t-text)' }}>{part}</strong>
-            )}
-          </div>
-        );
-      })}
-      {streaming && (
-        <span
-          className="inline-block w-1.5 h-3 ml-0.5 animate-pulse rounded-sm align-middle"
-          style={{ background: 'var(--t-gold)', opacity: 0.6 }}
-        />
-      )}
-    </div>
-  );
-}
-
-export default function InsightPanel({ chart, selectedPalace, selectedSiHua }: InsightPanelProps) {
+/**
+ * AI 解读面板：保留原有数据流（挂载自动请求命格总览、选中宫位自动分析、
+ * 6 个主题、追问、SSE 流式、错误作为消息展示），只重做外观。
+ */
+export default function InsightPanel({
+  chart,
+  selectedPalace,
+  selectedSiHua,
+  className,
+}: InsightPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [activeTopic, setActiveTopic] = useState<string>('overview');
+  const [activeTopic, setActiveTopic] = useState<string>("overview");
   const messagesRef = useRef<Message[]>([]); // always-current copy for closures
   const loadingRef = useRef(false);
   const autoLoaded = useRef(false);
@@ -197,8 +178,12 @@ export default function InsightPanel({ chart, selectedPalace, selectedSiHua }: I
   const requestRef = useRef<AbortController | null>(null);
 
   // Keep refs in sync
-  useEffect(() => { messagesRef.current = messages; }, [messages]);
-  useEffect(() => { loadingRef.current = loading; }, [loading]);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
 
   // Auto-scroll
   useEffect(() => {
@@ -224,11 +209,12 @@ export default function InsightPanel({ chart, selectedPalace, selectedSiHua }: I
     if (!selectedPalace || selectedPalace.branch === lastPalaceBranch.current) return;
     lastPalaceBranch.current = selectedPalace.branch;
 
-    const majorStars = selectedPalace.stars.filter(s => s.type === 'major');
-    const starDesc = majorStars.length > 0
-      ? majorStars.map(s => `${s.name}${s.siHua ? '化' + s.siHua : ''}`).join('、')
-      : '空宫（借对宫）';
-    const role = PALACE_ROLES[selectedPalace.name] ?? '';
+    const majorStars = selectedPalace.stars.filter((star) => star.type === "major");
+    const starDesc =
+      majorStars.length > 0
+        ? majorStars.map((star) => `${star.name}${star.siHua ? "化" + star.siHua : ""}`).join("、")
+        : "空宫（借对宫）";
+    const role = PALACE_ROLES[selectedPalace.name] ?? "";
 
     const prompt = `请重点分析【${selectedPalace.name}】（主管：${role}），该宫主星为${starDesc}，按以下结构输出：
 
@@ -254,12 +240,11 @@ ${selectedPalace.name}在命盘中的意义，以及这种星曜配置的整体�
     if (key === lastSiHuaKey.current) return;
     lastSiHuaKey.current = key;
 
-    // 找出该星所在宫位
-    const palaceOfStar = chart.palaces.find(p =>
-      p.stars.some(s => s.name === selectedSiHua.starName)
+    const palaceOfStar = chart.palaces.find((palace) =>
+      palace.stars.some((star) => star.name === selectedSiHua.starName),
     );
-    const palaceName = palaceOfStar?.name ?? '未知宫位';
-    const viewLabel = selectedSiHua.view === 'daxian' ? '大限' : '流年';
+    const palaceName = palaceOfStar?.name ?? "未知宫位";
+    const viewLabel = selectedSiHua.view === "daxian" ? "大限" : "流年";
 
     const prompt = `请分析【${viewLabel}${selectedSiHua.starName}化${selectedSiHua.siHua}】的飞化影响，按以下结构输出：
 
@@ -281,28 +266,35 @@ ${selectedSiHua.starName}化${selectedSiHua.siHua}落在【${palaceName}】，�
     sendMessage(prompt, true);
   }, [selectedSiHua]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const streamResponse = async (apiMessages: { role: 'user' | 'assistant'; content: string }[]) => {
+  const streamResponse = async (apiMessages: { role: "user" | "assistant"; content: string }[]) => {
     const abort = new AbortController();
     requestRef.current = abort;
     try {
-      const res = await fetch('/api/interpret', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/interpret", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chart, messages: apiMessages }),
         signal: abort.signal,
       });
       if (abort.signal.aborted) return;
-      if (res.ok) setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
-      await consumeAiResponse(res, text => {
-        setMessages(prev => {
+      if (res.ok) setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      await consumeAiResponse(res, (text) => {
+        setMessages((prev) => {
           const updated = [...prev];
-          updated[updated.length - 1] = { role: 'assistant', content: text };
+          updated[updated.length - 1] = { role: "assistant", content: text };
           return updated;
         });
       });
-    } catch (e) {
+    } catch (error) {
       if (abort.signal.aborted) return;
-      setMessages(prev => [...prev, { role: 'assistant', content: e instanceof Error ? e.message : '解读失败，请稍后重试。' }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: error instanceof Error ? error.message : "解读失败，请稍后重试。",
+          error: true,
+        },
+      ]);
     } finally {
       if (requestRef.current === abort && !abort.signal.aborted) {
         requestRef.current = null;
@@ -317,15 +309,15 @@ ${selectedSiHua.starName}化${selectedSiHua.siHua}落在【${palaceName}】，�
     loadingRef.current = true;
     setLoading(true);
 
-    const userMsg: Message = { role: 'user', content: text, hidden };
+    const userMsg: Message = { role: "user", content: text, hidden };
     // Capture current messages synchronously via ref (avoids stale closure)
-    const apiMessages = [...messagesRef.current, userMsg].map(m => ({
-      role: m.role,
-      content: m.content,
+    const apiMessages = [...messagesRef.current, userMsg].map((message) => ({
+      role: message.role,
+      content: message.content,
     }));
 
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
     streamResponse(apiMessages);
   };
 
@@ -339,124 +331,135 @@ ${selectedSiHua.starName}化${selectedSiHua.siHua}落在【${palaceName}】，�
     sendMessage(input);
   };
 
+  const visibleMessages = messages.filter((message) => !(message.role === "user" && message.hidden));
+  const waitingForFirstToken = loading && messages[messages.length - 1]?.role !== "assistant";
+
   return (
-    <div className="flex flex-col h-full rounded-xl overflow-hidden card-glass">
+    <Card className={cn("flex min-h-0 flex-col overflow-hidden", className)}>
+      <p role="status" aria-live="polite" className="sr-only">
+        {loading ? "AI 解读生成中" : "AI 解读已就绪"}
+      </p>
 
-      {/* ── Topic buttons ── */}
-      <div className="flex-shrink-0 px-2 pt-2.5 pb-2" style={{ borderBottom: '1px solid var(--t-border)' }}>
-        <div className="grid grid-cols-6 gap-1">
-          {TOPICS.map(t => {
-            const isActive = activeTopic === t.key;
-            return (
-              <button
-                key={t.key}
-                onClick={() => handleTopicClick(t.key)}
-                disabled={loading}
-                className="py-1.5 text-[10px] font-medium rounded-lg transition-all duration-150 disabled:opacity-40"
-                style={{
-                  background: isActive ? 'rgba(212,168,67,0.12)' : 'transparent',
-                  border: `1px solid ${isActive ? 'rgba(212,168,67,0.3)' : 'var(--t-border)'}`,
-                  color: isActive ? 'var(--t-gold)' : 'var(--t-faint)',
-                }}
-              >
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
+      {/* 标题 + 免责提示 */}
+      <div className="shrink-0 border-b border-line/12 px-3 pb-2.5 pt-3 sm:px-4">
+        <h2 className="font-serif text-[16px] font-semibold tracking-[0.02em] text-ink">
+          AI 解读
+        </h2>
+        <p className="mt-1 text-[12px] leading-relaxed text-ink-3">
+          内容由 AI 生成，仅供参考，不构成医疗、投资或法律建议。
+        </p>
       </div>
 
-      {/* ── Messages ── */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+      {/* 主题 chips */}
+      <div className="flex shrink-0 flex-wrap gap-1.5 border-b border-line/12 px-3 py-2 sm:px-4">
+        {TOPICS.map((topic) => {
+          const isActive = activeTopic === topic.key;
+          return (
+            <button
+              key={topic.key}
+              type="button"
+              onClick={() => handleTopicClick(topic.key)}
+              disabled={loading}
+              aria-pressed={isActive}
+              className={cn(
+                "inline-flex h-9 items-center rounded-sm border px-2.5 text-[12px] transition-colors duration-150 disabled:opacity-45",
+                isActive
+                  ? "border-cinnabar/35 bg-cinnabar/8 font-medium text-cinnabar"
+                  : "border-line/20 text-ink-2 hover:border-line/35 hover:bg-surface-2",
+              )}
+            >
+              {topic.label}
+            </button>
+          );
+        })}
+      </div>
 
-        {/* Loading state before first message */}
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="text-4xl mb-3" style={{ color: 'var(--t-gold)', opacity: 0.1 }}>✦</div>
-            <p className="text-[10px] animate-pulse" style={{ color: 'var(--t-faint)' }}>命格解读生成中…</p>
+      {/* 消息区 */}
+      <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-3 py-3 sm:px-4">
+        {visibleMessages.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+            {loading ? (
+              <>
+                <Spinner label="解读生成中" />
+                <p className="text-[13px] text-ink-3">正在生成命格总览…</p>
+              </>
+            ) : (
+              <p className="text-[13px] text-ink-3">选择上方主题，或点选命盘中的宫位开始解读。</p>
+            )}
           </div>
-        )}
+        ) : null}
 
-        <AnimatePresence initial={false}>
-          {messages.map((msg, i) => {
-            if (msg.role === 'user' && msg.hidden) return null;
-
-            if (msg.role === 'user') {
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex justify-end"
-                >
-                  <div
-                    className="max-w-[85%] rounded-xl px-3 py-2 text-[11px]"
-                    style={{
-                      background: 'rgba(212,168,67,0.08)',
-                      border: '1px solid rgba(212,168,67,0.18)',
-                      color: 'var(--t-gold)',
-                    }}
-                  >
-                    {msg.content}
-                  </div>
-                </motion.div>
-              );
-            }
-
-            // Assistant message
-            const isLastMsg = i === messages.length - 1;
+        {visibleMessages.map((message, index) => {
+          const isLastMessage = message === messages[messages.length - 1];
+          if (message.role === "user") {
             return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <div
-                  className="text-[9px] tracking-widest mb-2 flex items-center gap-1.5"
-                  style={{ color: 'var(--t-faint)' }}
-                >
-                  <span style={{ color: 'var(--t-gold)', opacity: 0.4 }}>✦</span>
-                  命理解读
-                </div>
-                <AiContent text={msg.content} streaming={loading && isLastMsg} />
-              </motion.div>
+              <div key={`user-${index}`} className="flex justify-end">
+                <p className="max-w-[85%] rounded-sm border border-line/20 bg-surface-2 px-3 py-2 text-[13px] leading-relaxed text-ink-2">
+                  {message.content}
+                </p>
+              </div>
             );
-          })}
-        </AnimatePresence>
+          }
+          return (
+            <div key={`assistant-${index}`} className="animate-fade-in">
+              <div className="mb-1.5 flex items-center gap-2 text-[12px] text-ink-3">
+                <span aria-hidden="true" className="h-px w-4 bg-line/25" />
+                <span>命理解读</span>
+              </div>
+              {message.error ? (
+                <p
+                  role="alert"
+                  className="rounded-sm border border-cinnabar/25 bg-cinnabar/5 px-3 py-2 text-[13px] leading-relaxed text-cinnabar"
+                >
+                  {message.content}
+                </p>
+              ) : (
+                <AiProse text={message.content} streaming={loading && isLastMessage} />
+              )}
+            </div>
+          );
+        })}
+
+        {waitingForFirstToken && visibleMessages.length > 0 ? (
+          <div className="flex items-center gap-2 text-[12px] text-ink-3">
+            <Spinner label="解读生成中" />
+            <span>正在解读…</span>
+          </div>
+        ) : null}
       </div>
 
-      {/* ── Input ── */}
-      <div className="flex-shrink-0 px-3 pb-3 pt-2" style={{ borderTop: '1px solid var(--t-border)' }}>
-        <div className="flex gap-2">
-          <input
+      {/* 追问输入 */}
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          handleSend();
+        }}
+        className="shrink-0 border-t border-line/12 px-3 py-2.5 sm:px-4"
+      >
+        <div className="flex items-center gap-2">
+          <label htmlFor="insight-input" className="sr-only">
+            追问内容
+          </label>
+          <Input
+            id="insight-input"
             type="text"
             value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
+            onChange={(event) => setInput(event.target.value)}
             placeholder="继续追问，如：今年适合换工作吗？"
             disabled={loading}
-            className="flex-1 rounded-lg px-3 py-2 text-[11px] focus:outline-none transition-colors"
-            style={{
-              background: 'var(--t-card)',
-              border: '1px solid var(--t-border)',
-              color: 'var(--t-text)',
-            }}
+            autoComplete="off"
           />
-          <button
-            onClick={handleSend}
+          <Button
+            type="submit"
+            variant="secondary"
+            size="md"
             disabled={loading || !input.trim()}
-            className="px-3 py-2 rounded-lg text-[11px] font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{
-              background: 'rgba(212,168,67,0.15)',
-              border: '1px solid rgba(212,168,67,0.25)',
-              color: 'var(--t-gold)',
-            }}
+            className="shrink-0"
           >
-            {loading ? '…' : '追问'}
-          </button>
+            {loading ? "生成中" : "追问"}
+          </Button>
         </div>
-      </div>
-
-    </div>
+      </form>
+    </Card>
   );
 }

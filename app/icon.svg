@@ -1,1 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0d070"/><stop offset=".55" stop-color="#d9aa45"/><stop offset="1" stop-color="#b8862a"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="#07101f"/><path fill="url(#g)" d="M45.43 9.75 42.03 13.98H13.18L13.52 15.34H27.8C27.8 19.95 27.8 24.18 27.46 28.11H10.31L10.65 29.47H27.31C26.2 39.24 22.36 47.01 9 53.52L9.39 54.25C26.24 48.9 31.54 41.23 33.29 30.83C34.84 39.04 38.78 48.61 49.9 54.2C50.39 50.99 52.09 49.44 54.95 48.9L55 48.32C41.64 44 35.76 36.86 33.92 29.47H53.2C53.83 29.47 54.37 29.23 54.51 28.75C52.23 26.61 48.35 23.79 48.35 23.79L44.95 28.11H33.68C34.11 24.23 34.21 19.95 34.31 15.34H50.19C50.82 15.34 51.41 15.1 51.5 14.61C49.22 12.52 45.43 9.75 45.43 9.75Z"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" fill="#A6402E"/>
+  <g fill="none" stroke="#F5F0E6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 19h26"/>
+    <path d="M13 30h38"/>
+    <path d="M32 30v22"/>
+    <path d="M23 52 32 42"/>
+    <path d="M41 52 32 42"/>
+  </g>
+</svg>

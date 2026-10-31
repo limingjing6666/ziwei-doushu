@@ -1,100 +1,155 @@
 /**
- * /library/[book] — 单部古籍目录页
+ * /library/[book] — 单部古籍书目
+ *
+ * 左：粘性书信息（书名 / 朝代 / 作者 / 章节数 / 段数 / 简介 / 开始阅读）
+ * 右：章节目录（编号 + 标题 + 副题 + 段数）
  */
 
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { ALL_BOOKS, getBookBySlug } from '@/lib/classics';
-import { pageMetadata } from '@/lib/brand';
-import { CLASSICS_NOTICE } from '@/lib/classics/types';
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ALL_BOOKS, getBookBySlug } from "@/lib/classics";
+import { CLASSICS_NOTICE } from "@/lib/classics/types";
+import { pageMetadata } from "@/lib/brand";
+import { Breadcrumb } from "@/components/ui/Breadcrumb";
+import { buttonClasses } from "@/components/ui/Button";
+import { IconArrowRight } from "@/components/icons";
 
 export async function generateStaticParams() {
-  return ALL_BOOKS.map(b => ({ book: b.slug }));
+  return ALL_BOOKS.map((b) => ({ book: b.slug }));
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ book: string }> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ book: string }>;
+}) {
   const { book: slug } = await params;
   const book = getBookBySlug(slug);
   if (!book) return {};
   return pageMetadata(`《${book.title}》主题整理`, book.intro, `/library/${slug}`);
 }
 
-export default async function BookPage({ params }: { params: Promise<{ book: string }> }) {
+export default async function BookPage({
+  params,
+}: {
+  params: Promise<{ book: string }>;
+}) {
   const { book: slug } = await params;
   const book = getBookBySlug(slug);
   if (!book) notFound();
 
+  const paragraphCount = book.chapters.reduce(
+    (sum, chapter) => sum + chapter.paragraphs.length,
+    0,
+  );
+
   return (
-    <div style={{ background: 'var(--bg-page)', minHeight: '100vh' }}>
-      <div className="px-6 py-4 flex items-center justify-between"
-        style={{ borderBottom: '1px solid rgba(184,146,42,0.15)', background: 'var(--bg-page)' }}>
-        <Link href="/library" style={{ fontSize: '12px', color: 'var(--ac)', letterSpacing: '0.3em', textDecoration: 'none' }}>
-          ← 古籍库
-        </Link>
-        <div style={{ fontSize: '12px', color: 'var(--tx-3)', letterSpacing: '0.2em' }}>
-          《{book.title}》
-        </div>
-        <Link href="/" style={{ fontSize: '12px', color: 'var(--ac)', letterSpacing: '0.2em', textDecoration: 'none' }}>
-          首页 →
-        </Link>
-      </div>
+    <div className="container-page py-8 lg:py-12">
+      <Breadcrumb
+        items={[
+          { label: "首页", href: "/" },
+          { label: "古籍对读", href: "/library" },
+          { label: `《${book.title}》` },
+        ]}
+        className="mb-6"
+      />
 
-      <div className="max-w-3xl mx-auto px-6 py-12">
-        {/* 书名信息 */}
-        <div className="text-center mb-12">
-          <div style={{ fontSize: '11px', color: 'var(--tx-3)', letterSpacing: '0.3em', marginBottom: '8px' }}>
-            {book.dynasty} · {book.author}
-          </div>
-          <h1 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 700, color: 'var(--tx-0)', letterSpacing: '0.15em', marginBottom: '14px' }}>
-            《{book.title}》
-          </h1>
-          <p style={{ fontSize: '13px', color: 'var(--tx-2)', lineHeight: 1.8, maxWidth: '500px', margin: '0 auto' }}>
-            {book.intro}
-          </p>
-        </div>
-
-        <p role="note" style={{ fontSize: '12px', color: 'var(--tx-2)', lineHeight: 1.8, marginBottom: '20px' }}>{CLASSICS_NOTICE}</p>
-
-        {/* 章节目录 */}
-        <div style={{ background: 'var(--bg-card)', borderRadius: '14px', border: '1px solid rgba(184,146,42,0.2)', overflow: 'hidden' }}>
-          <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(184,146,42,0.15)', fontSize: '11px', color: 'var(--tx-3)', letterSpacing: '0.3em' }}>
-            CHAPTERS · 章节目录
-          </div>
-          {book.chapters.map((chapter, i) => (
+      <div className="grid gap-8 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-12">
+        <aside className="self-start lg:sticky lg:top-24">
+          <div className="surface-card p-6">
+            <p className="eyebrow">古籍主题整理</p>
+            <h1 className="mt-2 font-serif text-[26px] font-semibold leading-snug tracking-[0.04em] text-ink">
+              《{book.title}》
+            </h1>
+            <dl className="mt-5 space-y-2.5 border-t border-line/15 pt-4 text-[13px]">
+              <div className="flex items-baseline justify-between gap-4">
+                <dt className="shrink-0 text-ink-3">朝代</dt>
+                <dd className="text-right text-ink-2">{book.dynasty}</dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-4">
+                <dt className="shrink-0 text-ink-3">作者</dt>
+                <dd className="text-right text-ink-2">{book.author}</dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-4">
+                <dt className="shrink-0 text-ink-3">章节</dt>
+                <dd className="text-right font-mono tabular-nums text-ink-2">
+                  {book.chapters.length}
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-4">
+                <dt className="shrink-0 text-ink-3">整理段数</dt>
+                <dd className="text-right font-mono tabular-nums text-ink-2">
+                  {paragraphCount}
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-4">
+                <dt className="shrink-0 text-ink-3">约字数</dt>
+                <dd className="text-right font-mono tabular-nums text-ink-2">
+                  {book.wordCount}
+                </dd>
+              </div>
+            </dl>
+            <p className="mt-4 text-[13px] leading-relaxed text-ink-2">
+              {book.intro}
+            </p>
             <Link
-              key={i}
-              href={`/library/${book.slug}/${i}`}
-              style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: '14px',
-                padding: '14px 20px',
-                borderBottom: i === book.chapters.length - 1 ? 'none' : '1px dashed rgba(184,146,42,0.15)',
-                textDecoration: 'none',
-                color: 'inherit',
-                transition: 'background 0.15s',
-              }}
-              className="hover:bg-amber-50"
+              href={`/library/${book.slug}/0`}
+              className={buttonClasses("primary", "md", "mt-5 w-full")}
             >
-              <div style={{ fontSize: '12px', color: 'var(--ac)', fontWeight: 600, minWidth: '40px', letterSpacing: '0.1em' }}>
-                {String(i + 1).padStart(2, '0')}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '15px', color: 'var(--tx-0)', fontWeight: 500, letterSpacing: '0.08em', marginBottom: '2px' }}>
-                  {chapter.title}
-                </div>
-                {chapter.subtitle && (
-                  <div style={{ fontSize: '11px', color: 'var(--tx-3)' }}>
-                    {chapter.subtitle}
-                  </div>
-                )}
-              </div>
-              <div style={{ fontSize: '10px', color: 'var(--tx-3)', letterSpacing: '0.1em' }}>
-                {chapter.paragraphs.length} 段
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--ac)' }}>→</div>
+              从第一章开始
+              <IconArrowRight size={16} />
             </Link>
-          ))}
+          </div>
+        </aside>
+
+        <div className="min-w-0">
+          <p
+            role="note"
+            className="mb-6 rounded-sm border border-line/15 bg-surface-2/40 p-4 text-[12px] leading-relaxed text-ink-2"
+          >
+            {CLASSICS_NOTICE}
+          </p>
+
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="font-serif text-[20px] font-semibold text-ink">
+              章节目录
+            </h2>
+            <span className="text-[12px] text-ink-3">
+              共 {book.chapters.length} 章 · {paragraphCount} 段
+            </span>
+          </div>
+
+          <ol className="mt-3 border-t border-line/10">
+            {book.chapters.map((chapter, index) => (
+              <li key={`${book.slug}-${index}`}>
+                <Link
+                  href={`/library/${book.slug}/${index}`}
+                  className="group flex items-baseline gap-4 border-b border-line/10 px-2 py-4 transition-colors hover:bg-surface-2"
+                >
+                  <span className="w-7 shrink-0 font-mono text-[12px] tabular-nums text-ink-3 transition-colors group-hover:text-cinnabar">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-serif text-[16px] font-medium tracking-[0.04em] text-ink">
+                      {chapter.title}
+                    </span>
+                    {chapter.subtitle ? (
+                      <span className="mt-0.5 block text-[12px] leading-snug text-ink-3">
+                        {chapter.subtitle}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="shrink-0 text-[12px] text-ink-3">
+                    {chapter.paragraphs.length} 段
+                  </span>
+                  <IconArrowRight
+                    size={15}
+                    className="shrink-0 text-ink-3 transition-colors group-hover:text-cinnabar"
+                  />
+                </Link>
+              </li>
+            ))}
+          </ol>
         </div>
       </div>
     </div>

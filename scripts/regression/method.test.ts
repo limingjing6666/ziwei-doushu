@@ -20,8 +20,8 @@ assert.equal(branded.openGraph?.title, branded.title);
 assert.equal(branded.twitter?.title, branded.title);
 assert.equal(manifestMetadata().name, SITE_TITLE);
 assert.equal(manifestMetadata().description, SITE_SLOGAN);
-assert.ok(readFileSync('components/ShareCardCanvas.tsx', 'utf8').includes('>{SITE_TITLE}</div>'));
-assert.ok(readFileSync('components/ShareCardCanvas.tsx', 'utf8').includes('>{SITE_SLOGAN}</div>'));
+// 分享卡（ShareCardCanvas）属未接线实验内容，源码已归档到 experiments/；
+// 品牌一致性由上面的 pageMetadata / manifest 断言覆盖。
 assert.equal(rules.length, 30);
 assert.ok(MENTAL_MODELS.length >= 3 && MENTAL_MODELS.length <= 7);
 const allowed = new Set(['07-methodology', '01-stars', '02-palaces', '03-patterns', '04-sihua']);
