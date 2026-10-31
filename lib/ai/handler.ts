@@ -8,10 +8,12 @@ import { AiError, normalizeChart, normalizeMessages, normalizeView, readBody, te
 import { retrieveKnowledge } from './knowledge';
 import { INTERPRET_SYSTEM, HEMING_SYSTEM } from './prompts';
 import { checkOrigin, checkRateLimit } from './rate-limit';
+import { AiTelemetry } from './telemetry';
 
 export async function handleAi(request: Request, mode: 'interpret' | 'heming'): Promise<Response> {
   // Leave 3 seconds before the routes' 60-second limit for stream cleanup/errors.
   const deadline = Date.now() + 57000;
+  const telemetry = new AiTelemetry(mode);
   try {
     checkOrigin(request);
     const body = await readBody(request);
@@ -24,6 +26,7 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     if (b) b.liunianYear = viewB!.year;
     const messages = normalizeMessages(body.messages);
     const scenario = b ? (body.mode === 'followup' ? 'followup' : 'overview') : body.mode === 'detail' ? 'detail' : body.mode === 'overview' ? 'overview' : 'followup';
+    telemetry.context(scenario, a.birthInfo.birthTimeKnown !== false);
     const maxTokens = scenario === 'overview' ? 2400 : scenario === 'detail' ? 1800 : 2200;
     const lengthRule = (scenario === 'overview'
       ? b ? '合盘总览目标700–1000汉字，最多1200字。' : '整盘总览700–1000汉字（含括号解释，不含标题），硬上限1200字，写到上限前收束；独立健康/感情/婚姻/事业专题600–1000字，详细给出宫位星曜依据和数据支持的时间点。'
@@ -50,13 +53,14 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     const upstream = await streamDeepSeek(request, `${b ? HEMING_SYSTEM : INTERPRET_SYSTEM}\n【本次篇幅硬约束】${lengthRule}`, [
       { role: 'user', content: context },
       ...(b ? [...messages, { role: 'user' as const, content: text(body.question, 1000) || '请分析双方的相处模式与建议。' }] : messages.length ? messages : [{ role: 'user' as const, content: text(body.question, 1000) || '请解读这张命盘的核心特点和实际建议。' }]),
-    ], Math.max(1, deadline - Date.now()), maxTokens);
-    return consistencyStream(upstream, { mode: scenario, facts, question }, { buffered: isNumericSensitive(question), deadline, rewrite: deepSeekRewriter(request.signal), signal: request.signal });
+    ], Math.max(1, deadline - Date.now()), maxTokens, telemetry);
+    return telemetry.response(consistencyStream(upstream, { mode: scenario, facts, question }, { buffered: isNumericSensitive(question), deadline, rewrite: deepSeekRewriter(request.signal, telemetry), signal: request.signal }));
   } catch (error) {
+    telemetry.error(error);
     const known = error instanceof AiError;
-    return Response.json({ error: known ? error.message : '解读服务暂时不可用，请稍后重试。', ...(known && error.status === 429 ? { retryAfter: error.retryAfter ?? 60, limitKind: error.limitKind ?? 'minute' } : {}) }, {
+    return telemetry.response(Response.json({ error: known ? error.message : '解读服务暂时不可用，请稍后重试。', ...(known && error.status === 429 ? { retryAfter: error.retryAfter ?? 60, limitKind: error.limitKind ?? 'minute' } : {}) }, {
       status: known ? error.status : 500,
       headers: { 'Cache-Control': 'no-store', ...(known && error.status === 429 ? { 'Retry-After': String(error.retryAfter ?? 60) } : {}) },
-    });
+    }));
   }
 }

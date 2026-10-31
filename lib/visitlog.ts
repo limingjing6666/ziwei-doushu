@@ -64,15 +64,17 @@ export async function pruneVisits(db: Queryable) {
   syslog('info', 'visit.prune', { rows });
   return rows;
 }
-export async function visitStats(db: Queryable, days = 7, bots = false) {
+export async function visitStats(db: Queryable, days = 7, bots = false, selfHost?: string) {
   await ensureSchema(db);
   const filter = `ts >= now() - $1 * interval '1 day' AND ($2::boolean OR NOT is_bot)`;
-  const run = async (sql: string) => (await db.query(`WITH v AS (SELECT * FROM visit_log WHERE ${filter}) ${sql}`, [days,bots])).rows;
+  const run = async (sql: string, extra: unknown[] = []) => (await db.query(`WITH v AS (SELECT * FROM visit_log WHERE ${filter}) ${sql}`, [days,bots,...extra])).rows;
+  const selfHosts = ['tianjipan.tech', 'www.tianjipan.tech', selfHost, process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL, process.env.VERCEL_PROJECT_PRODUCTION_URL].filter((h): h is string => Boolean(h)).map(h => h.toLowerCase());
+  const previewPatterns = ['tianjipan%.vercel.app', ...selfHosts.filter(h => h.endsWith('.vercel.app')).map(h => `${h.replace(/\.vercel\.app$/, '')}-%.vercel.app`)];
   const counts = `count(*) FILTER (WHERE kind='page')::int AS pv, count(DISTINCT ip) FILTER (WHERE kind='page')::int AS uv, count(*) FILTER (WHERE kind='ai')::int AS "aiCalls"`;
   const totals = (await run(`SELECT ${counts}, count(DISTINCT ip) FILTER (WHERE kind='ai')::int AS "aiUv" FROM v`))[0];
   const daily = await run(`SELECT to_char(date_trunc('day', ts at time zone 'Asia/Hong_Kong'),'YYYY-MM-DD') AS day, ${counts} FROM v GROUP BY 1 ORDER BY 1`);
   const topPages = await run(`SELECT path, count(*)::int AS pv, count(DISTINCT ip)::int AS uv FROM v WHERE kind='page' GROUP BY path ORDER BY pv DESC, path LIMIT 20`);
-  const topReferrers = await run(`SELECT host, count(*)::int AS pv FROM (SELECT CASE WHEN coalesce(referrer,'')='' THEN 'direct' ELSE lower(split_part(split_part(referrer,'://',2),'/',1)) END AS host FROM v WHERE kind='page') r WHERE host NOT IN ('tianjipan.tech','www.tianjipan.tech') AND host NOT LIKE '%.vercel.app' GROUP BY host ORDER BY pv DESC, host LIMIT 20`);
+  const topReferrers = await run(`SELECT host, count(*)::int AS pv FROM (SELECT CASE WHEN coalesce(referrer,'')='' THEN 'direct' ELSE lower(split_part(split_part(referrer,'://',2),'/',1)) END AS host FROM v WHERE kind='page') r WHERE NOT (host = ANY($3::text[])) AND NOT (host LIKE ANY($4::text[])) GROUP BY host ORDER BY pv DESC, host LIMIT 20`, [selfHosts, previewPatterns]);
   const topIps = await run(`SELECT ip, ${counts.replace(/, count\(DISTINCT ip\) FILTER \(WHERE kind='page'\)::int AS uv/, '')}, max(country) AS country, max(city) AS city, max(ts) AS "lastSeen" FROM v GROUP BY ip ORDER BY pv DESC, "aiCalls" DESC LIMIT 30`);
   const topCountries = await run(`SELECT country, count(DISTINCT ip)::int AS uv FROM v WHERE kind='page' GROUP BY country ORDER BY uv DESC`);
   const aiByRoute = await run(`SELECT ai_route AS route, count(*)::int AS calls FROM v WHERE kind='ai' GROUP BY ai_route ORDER BY calls DESC`);
