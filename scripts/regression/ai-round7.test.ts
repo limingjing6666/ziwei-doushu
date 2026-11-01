@@ -38,7 +38,7 @@ async function main() {
     assert.match(prompt, /第二句固定为“因出生时辰未知，命宫\/身宫\/宫位排布不可靠，以下只讲生年四化与流年的大方向。”/);
     assert.match(prompt, /禁止给出具体职业或岗位名称.*婚期年份、健康病症、财富结论/);
     assert.match(prompt, /双方时辰都已知时完全不提时辰/);
-    assert.match(prompt, /年份\/年龄只可引用事实区块/);
+    assert.match(prompt, /年份\/年龄只可引用下面【年龄与运限事实】给出的数字/);
     assert.match(prompt, /凡提到任何四化，必须同时说出它是生年四化\/大限四化\/流年四化/);
     assert.doesNotMatch(prompt, /\{\{|倪|时辰未知的固定首句声明优先/);
   }

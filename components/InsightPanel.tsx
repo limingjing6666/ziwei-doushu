@@ -6,6 +6,7 @@ import type { Palace, Star, ZiweiChart } from "@/lib/ziwei/types";
 import type { AiView, ChatMessage } from "@/lib/ai/input";
 import type { TimeView } from "./TimeNav";
 import { requestAi, classifyAiError, type AiClientError } from "@/lib/ai/client";
+import { scheduleAutoOverview } from "@/lib/ai/auto-overview";
 import { termDescription } from "@/lib/glossary";
 import { AiProse } from "@/components/ui/AiProse";
 import { Button } from "@/components/ui/Button";
@@ -29,17 +30,18 @@ const TOPICS = [
   ['love', '感情', '【感情】首句直答关系特点。之后分节：关系期待、双方相处、容易遇到对象、结婚或感情变动的大限/流年依据、三条建议。'],
   ['career', '事业', '【事业】首句直答工作特点。之后分节：工作方式、事业依据、所选年份重心、三条建议。'],
   ['wealth', '财运', '【财运】首句直答收入特点。之后分节：收入方式、资源安排、盘面依据、三条建议。'],
-  ['health', '健康', '【健康】首句直答体质特点。之后分节：身体倾向、疾厄与福德及命宫依据、事实区块中的健康年份、三条建议。时辰未知时仅讲允许的大方向。'],
+  ['health', '健康', '【健康】首句直答体质特点。之后分节：身体倾向、疾厄与福德及命宫依据、下面给出的健康年份、三条建议。时辰未知时仅讲允许的大方向。'],
   ['personality', '性格', '【性格】首句直答性格特点。之后分节：行为方式、人际互动、优势与课题、三条建议。'],
 ] as const;
 
-/** 盘面点击只更新简介；仅显式点击话题/解读/追问才发请求，不自动滚动。 */
+/** 每张盘自动请求一次整盘；盘面点击仍只更新简介，不自动滚动。 */
 export default function InsightPanel({ chart, selectedPalace, selectedStar, selectedSiHua, view, className }: InsightPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<AiClientError | null>(null);
   const [activeTopic, setActiveTopic] = useState('');
+  const overviewSent = useRef(new WeakSet<object>());
   const request = useRef<AbortController | null>(null);
   const last = useRef<{ payload: Record<string, unknown>; index: number } | null>(null);
   useEffect(() => () => request.current?.abort(), []);
@@ -60,6 +62,12 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
     setMessages([...next, { role: 'assistant', content: '' }]); setInput('');
     void execute({ chart, messages: (standalone ? next.slice(-1) : next.filter(m => m.content).slice(-12)).map(m => ({ role: m.role, content: m.content.slice(0, 2000) })), view: view ?? { type: 'natal', year: new Date().getFullYear() }, birthTimeKnown: chart.birthInfo.birthTimeKnown !== false, mode }, next.length);
   };
+  useEffect(() => scheduleAutoOverview(overviewSent.current, chart, () => {
+    setActiveTopic('overview');
+    send(TOPICS[0][2], 'overview', true, true);
+    // Only a new chart triggers this effect; selection/view changes remain manual.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [chart]);
   const localQuestion = selectedStar ? `请解读${selectedPalace?.name ?? ''}的${selectedStar.name}，第一句给白话结论，再充分说明依据与建议。`
     : selectedSiHua ? `请解读当前所选视图的${selectedSiHua.starName}化${selectedSiHua.siHua}，第一句给白话结论，再充分说明依据与建议。`
     : selectedPalace ? `请解读${selectedPalace.name}，第一句给白话结论，再充分说明依据与建议。` : '';
@@ -79,7 +87,7 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
           {selectedSiHua && <p><Term name={`化${selectedSiHua.siHua}`} />：{termDescription(`化${selectedSiHua.siHua}`)}</p>}
           <Button variant="secondary" className="mt-3" disabled={loading} onClick={() => send(localQuestion, 'detail', true, true)}>让 AI 解读{selectedStar ? '这颗星' : selectedSiHua ? '这一四化' : '这一宫'}</Button>
         </div>}
-        {!messages.length && <p className="py-6 text-[13px] text-ink-3">命盘已生成。先看看宫位简介，再选一个想了解的话题；以下话题会请求 AI。</p>}
+        {!messages.length && <p className="py-6 text-[13px] text-ink-3">命盘已生成。先看看宫位简介，再选一个想了解的话题。</p>}
         <div className="space-y-4" aria-live="polite">{messages.map((m, i) => m.role === 'user' && m.hidden ? null : m.role === 'user' ? <div key={i} className="flex justify-end"><p className="max-w-[85%] break-words rounded-sm border border-line/20 bg-surface-2 px-3 py-2 text-[13px] text-ink-2">{m.content}</p></div> : <div key={i}><p className="mb-1.5 text-xs text-ink-3">命理解读</p><AiProse text={m.content} streaming={loading && i === messages.length - 1} /></div>)}</div>
         {loading && !messages[last.current?.index ?? -1]?.content && <AiLoading />}
         <AiErrorNotice error={error} loading={loading} retry={() => { if (last.current) void execute(last.current.payload, last.current.index); }} />

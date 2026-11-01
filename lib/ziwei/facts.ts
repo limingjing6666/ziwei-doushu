@@ -2,6 +2,7 @@ import { astro } from 'iztro';
 import { BRANCHES, STEMS } from './constants';
 import { resolveEffectiveLunarDate, type LunarMonthPolicy } from './algorithm';
 import { getSiHuaByStem } from './sihua';
+import { getDaXianIndexForYear } from './yunxian-context';
 import type { ZiweiChart } from './types';
 
 export interface FactOptions { currentYear?: number; currentDate?: string; selectedYear?: number; omitSelected?: boolean }
@@ -15,7 +16,7 @@ export interface MarriageFacts { unavailable: boolean; reason?: string; rangeTex
 export interface AgeWhitelist { ages: number[]; years: number[]; ageRanges: [number, number][]; yearRanges: [number, number][] }
 export interface AgeFacts {
   birthYear: number; lunarBirthYear: number; currentYear: number; currentDate: string; natalTransformations: string; currentAge?: number; selected?: YearFact; selectedOmitted?: boolean;
-  currentDecadal?: YearFact['decadal']; decadals: NonNullable<YearFact['decadal']>[];
+  currentDecadal?: YearFact['decadal']; decadals: NonNullable<YearFact['decadal']>[]; years: YearFact[];
   marriage: MarriageFacts; health: { years: number[]; entries: { year: number; nominalAge: number; reasons: string[] }[] };
   whitelist: AgeWhitelist; birthTimeKnown: boolean; discrepancies: string[];
 }
@@ -59,7 +60,7 @@ function engine(chart: ZiweiChart, opts: FactOptions) {
     const spouseIndex = h.yearly.palaceNames.findIndex(n => name(n) === '夫妻');
     const branch = BRANCHES.indexOf(a.palaces[spouseIndex]?.earthlyBranch ?? '');
     return { year, nominalAge, marriagePalace: chart.palaces.find(p => p.branch === branch)?.name ?? '未知', palaceNames,
-      decadal: decadals.find(d => nominalAge >= d.startAge && nominalAge <= d.endAge),
+      decadal: decadals.find(d => d.branch === chart.daXians[getDaXianIndexForYear(chart, year)]?.palaceBranch),
       transformations: h.yearly.mutagen.map((star, i) => {
         const p = chart.palaces.find(p => p.stars.some(s => s.name === star));
         return { star, mark: ['禄', '权', '科', '忌'][i], palace: p?.name ?? '未知', branch: p?.branch ?? -1 };
@@ -125,12 +126,14 @@ export function buildAgeFacts(chart: ZiweiChart, opts: FactOptions = {}): AgeFac
     currentDate: opts.currentDate ?? new Date().toISOString().slice(0, 10),
     ...(opts.omitSelected ? { selectedOmitted: true } : {}),
     natalTransformations: Object.entries(getSiHuaByStem(chart.lunarInfo.yearStem)).map(([mark, star]) => `${star}化${mark}`).join('、'),
-    decadals: [], marriage: getMarriageCandidates(chart, opts), health: getHealthYears(chart, opts), birthTimeKnown: chart.birthInfo.birthTimeKnown !== false,
+    decadals: [], years: [], marriage: getMarriageCandidates(chart, opts), health: getHealthYears(chart, opts), birthTimeKnown: chart.birthInfo.birthTimeKnown !== false,
     whitelist: { ages: [], years: [], ageRanges: [], yearRanges: [] }, discrepancies: [] };
   try {
     const e = engine(chart, opts);
     facts.currentAge = e.currentAge;
     if (!opts.omitSelected) facts.selected = e.yearFact(opts.selectedYear ?? e.currentYear);
+    facts.years = [...new Set([e.currentYear, ...(facts.selected ? [facts.selected.year] : []),
+      ...facts.marriage.years, ...facts.health.years])].sort((a, b) => a - b).map(e.yearFact);
     facts.decadals = e.decadals;
     facts.currentDecadal = e.decadals.find(d => facts.currentAge! >= d.startAge && facts.currentAge! <= d.endAge);
     for (const p of e.a.palaces) {
