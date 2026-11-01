@@ -14,7 +14,7 @@ export interface MarriageCandidate extends YearFact { score: number; reasons: st
 export interface MarriageFacts { unavailable: boolean; reason?: string; rangeText: string; years: number[]; candidates: MarriageCandidate[] }
 export interface AgeWhitelist { ages: number[]; years: number[]; ageRanges: [number, number][]; yearRanges: [number, number][] }
 export interface AgeFacts {
-  birthYear: number; lunarBirthYear: number; currentYear: number; currentAge?: number; selected?: YearFact;
+  birthYear: number; lunarBirthYear: number; currentYear: number; currentDate: string; natalTransformations: string; currentAge?: number; selected?: YearFact;
   currentDecadal?: YearFact['decadal']; decadals: NonNullable<YearFact['decadal']>[];
   marriage: MarriageFacts; health: { years: number[]; entries: { year: number; nominalAge: number; reasons: string[] }[] };
   whitelist: AgeWhitelist; birthTimeKnown: boolean; discrepancies: string[];
@@ -42,7 +42,7 @@ export function factAstrolabe(chart: ZiweiChart) {
 }
 function engine(chart: ZiweiChart, opts: FactOptions) {
   const a = factAstrolabe(chart);
-  const currentYear = opts.currentYear ?? chart.lunarInfo.lunarYear + chart.currentAge - 1;
+  const currentYear = opts.currentYear ?? new Date().getFullYear();
   // Annual labels refer to the lunar year named by that Gregorian year (July 1 is after 春节).
   const at = (year: number) => a.horoscope(`${year}-7-1`);
   const ageAt = (year: number) => at(year).age.nominalAge;
@@ -74,7 +74,7 @@ const unavailable = (reason: string): MarriageFacts => ({ unavailable: true, rea
  * each 禄权科 on natal spouse/trine/opposite +2; 忌 on natal spouse -3;
  * annual spouse same/opposite decadal 命 or 夫妻 +2 each (夫妻 = 大命-2);
  * natal spouse each 贪狼/廉贞/天姚/咸池 +0.5. Score descending, ties earlier year.
- * Scan current nominal age-2 through 55 inclusive, retain top 3. Range is envelope,
+ * Scan current year through nominal age 55 inclusive, retain top 3 in time order. Range is envelope,
  * NOT a claim that every intervening year scores equally; years is the actual candidate set. */
 export function getMarriageCandidates(chart: ZiweiChart, opts: FactOptions = {}): MarriageFacts {
   if (chart.birthInfo.birthTimeKnown === false) return unavailable('出生时辰未知，目前无法确定婚期');
@@ -82,7 +82,7 @@ export function getMarriageCandidates(chart: ZiweiChart, opts: FactOptions = {})
     const e = engine(chart, opts), spouse = chart.palaces.find(p => name(p.name) === '夫妻');
     if (!spouse || chart.palaces.length !== 12) return unavailable('命盘资料不完整，目前无法确定');
     const candidates: MarriageCandidate[] = [];
-    for (let year = Math.max(e.base + e.currentAge - 3, e.base); e.ageAt(year) <= 55; year++) {
+    for (let year = e.currentYear; e.ageAt(year) <= 55; year++) {
       const f = e.yearFact(year), h = e.at(year), reasons: string[] = []; let score = 0;
       const add = (n: number, why: string) => { score += n; reasons.push(`${why}（${n > 0 ? '+' : ''}${n}）`); };
       const branchFor = (n: string) => BRANCHES.indexOf(e.a.palaces[h.yearly.palaceNames.findIndex(p => name(p) === n)]?.earthlyBranch ?? '');
@@ -100,19 +100,19 @@ export function getMarriageCandidates(chart: ZiweiChart, opts: FactOptions = {})
       for (const s of spouse.stars) if (['贪狼', '廉贞', '天姚', '咸池'].includes(s.name)) add(0.5, `本命夫妻有${s.name}桃花辅助线索`);
       candidates.push({ ...f, score, reasons });
     }
-    const top = candidates.sort((a, b) => b.score - a.score || a.year - b.year).slice(0, 3);
+    const top = candidates.sort((a, b) => b.score - a.score || a.year - b.year).slice(0, 3).sort((a, b) => a.year - b.year);
     if (top.length < 2) return unavailable('扫描范围内不足两个年份，目前无法确定候选');
     const years = top.map(c => c.year), lo = Math.min(...years), hi = Math.max(...years);
     return { unavailable: false, candidates: top, years, rangeText: `虚岁 ${e.ageAt(lo)}–${e.ageAt(hi)}（公历 ${lo}–${hi}）` };
   } catch { return unavailable('出生数据不足，目前无法确定'); }
 }
-/** Fifteen annual labels: current-2 through current+12. Only annual 忌 entering natal 命/疾厄.
+/** Annual labels: current through current+12. Only annual 忌 entering natal 命/疾厄.
  * Deliberately no speculative malefic-overlap scoring. */
 export function getHealthYears(chart: ZiweiChart, opts: FactOptions = {}) {
   const entries: AgeFacts['health']['entries'] = [];
   if (chart.birthInfo.birthTimeKnown !== false) try {
     const e = engine(chart, opts);
-    for (let year = e.currentYear - 2; year <= e.currentYear + 12; year++) {
+    for (let year = e.currentYear; year <= e.currentYear + 12; year++) {
       const f = e.yearFact(year), hits = f.transformations.filter(t => t.mark === '忌' && ['命', '疾厄'].includes(name(t.palace)));
       if (hits.length) entries.push({ year, nominalAge: f.nominalAge, reasons: hits.map(t => `${t.star}流年化忌入本命${t.palace}`) });
     }
@@ -121,7 +121,9 @@ export function getHealthYears(chart: ZiweiChart, opts: FactOptions = {}) {
 }
 export function buildAgeFacts(chart: ZiweiChart, opts: FactOptions = {}): AgeFacts {
   const facts: AgeFacts = { birthYear: chart.birthInfo.year, lunarBirthYear: chart.lunarInfo.lunarYear,
-    currentYear: opts.currentYear ?? chart.lunarInfo.lunarYear + chart.currentAge - 1,
+    currentYear: opts.currentYear ?? new Date().getFullYear(),
+    currentDate: opts.currentDate ?? new Date().toISOString().slice(0, 10),
+    natalTransformations: Object.entries(getSiHuaByStem(chart.lunarInfo.yearStem)).map(([mark, star]) => `${star}化${mark}`).join('、'),
     decadals: [], marriage: getMarriageCandidates(chart, opts), health: getHealthYears(chart, opts), birthTimeKnown: chart.birthInfo.birthTimeKnown !== false,
     whitelist: { ages: [], years: [], ageRanges: [], yearRanges: [] }, discrepancies: [] };
   try {

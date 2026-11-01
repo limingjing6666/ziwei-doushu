@@ -317,7 +317,7 @@ export default function BirthForm({
           lunar={form.calendar === 'lunar'}
         />
         {form.calendar === 'lunar' && <label className="block text-sm text-ink-2"><input type="checkbox" checked={!!form.leapMonth} disabled={!leap || m !== leap} onChange={e => updateForm({ leapMonth: e.target.checked })} /> 闰月 · {leap ? `该年闰${leap}月，仅选该月可勾选` : '该年没有闰月'}</label>}
-        {solar && lunar && <p role="status" className="text-sm text-cinnabar">公历 {solar.year}-{String(solar.month).padStart(2, '0')}-{String(solar.day).padStart(2, '0')} ＝ {lunar.label}</p>}
+        {solar && lunar && <p role="status" className="text-sm text-ink-2">公历 {solar.year}-{String(solar.month).padStart(2, '0')}-{String(solar.day).padStart(2, '0')} ＝ {lunar.label}</p>}
       </FormSection>
 
       <FormSection

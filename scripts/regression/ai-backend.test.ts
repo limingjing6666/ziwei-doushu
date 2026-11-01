@@ -42,7 +42,7 @@ async function main() {
     assert.match(summary, /空宫；仅借对宫/);
     assert.match(summary, /生年四化/);
     assert.match(summary, /当前大限/);
-    assert.match(chartToText(normalizeChart({ ...chart, liunianYear: 2026 })), /流年干丙四化/);
+    assert.match(chartToText(normalizeChart({ ...chart, liunianYear: 2026 })), /所选流年四化（流年干丙）/);
     assert.doesNotMatch(chartToText({ ...chart, birthInfo: { ...chart.birthInfo, name: '隐私姓名', city: '隐私城市' } }), /隐私姓名|隐私城市/);
     const cross = crossTransformations(chart, other);
     assert.match(cross, /A→B（生年干己）：武曲化禄→父母/);

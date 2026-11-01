@@ -41,7 +41,7 @@ export default function Term({ name, children }: { name: string; children?: Reac
     onFocus={() => { if (!restoringFocus.current) show(); }} onBlur={e => { if (!popup.current?.contains(e.relatedTarget as Node)) setOpen(false); }}
     onKeyDown={e => { if (open && (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey))) { e.preventDefault(); popup.current?.querySelector<HTMLElement>('button, a')?.focus(); } }}
     onClick={e => { e.stopPropagation(); if (!open) show(); }}>
-    {children ?? name}<span aria-hidden="true" className="text-xs opacity-60"> ⓘ</span></button>
+    {children ?? name}<span aria-hidden="true" className="text-xs opacity-60">ⓘ</span></button>
     {open && createPortal(<div ref={popup} id={id} role="dialog" aria-label={`${name}简介`} className="term-popover" style={{ ...position }} onMouseEnter={keepOpen} onMouseLeave={leave} onClick={e => e.stopPropagation()} onBlur={e => { if (!popup.current?.contains(e.relatedTarget as Node) && !button.current?.contains(e.relatedTarget as Node)) setOpen(false); }}>
       <div className="flex justify-between"><strong>{name}</strong><button aria-label="关闭解释" onClick={close}>×</button></div>
       <p className="my-2">{termDescription(name)}</p><a href="/knowledge" className="underline">了解更多 → /knowledge</a>
