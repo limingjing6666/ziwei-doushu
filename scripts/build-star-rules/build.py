@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stream v4.0 CC BY 4.0 -> exact resident natal rules; see README.md."""
+"""Stream v4.0 CC BY 4.0 -> exact resident/borrowed natal rules; see README.md."""
 import argparse
 import collections
 import functools
@@ -46,6 +46,21 @@ REWRITES = {
 }
 
 
+# Auditable sentence exclusions: omit whole sentences, never soften by deleting words.
+WEAK_EXCLUSIONS = [
+    ('贬义或评判性人格标签', re.compile(r'拖延|懒|混日子|不成器|成少败多|没出息|一事无成|只会|聪明反被聪明误|多变难成|落地的极少|不沉淀|心存芥蒂|没人欣赏|再会说也没人听|讲话直接得罪人|被传话|被议论|决策能力被进一步削弱|主观固执|自我怀疑折磨|破旧不立新|再赚也存不下|慢半拍|慢了别人半拍|想变又难下决心|主长辈缘紧张|破坏力化为')),
+    ('过度具体或跨话题的职业才艺清单', re.compile(r'音乐|舞蹈|绘画|学者、|学者命|大学教授|行业元老|宗教讲师|医疗、公益|艺术疗愈|儿童教育|私人银行家|投资顾问|金融分析师|投资银行家|税务/审计|CFO|CTO|CEO|董事会主席|协会会长|军师型高管|激励型高管|高管副手|外交、公关|公关、外交|艺术经纪|演讲、艺术、咨询|文教、出版、行政|演讲、表演、咨询|出差、物流、贸易|战略型创业|演讲型领袖|文学、艺术、心理|文学、设计、品牌|法律、行政、文官|演艺圈|KOL|家族企业管理、|销售总监|演讲家、培训师|记者、作家|主播、辩论|技术型创业、|艺术类专业、|应酬、公关、销售|检察、法务|财务规划、会计审计|布道者')),
+    ('绝对化评价或财富地位许诺', re.compile(r'最好的状态|最好的格局|最理想|最强组合|稳健富格|顺风顺水|一次正确的人脉|改变财富层级|改变你财运轨迹|赚大钱|赚钱猛|衣食无忧|财运大旺|丰厚收益|福报源于厚德|孝顺听话|长大后反哺|家运渐兴|独立做事反而压抑命格|能成大器|桃花极重|多角恋|最终往往不了了之|大成也有大败|实质帮助有限|能力被埋没的可能性高|有名而无实利|财库隐患|投资踩雷|收不回|父母或长辈常不在身边|早早离家|不宜久居一地|最适合|最佳|最顺|最旺|天生聚才聚势|不必强势就能|第一贵人|夜晚贵人|白天贵人|学业顺遂|成功格局象征|极具话语权|极有话语权|社会地位与话语权显著提升|情感生活复杂')),
+    ('过度具体的投资操作或生活指令', re.compile(r'定投|自动扣款|长期布局型投资|谨慎驾驶|年轻时尤其|需防桃花是非|强制落实|每天写下三个|先停三秒')),
+]
+# Borrowed stars must never be described as resident, even inside a surviving sentence.
+BORROWED_RESIDENT = re.compile(r'坐|同宫|入命|入宫|守命|守宫|本宫|你的[^，。；：]{0,5}宫')
+
+
+def weak_reason(text):
+    return next((reason for reason, pattern in WEAK_EXCLUSIONS if pattern.search(text)), None)
+
+
 def palace(s):
     s = s.strip().removesuffix('宫')
     return '命宫' if s == '命' else '仆役' if s in ('交友', '奴仆') else s
@@ -64,7 +79,7 @@ def sections(text):
 
 
 @functools.lru_cache(maxsize=512)
-def extract_section(name, body, p, resident):
+def extract_section(name, body, p, resident, borrowed=False):
     out = []
     lines = body.splitlines()
     if name == '三方四正联动':
@@ -87,7 +102,7 @@ def extract_section(name, body, p, resident):
                 text = lines[i+1].strip()
             if text:
                 out.append(('sihua', palace(pal), star, '', mark, text))
-    elif resident:
+    elif resident or borrowed:
         for i, line in enumerate(lines):
             m = PAIR.match(line)
             if not m or m[1] not in STARS or m[2] not in SUPPORT:
@@ -99,11 +114,11 @@ def extract_section(name, body, p, resident):
                 if other.strip():
                     para.append(other.strip())
             if para:
-                out.append(('pair', p, m[1], m[2], '', ' '.join(para)))
+                out.append(('pair' if resident else 'bpair', p, m[1], m[2], '', ' '.join(para)))
     return tuple(out)
 
 
-def clean_candidate(kind, star, other, mark, body):
+def clean_candidate(kind, star, other, mark, body, excluded=None):
     """Return [(text, brightness predicates, extra natal marks, rewrite source)], reasons."""
     reasons = collections.Counter()
     # Normalize an explicit prefix, never lose its natal mark.
@@ -132,6 +147,15 @@ def clean_candidate(kind, star, other, mark, body):
         text = REWRITES.get(original, original)
         if DANGER.search(text) or _base.UNSAFE.search(text):
             reasons['unsafe_fatalistic'] += 1
+            continue
+        reason = weak_reason(text)
+        if reason:
+            reasons['weak_excluded'] += 1
+            if excluded is not None:
+                excluded.append((original, reason))
+            continue
+        if kind == 'bpair' and BORROWED_RESIDENT.search(text):
+            reasons['borrowed_resident_wording'] += 1
             continue
         if UNBOUND.search(text) or any(s in text for s in set(STARS + AUX + SUPPORT) - {star, other}):
             reasons['unbound_condition'] += 1
@@ -195,15 +219,20 @@ def build(inputs, output, stats_path):
                         continue
                     main = re.search(r'本宫主星[：:]([^\n]+)', text)
                     resident = bool(main and '空宫' not in main[1])
+                    borrowed = bool(main and '空宫' in main[1])
                     for title, body in sections(text):
-                        raw.update(extract_section(title, body, TOPICS[topic], resident))
+                        raw.update(extract_section(title, body, TOPICS[topic], resident, borrowed))
         growth.append(dict(file=path.name, new_candidates=len(raw)-before, cumulative_candidates=len(raw)))
         print(f'{path.name}: {records} records; {len(raw)} candidates (+{len(raw)-before})', flush=True)
     counts = collections.defaultdict(collections.Counter)
     dropped, rewrite_hits = collections.Counter(), collections.Counter()
     rewritten = {}
+    weak_audit = collections.Counter()
     for (kind, p, star, other, mark, body), frequency in sorted(raw.items()):
-        kept, reasons = clean_candidate(kind, star, other, mark, body)
+        excluded = []
+        kept, reasons = clean_candidate(kind, star, other, mark, body, excluded)
+        for sentence, reason in excluded:
+            weak_audit[(sentence, reason)] += frequency
         for reason, n in reasons.items():
             dropped[reason] += n * frequency
         for text, brightness, extra_marks, rewrite in kept:
@@ -223,18 +252,18 @@ def build(inputs, output, stats_path):
     for key, text, brightness, extra_marks in selected:
         index[key].append(len(rules))
         rules.append([text_ids[text], brightness, extra_marks])
-    meta = dict(source='紫微斗数开源解读数据集 v4.0', author='王多鱼AI', license='CC BY 4.0', url='https://github.com/Renhuai123/ziwei-doushu', modified='抽取/过滤/明确映射改写/去重', version=1, relation='resident-same-palace', sihuaSource='natal-star.siHua', keySchema='kind|palace|star|other|natalMark', ruleSchema='[textId,[[star,brightnessRaw,allowedRawValues]],[[star,natalMark]]]', selection='frequency descending, text ascending after condition split')
+    meta = dict(source='紫微斗数开源解读数据集 v4.0', author='王多鱼AI', license='CC BY 4.0', url='https://github.com/Renhuai123/ziwei-doushu', modified='抽取/过滤/明确映射改写/去重', version=2, relation='pair:resident-same-palace; bpair:opposite-major+resident-support; aux:resident-support; sihua:resident-major-required', sihuaSource='natal-star.siHua', keySchema='kind|palace|star|other|natalMark', ruleSchema='[textId,[[star,brightnessRaw,allowedRawValues]],[[star,natalMark]]]', selection='frequency descending, text ascending after condition split')
     data = dict(meta=meta, texts=texts, rules=rules, index=dict(index))
     encoded = json.dumps(data, ensure_ascii=False, separators=(',', ':')) + '\n'
     Path(output).write_text(encoded, encoding='utf-8')
     tables = {}
-    for kind in ['aux', 'sihua', 'pair']:
+    for kind in ['aux', 'sihua', 'pair', 'bpair']:
         keys = [k for k in index if k.startswith(kind+'|')]
         ids = [i for k in keys for i in index[k]]
         tables[kind] = dict(keys=len(keys), rules=len(ids), texts=len({rules[i][0] for i in ids}))
-    stats = dict(records=records, sources=sources, input_policy='all supplied years, sorted; no sampling', growth=growth, tables=tables, text_count=len(texts), text_chars=sum(map(len, texts)), output_bytes=len(encoded.encode()), candidate_occurrences=sum(raw.values()), unique_candidates=len(raw), kept_sentence_occurrences=sum(sum(c.values()) for c in counts.values()), dropped_occurrences=dict(sorted(dropped.items())), rewrites=[dict(before=s, after=rewritten[s], occurrences=rewrite_hits[s]) for s in sorted(rewrite_hits)], artifact_sha256=hashlib.sha256(encoded.encode()).hexdigest())
+    stats = dict(records=records, sources=sources, input_policy='all supplied years, sorted; no sampling', growth=growth, tables=tables, text_count=len(texts), text_chars=sum(map(len, texts)), output_bytes=len(encoded.encode()), candidate_occurrences=sum(raw.values()), unique_candidates=len(raw), kept_sentence_occurrences=sum(sum(c.values()) for c in counts.values()), dropped_occurrences=dict(sorted(dropped.items())), weak_excluded=[dict(sentence=s, reason=r, occurrences=n) for (s, r), n in sorted(weak_audit.items())], rewrites=[dict(before=s, after=rewritten[s], occurrences=rewrite_hits[s]) for s in sorted(rewrite_hits)], artifact_sha256=hashlib.sha256(encoded.encode()).hexdigest())
     Path(stats_path).write_text(json.dumps(stats, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
-    print(json.dumps({k:v for k,v in stats.items() if k not in ('sources','growth','rewrites')}, ensure_ascii=False), flush=True)
+    print(json.dumps({k:v for k,v in stats.items() if k not in ('sources','growth','rewrites','weak_excluded')}, ensure_ascii=False), flush=True)
 
 
 if __name__ == '__main__':

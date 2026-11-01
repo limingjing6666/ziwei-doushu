@@ -8,6 +8,8 @@ import { matchesStarRule, normalizeReferenceText, rulePalaces, ruleReferences, t
 import { knowledgeRuleReferences, retrieveKnowledge, safeReference } from '../../lib/ai/knowledge';
 import { palaceKey } from '../../lib/ai/chart-to-text';
 import { retrieveMethod } from '../../lib/ziwei/method/retrieve';
+import { INTERPRET_SYSTEM, HEMING_SYSTEM } from '../../lib/ai/prompts';
+import buildStats from '../build-star-rules/stats.json';
 import { check, collectFile, loadFingerprints } from '../copyright/guard';
 
 // No handler, fetch, credentials, or model invocation: actual local iztro charts only.
@@ -25,11 +27,19 @@ assert.equal(generated.meta.author, '王多鱼AI');
 assert.equal(generated.meta.license, 'CC BY 4.0');
 assert.match(generated.meta.modified, /抽取.*过滤.*改写.*去重/);
 assert.equal(generated.meta.sihuaSource, 'natal-star.siHua');
+assert.equal(generated.meta.version, 2);
+assert.match(generated.meta.relation, /bpair:opposite-major\+resident-support/);
+const fatalismRule = '不用“一生/早年成少败多/注定”断语，改用倾向、阶段或条件式白话。';
+assert.ok(fatalismRule.length <= 40);
+for (const system of [INTERPRET_SYSTEM, HEMING_SYSTEM]) assert.ok(system.includes(fatalismRule));
+assert.ok(buildStats.dropped_occurrences.weak_excluded > 0);
+for (const excluded of buildStats.weak_excluded) assert.ok(!generated.texts.includes(excluded.sentence));
 assert.ok(statSync('lib/ziwei/star-rules.generated.json').size < 150 * 1024);
 assert.ok(generated.texts.join('').length < 15000);
 assert.equal(new Set(generated.texts).size, generated.texts.length);
 for (const text of generated.texts) {
   assert.doesNotMatch(text, forbidden);
+  assert.doesNotMatch(text, /拖延|懒|混日子|不成器|成少败多|没出息|一事无成|只会|音乐|舞蹈|绘画|金融分析师|投资银行家|CFO|CTO|CEO/);
   assert.ok(text.length >= 8 && text.length <= 150);
   assert.equal(safeReference(text), text);
 }
@@ -44,8 +54,12 @@ assert.ok(noMethod.includes('JSON.stringify(STAR_RULES), banned'));
 
 for (const c of fixtures) {
   const before = JSON.stringify(c), refs = ruleReferences(c);
-  if (c.birthInfo.year === 1964) assert.equal(refs.length, 2, 'three overview palaces are empty: do not pad with borrowed/unrelated entries');
-  else assert.ok(refs.length >= 3 && refs.length <= 6);
+  assert.equal(refs.length, c.birthInfo.year === 1965 ? 3 : 2, 'audited fixtures stay sparse rather than restoring excluded weak text');
+  for (const name of ['命宫', '夫妻', '官禄', '财帛']) assert.ok(refs.filter(r => r.palace === name).length <= 2);
+  if (c.birthInfo.year === 1964) {
+    assert.deepEqual(refs.map(r => [r.palace, r.kind]), [['命宫', 'aux'], ['官禄', 'bpair']]);
+    assert.ok(refs.some(r => /借对宫天机参照；本宫实坐右弼/.test(r.reference)), 'empty overview palaces use exact borrowed/resident stars, not unrelated padding');
+  }
   assert.ok(joined(refs).length <= 800);
   assert.deepEqual(refs, ruleReferences(c));
   assert.equal(new Set(refs.map(r => normalizeReferenceText(r.text))).size, refs.length);
@@ -70,6 +84,11 @@ for (const c of fixtures) {
     assert.equal(knowledge, retrieveKnowledge(c, b, '事业'));
   }
 }
+for (const [i, question, expected] of [
+  [0, '我的命宫是不是两颗主星都庙旺？这对学习和工作方式有什么参考？', 1],
+  [1, '命宫生年太阴化忌是不是一定会生重病？压力大时，我该怎样安排生活？', 3],
+  [2, '我今年适合换工作还是先做副业？命宫空宫，是不是就算天同太阴坐命？', 2],
+] as const) assert.equal(knowledgeRuleReferences(fixtures[i], undefined, question).length, expected, 'reproduce previous A/B/C questions locally');
 const paired = knowledgeRuleReferences(fixtures[0], fixtures[2]);
 assert.ok(paired.some(r => r.reference.startsWith('A')) && paired.some(r => r.reference.startsWith('B')));
 assert.ok(joined(paired).length <= 800 && paired.length <= 6);
@@ -78,8 +97,64 @@ assert.ok(knowledgeRuleReferences(fixtures[0], { ...fixtures[1], birthInfo: { ..
 const empty = fixtures[2].palaces.find(p => palaceKey(p.name) === '命宫')!;
 assert.equal(empty.stars.filter(s => s.type === 'major').length, 0);
 assert.ok(empty.borrowedStars?.length);
-for (const key of Object.keys(index).filter(k => k.split('|')[1] === '命宫')) for (const id of index[key]) assert.equal(matchesStarRule(empty, key, storedRules[id]), false);
-assert.ok(ruleReferences(fixtures[2]).every(r => r.palace !== '命宫'));
+const opposite = fixtures[2].palaces.find(p => p.branch === empty.oppositeBranch)!;
+assert.equal(opposite.branch, (empty.branch + 6) % 12, 'engine oppositeBranch is the branch opposite, not a palace-array offset');
+for (const key of Object.keys(index).filter(k => k.split('|')[1] === '命宫' && /^(pair|sihua)\|/.test(k))) {
+  for (const id of index[key]) assert.equal(matchesStarRule(empty, key, storedRules[id], opposite), false);
+}
+assert.ok(ruleReferences(fixtures[2]).some(r => r.palace === '命宫' && r.kind === 'aux' && /本宫实坐文曲/.test(r.reference)));
+assert.equal(matchesStarRule(empty, 'aux|命宫|文曲||', [0, [], []]), true);
+assert.equal(matchesStarRule(empty, 'sihua|命宫|文曲||科', [0, [], []], opposite), false, 'empty-palace sihua remains disabled');
+
+const borrowedKey = 'bpair|命宫|天同|文曲|';
+const borrowedRule: StoredRule = [0, [['天同', '落陷', ['陷']], ['文曲', '得地', ['得']]], []];
+assert.equal(matchesStarRule(empty, borrowedKey, borrowedRule, opposite), true);
+assert.equal(matchesStarRule(empty, borrowedKey, borrowedRule), false);
+assert.equal(matchesStarRule(empty, borrowedKey, borrowedRule, { ...opposite, branch: empty.branch }), false);
+assert.equal(matchesStarRule({ ...empty, stars: [] }, borrowedKey, borrowedRule, opposite), false, 'support must be resident, not borrowed');
+assert.equal(matchesStarRule({ ...empty, stars: [...empty.stars, { name: '天同', type: 'major' }] }, borrowedKey, borrowedRule, opposite), false);
+const wrongBorrow = structuredClone(opposite);
+wrongBorrow.stars = wrongBorrow.stars.filter(s => s.name !== '天同');
+assert.equal(matchesStarRule(empty, borrowedKey, borrowedRule, wrongBorrow), false);
+const wrongBrightness = structuredClone(opposite);
+wrongBrightness.stars.find(s => s.name === '天同')!.brightnessRaw = '旺';
+assert.equal(matchesStarRule(empty, borrowedKey, borrowedRule, wrongBrightness), false, 'borrowed brightness comes from the opposite star');
+const wrongSupport = structuredClone(empty);
+wrongSupport.stars.find(s => s.name === '文曲')!.brightnessRaw = '陷';
+assert.equal(matchesStarRule(wrongSupport, borrowedKey, borrowedRule, opposite), false, 'support brightness comes from the resident star');
+const noBorrowBrightness = structuredClone(opposite), borrowStar = noBorrowBrightness.stars.find(s => s.name === '天同')!;
+delete borrowStar.brightnessRaw; borrowStar.brightness = 'dim';
+assert.equal(matchesStarRule(empty, borrowedKey, borrowedRule, noBorrowBrightness), false, 'coarse dim is not equivalent to 陷');
+delete borrowStar.brightness;
+assert.equal(matchesStarRule(empty, borrowedKey, borrowedRule, noBorrowBrightness), false);
+
+// Exercise borrowed retrieval, not just its predicate; a missing exact key is never filled.
+const oldBorrowedIds = index[borrowedKey], borrowedId = storedRules.length, borrowedTextId = generated.texts.length;
+const borrowChart = structuredClone(fixtures[2]);
+borrowChart.palaces = [structuredClone(empty), { ...structuredClone(opposite), stars: [structuredClone(opposite.stars.find(s => s.name === '天同')!)] }];
+// Deliberately stale convenience names must not override the opposite palace's actual stars.
+borrowChart.palaces[0].borrowedStars = ['紫微'];
+delete index[borrowedKey];
+assert.ok(ruleReferences(borrowChart).every(r => r.kind !== 'bpair'));
+generated.texts.push('天同 + 文曲，可以通过交流积累经验。');
+storedRules.push([borrowedTextId, borrowedRule[1], []]); index[borrowedKey] = [borrowedId];
+try {
+  const refs = ruleReferences(borrowChart), borrowed = refs.find(r => r.id === borrowedId)!;
+  assert.ok(borrowed);
+  assert.match(borrowed.reference, /空宫，借对宫天同参照；本宫实坐文曲/);
+  assert.doesNotMatch(borrowed.text, /坐|同宫|入命|本宫/);
+  assert.ok(ruleReferences(borrowChart, { maxChars: borrowed.reference.length - 1 }).every(r => r.id !== borrowedId), 'budget includes the full borrowed label');
+  assert.ok(joined(ruleReferences(borrowChart, { label: '本盘'.repeat(150) })).length <= 800);
+  assert.ok(refs.every(r => r.kind === 'aux' || r.kind === 'bpair'));
+  borrowChart.palaces[1].stars[0].brightnessRaw = '旺';
+  assert.ok(ruleReferences(borrowChart).every(r => r.id !== borrowedId));
+} finally {
+  generated.texts.pop(); storedRules.pop();
+  if (oldBorrowedIds) index[borrowedKey] = oldBorrowedIds; else delete index[borrowedKey];
+}
+for (const key of Object.keys(index).filter(k => k.startsWith('bpair|'))) for (const id of index[key]) {
+  assert.doesNotMatch(generated.texts[storedRules[id][0]], /坐|同宫|入命|入宫|本宫|你的[^，。；：]{0,5}宫/);
+}
 
 // A precise absent key is a miss, even if a nearby star/palace has usable text.
 const missing = structuredClone(fixtures[0]);
@@ -127,6 +202,11 @@ noNatal.daXians[0].siHua = { stemIndex: 0, stemName: '甲', lu: '太阴', quan: 
 Object.assign(noNatal, { yearlySiHua: { lu: '太阴', ji: '太阴' } });
 assert.ok(noNatal.daXians.some(d => d.siHua));
 assert.ok(ruleReferences(noNatal).every(r => r.kind !== 'sihua'));
+const missingHuaKey = 'sihua|命宫|文昌||科';
+assert.equal(index[missingHuaKey], undefined);
+const missingHua = structuredClone(noNatal);
+missingHua.palaces = [{ ...missingHua.palaces.find(p => palaceKey(p.name) === '命宫')!, stars: [{ name: '太阴', type: 'major' }, { name: '文昌', type: 'lucky', siHua: '科' }] }];
+assert.ok(ruleReferences(missingHua).every(r => r.kind !== 'sihua'), 'missing natal mark key must not borrow another star or palace text');
 const huaKey = 'sihua|命宫|太阴||忌';
 const yin = fixtures[1].palaces.find(p => palaceKey(p.name) === '命宫')!;
 assert.equal(yin.stars.find(s => s.name === '太阴')!.siHua, '忌');
@@ -141,7 +221,7 @@ for (const [question, expected] of [['感情婚姻', '夫妻'], ['事业工作',
 
 assert.equal(keys.length, 300);
 const distribution: Record<number, number> = {};
-let items = 0, chars = 0, actualPalaceChecks = 0;
+let items = 0, chars = 0, actualPalaceChecks = 0, borrowedChecks = 0, emptyAuxChecks = 0;
 for (const key of keys) {
   const c = chart(key), refs = ruleReferences(c);
   assert.deepEqual(refs, ruleReferences(c));
@@ -150,16 +230,31 @@ for (const key of keys) {
   items += refs.length; chars += joined(refs).length;
   for (const r of refs) {
     const p = c.palaces.find(p => palaceKey(p.name) === r.palace)!;
-    assert.ok(p.stars.some(s => s.type === 'major'));
-    assert.ok(p.stars.some(s => s.name === r.star));
-    if (r.other) assert.ok(p.stars.some(s => s.name === r.other));
+    const opp = c.palaces.find(q => q.branch === p.oppositeBranch);
+    if (r.kind === 'bpair') {
+      assert.ok(!p.stars.some(s => s.type === 'major'));
+      assert.equal(opp?.branch, (p.branch + 6) % 12);
+      assert.ok(opp?.stars.some(s => s.name === r.star && s.type === 'major'));
+      assert.ok(p.stars.some(s => s.name === r.other && s.type !== 'major'));
+      assert.match(r.reference, /借对宫/);
+      assert.doesNotMatch(r.text, /坐|同宫|入命|本宫/);
+      borrowedChecks++;
+    } else {
+      assert.ok(p.stars.some(s => s.name === r.star));
+      if (r.kind === 'aux') {
+        assert.match(r.reference, /本宫实坐/);
+        if (!p.stars.some(s => s.type === 'major')) emptyAuxChecks++;
+      } else assert.ok(p.stars.some(s => s.type === 'major'));
+    }
+    if (r.other) assert.ok(p.stars.some(s => s.name === r.other && s.type !== 'major'));
     if (r.kind === 'pair') assert.ok(p.stars.some(s => s.name === r.star && s.type === 'major'));
     if (r.mark) assert.ok(p.stars.some(s => s.name === r.star && s.siHua === r.mark));
     assert.ok(index[r.key].includes(r.id));
     assert.equal(generated.texts[storedRules[r.id][0]], r.text);
-    assert.equal(matchesStarRule(p, r.key, storedRules[r.id]), true);
+    assert.equal(matchesStarRule(p, r.key, storedRules[r.id], opp), true);
     actualPalaceChecks++;
   }
 }
-console.log('Round11 300-chart metrics:', JSON.stringify({ charts: keys.length, averageItems: items / keys.length, distribution, zeroRate: (distribution[0] ?? 0) / keys.length, averageChars: chars / keys.length, actualPalaceChecks }));
-console.log('✓ Round11: resident-only exact keys, natal marks, brightness gates, shared budgets, deterministic output, attribution and copyright fingerprints');
+assert.ok(borrowedChecks > 0 && emptyAuxChecks > 0);
+console.log('Round11b 300-chart metrics:', JSON.stringify({ charts: keys.length, averageItems: items / keys.length, distribution, zeroRate: (distribution[0] ?? 0) / keys.length, averageChars: chars / keys.length, actualPalaceChecks, borrowedChecks, emptyAuxChecks }));
+console.log('✓ Round11b: exact resident/borrowed keys, natal marks, brightness gates, shared budgets, deterministic output, attribution and copyright fingerprints');

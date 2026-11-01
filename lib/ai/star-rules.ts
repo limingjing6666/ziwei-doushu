@@ -40,42 +40,52 @@ function brightnessMatches(star: Star, allowed: string[]): boolean {
 }
 
 /** Complete predicate, also exported for synthetic conflict/missing-condition regressions. */
-export function matchesStarRule(palace: Palace, key: string, rule: StoredRule): boolean {
+export function matchesStarRule(palace: Palace, key: string, rule: StoredRule, opposite?: Palace): boolean {
   const [kind, p, star, other, mark] = key.split('|');
-  if (palaceKey(palace.name) !== p || !palace.stars.some(s => s.type === 'major')) return false;
-  const actual = palace.stars.find(s => s.name === star);
+  if (palaceKey(palace.name) !== p) return false;
+  const resident = palace.stars.some(s => s.type === 'major');
+  if (kind === 'bpair' && (resident || palace.oppositeBranch === undefined || opposite?.branch !== palace.oppositeBranch)) return false;
+  if ((kind === 'pair' || kind === 'sihua') && !resident) return false;
+  const subjectPalace = kind === 'bpair' ? opposite! : palace;
+  const actual = subjectPalace.stars.find(s => s.name === star);
   if (!actual) return false;
   if (kind === 'aux' && (actual.type === 'major' || !['左辅', '右弼', '文昌', '文曲', '天魁', '天钺', '禄存', '天马'].includes(star))) return false;
   if (kind === 'pair' && (actual.type !== 'major' || !palace.stars.some(s => s.name === other && s.type !== 'major'))) return false;
+  if (kind === 'bpair' && (actual.type !== 'major' || !palace.stars.some(s => s.name === other && s.type !== 'major' && ['左辅', '右弼', '文昌', '文曲', '天魁', '天钺', '禄存', '天马', '擎羊', '陀罗', '火星', '铃星', '地空', '地劫'].includes(other)))) return false;
   if (kind === 'sihua' && (!mark || actual.siHua !== mark)) return false; // natal only; never daXians/selfSihua/yearly marks
-  if (!['aux', 'sihua', 'pair'].includes(kind)) return false;
+  if (!['aux', 'sihua', 'pair', 'bpair'].includes(kind)) return false;
   return rule[1].every(([name, , allowed]) => {
-    const s = palace.stars.find(s => s.name === name);
+    const s = (kind === 'bpair' && name === star ? subjectPalace : palace).stars.find(s => s.name === name);
     return !!s && brightnessMatches(s, allowed);
   }) && rule[2].every(([name, mark]) => palace.stars.some(s => s.name === name && s.siHua === mark));
 }
 
-function candidates(p: Palace, label: string): RuleReference[] {
-  if (!p.stars.some(s => s.type === 'major')) return [];
+function candidates(p: Palace, label: string, opposite?: Palace): RuleReference[] {
+  const resident = p.stars.some(s => s.type === 'major');
   const palace = palaceKey(p.name), keys: string[] = [];
   for (const s of p.stars) {
-    if (s.siHua) keys.push(`sihua|${palace}|${s.name}||${s.siHua}`);
+    if (resident && s.siHua) keys.push(`sihua|${palace}|${s.name}||${s.siHua}`);
     keys.push(`aux|${palace}|${s.name}||`);
     if (s.type === 'major') for (const other of p.stars.filter(s => s.type !== 'major')) keys.push(`pair|${palace}|${s.name}|${other.name}|`);
+  }
+  if (!resident) for (const s of opposite?.stars.filter(s => s.type === 'major') ?? []) {
+    for (const other of p.stars.filter(s => s.type !== 'major')) keys.push(`bpair|${palace}|${s.name}|${other.name}|`);
   }
   const result: RuleReference[] = [];
   for (const key of keys) for (const id of data.index[key] ?? []) {
     const rule = data.rules[id];
-    if (!rule || !matchesStarRule(p, key, rule)) continue;
+    if (!rule || !matchesStarRule(p, key, rule, opposite)) continue;
     const [kind, , star, other, mark] = key.split('|'), text = data.texts[rule[0]];
     const name = palace === '命宫' ? palace : `${palace}宫`;
     const source = `${star}${other ? `+${other}` : ''}${mark ? `生年化${mark}` : ''}`;
-    result.push({ id, key, kind, palace, star, other, mark, text, reference: `${label}${name}·${source}：${text}` });
+    const prefix = kind === 'bpair' ? `${label}${name}（空宫，借对宫${star}参照；本宫实坐${other}）`
+      : kind === 'aux' ? `${label}${name}（本宫实坐${star}）` : `${label}${name}·${source}`;
+    result.push({ id, key, kind, palace, star, other, mark, text, reference: `${prefix}：${text}` });
   }
   return result;
 }
 
-/** No borrowing, nearest-key fallback, networking, or chart mutation. Sparse hits are intentional. */
+/** Only explicit bpair borrowing; no nearest-key fallback, networking, or chart mutation. */
 export function ruleReferences(chart: ZiweiChart, opts: RuleOptions = {}): RuleReference[] {
   if (chart.birthInfo.birthTimeKnown === false) return [];
   const maxChars = Math.max(0, Math.min(800, opts.maxChars ?? 800));
@@ -83,7 +93,9 @@ export function ruleReferences(chart: ZiweiChart, opts: RuleOptions = {}): RuleR
   const { palaces, focused } = rulePalaces(opts);
   const buckets = palaces.map(name => {
     const palace = chart.palaces.find(p => palaceKey(p.name) === name);
-    return palace ? candidates(palace, opts.label ?? '本盘') : [];
+    // The chart engine supplies oppositeBranch (= branch + 6); never infer it from array order.
+    const opposite = palace?.oppositeBranch === undefined ? undefined : chart.palaces.find(p => p.branch === palace.oppositeBranch);
+    return palace ? candidates(palace, opts.label ?? '本盘', opposite) : [];
   });
   const selected: RuleReference[] = [], seen = new Set<string>();
   let chars = 0;

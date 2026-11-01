@@ -55,10 +55,58 @@ class RuleBuildTests(unittest.TestCase):
         self.assertFalse(self.clean('太阳 + 右弼，与左辅同主辅佐。', star='太阳', other='右弼')[0])
         self.assertFalse(self.clean('命宫此组合者中年前易遇大坎。')[0])
 
-    def test_borrowed_pair_not_extracted(self):
-        body = '### ✦ 「天机+文昌」\n\n可以发挥学习与研究能力。'
+    def test_borrowed_pair_extracted_only_for_explicit_empty_palace(self):
+        body = '### ✦ 「天机+文昌」\n\n可以发挥学习与研究能力。\n### ✦ 「天机+太阴」\n不能抽双主星。'
         self.assertEqual(build.extract_section('主辅煞组合精细', body, '命宫', False), ())
-        self.assertEqual(len(build.extract_section('主辅煞组合精细', body, '命宫', True)), 1)
+        resident = build.extract_section('主辅煞组合精细', body, '命宫', True)
+        borrowed = build.extract_section('主辅煞组合精细', body, '命宫', False, True)
+        self.assertEqual(len(resident), 1)
+        self.assertEqual(resident[0][0], 'pair')
+        self.assertEqual(borrowed, (('bpair', *resident[0][1:]),))
+        for sentence in ['你的夫妻宫坐天机，表达思路清楚。', '天机入命，表达方式灵活。', '天机与文昌同宫，表达思路清楚。', '本宫坐天机，表达方式灵活。']:
+            kept, dropped = self.clean(sentence, kind='bpair')
+            self.assertFalse(kept)
+            self.assertEqual(dropped['borrowed_resident_wording'], 1)
+        self.assertTrue(self.clean('天机 + 文昌，表达思路清楚。', kind='bpair')[0])
+        for sentence in ['天机庙旺，文昌表达思路清楚。', '如果遇到文昌，表达思路清楚。', '必有血光，事业尚好。', '本平台认为表达能力好。', '文昌眼睛容易疲劳。']:
+            self.assertFalse(self.clean(sentence, kind='bpair')[0], sentence)
+
+    def test_auditable_weak_sentence_exclusions(self):
+        for sentence, star, other in [
+            ('天同 + 陀罗，主天生爱拖延 + 加重——做决定能拖一年是一年。', '天同', '陀罗'),
+            ('天同 + 文曲，主才艺与温和并存——音乐、舞蹈、写作、绘画类艺术工作最自然。', '天同', '文曲'),
+            ('天机 + 地空，主聪明落空——好主意都在脑子里，落地的极少。', '天机', '地空'),
+            ('最适合金融分析师、投资银行家、税务/审计专家。', '武曲', '文昌'),
+        ]:
+            for kind in ['pair', 'bpair']:
+                audit = []
+                kept, dropped = build.clean_candidate(kind, star, other, '', sentence, audit)
+                self.assertFalse(kept)
+                self.assertEqual(dropped['weak_excluded'], 1)
+                self.assertEqual(audit[0][0], sentence)
+                self.assertTrue(audit[0][1])
+        kept, _ = self.clean('天机天生爱拖延。可以每天记录工作计划。')
+        self.assertEqual([s[0] for s in kept], ['可以每天记录工作计划。'])
+
+    def test_streaming_borrowed_metadata_and_missing_main(self):
+        import zstandard
+        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+            p = Path(directory)
+            source = p / 'year-2000.clean.jsonl.zst'
+            section = '\n## 主辅煞组合精细\n### ✦ 「紫微+文昌」\n紫微 + 文昌，表达思路清楚。'
+            rows = [dict(c=dict(love=main + section)) for main in [
+                '本宫主星：（夫妻空宫，借对宫紫微论事）紫微（庙旺）、贪狼（庙旺）',
+                '本宫主星：紫微（庙旺）', '',
+            ]]
+            source.write_bytes(zstandard.ZstdCompressor().compress(('\n'.join(json.dumps(r, ensure_ascii=False) for r in rows)+'\n').encode()))
+            build.build([str(source)], p/'data.json', p/'stats.json')
+            data = json.loads((p/'data.json').read_text())
+            stats = json.loads((p/'stats.json').read_text())
+            self.assertEqual(set(data['index']), {'bpair|夫妻|紫微|文昌|', 'pair|夫妻|紫微|文昌|'})
+            self.assertEqual(stats['candidate_occurrences'], 2)
+            self.assertEqual(stats['tables']['bpair']['keys'], 1)
+            self.assertEqual(data['meta']['version'], 2)
+            self.assertIn('opposite-major+resident-support', data['meta']['relation'])
 
     def test_streaming_reproducible_frequency_and_lexical_ties(self):
         try:
