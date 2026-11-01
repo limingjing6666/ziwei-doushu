@@ -91,7 +91,7 @@ async function main() {
               if (timeKnown) assert.match(text, /流年十二宫/);
             }
           }
-          assert.match(sent.messages[0].content, /“今年”“最近”的所指以事实区块的声明为准/);
+          assert.match(sent.messages[0].content, /“今年”“最近”的所指以下面的声明为准/);
         }
       }
     }

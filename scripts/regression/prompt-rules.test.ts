@@ -10,6 +10,7 @@ import { normalizeChart } from '../../lib/ai/input';
 for (const prompt of [INTERPRET_SYSTEM, HEMING_SYSTEM]) {
   assert.match(prompt, /【分层解盘流程】/);
   assert.match(prompt, /按传统断法直接下结论/);
+  assert.doesNotMatch(prompt, /仅供参考|免责声明|倪|本地|非AI/);
   assert.doesNotMatch(prompt, /但不是医学诊断|缺年份或大限就说明限制|缺项或流派差异须明示|不为追求气势使用绝对断言/);
   assert.match(prompt, /不预测死期/);
   assert.match(prompt, /不复现原句或近似表达/);
