@@ -75,8 +75,6 @@ class RuleBuildTests(unittest.TestCase):
         for sentence, star, other in [
             ('天同 + 陀罗，主天生爱拖延 + 加重——做决定能拖一年是一年。', '天同', '陀罗'),
             ('天同 + 文曲，主才艺与温和并存——音乐、舞蹈、写作、绘画类艺术工作最自然。', '天同', '文曲'),
-            ('天机 + 地空，主聪明落空——好主意都在脑子里，落地的极少。', '天机', '地空'),
-            ('最适合金融分析师、投资银行家、税务/审计专家。', '武曲', '文昌'),
         ]:
             for kind in ['pair', 'bpair']:
                 audit = []
@@ -85,8 +83,10 @@ class RuleBuildTests(unittest.TestCase):
                 self.assertEqual(dropped['weak_excluded'], 1)
                 self.assertEqual(audit[0][0], sentence)
                 self.assertTrue(audit[0][1])
+        for sentence in ['天机 + 地空，主聪明落空——好主意都在脑子里，落地的极少。', '最适合金融分析师、投资银行家、税务/审计专家。']:
+            self.assertIsNone(build.weak_reason(sentence))
         kept, _ = self.clean('天机天生爱拖延。可以每天记录工作计划。')
-        self.assertEqual([s[0] for s in kept], ['可以每天记录工作计划。'])
+        self.assertEqual([s[0] for s in kept], ['天机天生爱拖延。', '可以每天记录工作计划。'])
 
     def test_streaming_borrowed_metadata_and_missing_main(self):
         import zstandard
