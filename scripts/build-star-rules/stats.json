@@ -1,0 +1,767 @@
+{
+  "records": 674976,
+  "sources": [
+    {
+      "file": "year-1950.clean.jsonl.zst",
+      "sha256": "a4170337e4fbea7ee3f065f8f8fbcdcd78cc58eb7c9c590e6d98f6ad8f89aaa7"
+    },
+    {
+      "file": "year-1951.clean.jsonl.zst",
+      "sha256": "32c223d2e5b884225f3026fc8ed7f7030fad28f9f5a18418f7047f0819b73dfb"
+    },
+    {
+      "file": "year-1952.clean.jsonl.zst",
+      "sha256": "eff4075645e3625a54781f24c33a5e4e478d2067e904a9c6d19185e7c096f227"
+    },
+    {
+      "file": "year-1953.clean.jsonl.zst",
+      "sha256": "5699bf651e0c757b7e51487626704eaf016e4bb1b1e2b04f9816dc97d823e249"
+    },
+    {
+      "file": "year-1954.clean.jsonl.zst",
+      "sha256": "135a97f0b538baffae3a9d856f1d0a7efcd4848af00dc101fcaad07b918b9e74"
+    },
+    {
+      "file": "year-1955.clean.jsonl.zst",
+      "sha256": "6de6eb440f34c9b6392ef604f2ce0cf3d64967075205ccde97a811b8e0562c3c"
+    },
+    {
+      "file": "year-1956.clean.jsonl.zst",
+      "sha256": "df2af2a38baae9bae1e5960367a5b40a548090c8ca153052199f9fdc74e00a80"
+    },
+    {
+      "file": "year-1957.clean.jsonl.zst",
+      "sha256": "3b9f69393787284f7feca3634fc4cce3dd2c9658c9b00569bf1b55dc16ea82c5"
+    },
+    {
+      "file": "year-1958.clean.jsonl.zst",
+      "sha256": "df5b4cb238193377b21d224d11efc63e249775cb5a449c05f606da268227a2d5"
+    },
+    {
+      "file": "year-1959.clean.jsonl.zst",
+      "sha256": "435098eaa6cee642cce63dfdb72a8243afd9f259d253487e27558971ab50fd39"
+    },
+    {
+      "file": "year-1960.clean.jsonl.zst",
+      "sha256": "a40d4f8733e238eb44bd7efedc855904cc4e81d3cd02a8f7a69ff7d8c2969f13"
+    },
+    {
+      "file": "year-1961.clean.jsonl.zst",
+      "sha256": "d3918e777b1520410f5541226d1690c863278e2813602459ac4c3262f7237c77"
+    },
+    {
+      "file": "year-1962.clean.jsonl.zst",
+      "sha256": "e4d0ac688e45001c4999e612911856e8a730707e7d2b028171fb86f2b9c7f565"
+    },
+    {
+      "file": "year-1963.clean.jsonl.zst",
+      "sha256": "932319d2668d8b7f43a7bf4d07b329ab63607420e8e44ad526d8f3f6c1739d2b"
+    },
+    {
+      "file": "year-1964.clean.jsonl.zst",
+      "sha256": "2eb4e60e7f848cc7ffccf2c2e788565ee28b0795ee22191fdb3165bff9839555"
+    },
+    {
+      "file": "year-1965.clean.jsonl.zst",
+      "sha256": "18567bbba93e3b7da7c73d5d56d3ef939b1bb0beb6d06899be54eeea5c9b2c45"
+    },
+    {
+      "file": "year-1966.clean.jsonl.zst",
+      "sha256": "a7fe2140336a67ca8b425bd0a6aef9615992e04f048488e2c8815375ce619a7d"
+    },
+    {
+      "file": "year-1967.clean.jsonl.zst",
+      "sha256": "139c13b3108dd9209f1ef6a3d6844db3fe327210f78a03bf009745a40a14b16b"
+    },
+    {
+      "file": "year-1968.clean.jsonl.zst",
+      "sha256": "65f401c5d51b5a647fd428dc2ed43a72848b304f3e38e566ad8a25b38a120152"
+    },
+    {
+      "file": "year-1969.clean.jsonl.zst",
+      "sha256": "be1b6ec2965152ea01d88dc911ed4d17622e5436d3f574e34dbb76c650a07fe6"
+    },
+    {
+      "file": "year-1970.clean.jsonl.zst",
+      "sha256": "52dc4bb3818e94f5ca83cd98a1b07a742daa9597cd82b9f1370fb187e35f9b8e"
+    },
+    {
+      "file": "year-1971.clean.jsonl.zst",
+      "sha256": "03d53a0feb2cd69cd08c438e72fc6de79e2f7cf825ff584bbb0980d392f96a94"
+    },
+    {
+      "file": "year-1972.clean.jsonl.zst",
+      "sha256": "40d871aad2167b755f134cae0b8e5ca850dc055d53fc7e19a2d142a930360c7f"
+    },
+    {
+      "file": "year-1973.clean.jsonl.zst",
+      "sha256": "3ec257c788f67deae7dd2dca70eb302212ff163673e53f54d993285a3c506660"
+    },
+    {
+      "file": "year-1974.clean.jsonl.zst",
+      "sha256": "6b81bd7c3805ad88efd622996c534c1a8ede91f7cf78cf232b399b57c63c3e9e"
+    },
+    {
+      "file": "year-1975.clean.jsonl.zst",
+      "sha256": "08c6f9ce242c8bc26716fd022cefe48b27c0396d74c8c5b6ff67a7102b369168"
+    },
+    {
+      "file": "year-1976.clean.jsonl.zst",
+      "sha256": "ace8f15c37c8830010a5d251be1874eaa1effaad77573bec0a82305ef4ac521b"
+    },
+    {
+      "file": "year-1977.clean.jsonl.zst",
+      "sha256": "af2303440ffdbdf63b20f704b82a9e9c045cf1d3043868d7a667f468937db72e"
+    },
+    {
+      "file": "year-1978.clean.jsonl.zst",
+      "sha256": "0c1a8eeb485cecfaadff52e77fee5f28462f4c7259ea1b1abcbcf34ca41203ab"
+    },
+    {
+      "file": "year-1979.clean.jsonl.zst",
+      "sha256": "ac169c64ffe066f68232386f8a849a4ddec446dd5c237257de0698444a8694fa"
+    },
+    {
+      "file": "year-1980.clean.jsonl.zst",
+      "sha256": "d51de52c7b1993ac46302b51f2cae02b1cec128fc6731912ec402591e1f72798"
+    },
+    {
+      "file": "year-1981.clean.jsonl.zst",
+      "sha256": "f5383cf13822e83767c87903f0fb3f9e2400e35d2f537bc19d7d072ad423815d"
+    },
+    {
+      "file": "year-1982.clean.jsonl.zst",
+      "sha256": "dcfc11e7feef33b90b60759a73644bf6de631e465a04168023aad5c6edfeab2f"
+    },
+    {
+      "file": "year-1983.clean.jsonl.zst",
+      "sha256": "41f419fac43eb417eb6181e00442184d843f414486d5b78de5a5be51ff6431a8"
+    },
+    {
+      "file": "year-1984.clean.jsonl.zst",
+      "sha256": "d6aa0fd75fbc0cf7274af08c17c6d32eeee15ba65f1cc2859979a30ad4b09e56"
+    },
+    {
+      "file": "year-1985.clean.jsonl.zst",
+      "sha256": "fffadc838c4c161a0822da11a954929717153333b70772c8d8ff923adff7ed1d"
+    },
+    {
+      "file": "year-1986.clean.jsonl.zst",
+      "sha256": "2c062d4fed81fad3175a1400869dde3731e09b27ff8e811fddd33f62d96696b4"
+    },
+    {
+      "file": "year-1987.clean.jsonl.zst",
+      "sha256": "1a4fe7b8035e6cd4f35109a7046fdc190e95903e2d5e78ab5dc8e4c6a3af4f92"
+    },
+    {
+      "file": "year-1988.clean.jsonl.zst",
+      "sha256": "9e399a5595170857daf4e98bd849252dbf6910046d1d935ca8fd636ffec8c7d5"
+    },
+    {
+      "file": "year-1989.clean.jsonl.zst",
+      "sha256": "e0fb0c0c695ad7ac7bc121a77aaa39fae2221f007d8691a5ce1d639ca62a86d4"
+    },
+    {
+      "file": "year-1990.clean.jsonl.zst",
+      "sha256": "9bd159d1fed6c8a768283053cf47f17f2ed886463d6f16a82b5aa09018c76ac8"
+    },
+    {
+      "file": "year-1991.clean.jsonl.zst",
+      "sha256": "f9612f8f2e88a97c15382cdde3844b738b0e15b41d05c72d6bed5677e823bdc9"
+    },
+    {
+      "file": "year-1992.clean.jsonl.zst",
+      "sha256": "321d592ee61a67487adb014fe56865da558db306544c20f7e333ec06ad21cd62"
+    },
+    {
+      "file": "year-1993.clean.jsonl.zst",
+      "sha256": "3cb3870ae4168792b15a9e54cc375215d3167d9f2d7baeb30ede90fefc9ddf5e"
+    },
+    {
+      "file": "year-1994.clean.jsonl.zst",
+      "sha256": "a043c2c4c55823d5165392700778f79209081cdc7f01bc0902be165d417306af"
+    },
+    {
+      "file": "year-1995.clean.jsonl.zst",
+      "sha256": "9afd6f7981f983e6e398724c225288c1b76c9a313f864766faa6d70858a1912b"
+    },
+    {
+      "file": "year-1996.clean.jsonl.zst",
+      "sha256": "dde4e2295207f1e68ad4ce270fa9433e1dcf55c3a5d67f1ea7357f59604ec404"
+    },
+    {
+      "file": "year-1997.clean.jsonl.zst",
+      "sha256": "03faf8a4bd28a20915f2e6d0902cab31c2c9eeede77395adbd5638f90a20b016"
+    },
+    {
+      "file": "year-1998.clean.jsonl.zst",
+      "sha256": "4c489c9aeef6b0661c72fd5e53555c8821f4801bde1e06c2609ff26e251bbefd"
+    },
+    {
+      "file": "year-1999.clean.jsonl.zst",
+      "sha256": "e5d417da78c7b0142dc95ebbc5c7270c3db6b41984a9a0a7b9dba74510711fc6"
+    },
+    {
+      "file": "year-2000.clean.jsonl.zst",
+      "sha256": "f933819c0671b4aaf09c73831ade08f8293b4260e1a8b159a8fea6a5e3220d9f"
+    },
+    {
+      "file": "year-2001.clean.jsonl.zst",
+      "sha256": "fab084344e50519c358db87460e421208288142cd6dcbd733aff29dd22eb091a"
+    },
+    {
+      "file": "year-2002.clean.jsonl.zst",
+      "sha256": "62a1523814258706c43fa25e6ccb8f389f0da8758a02c9d2fbc4da4e137f0c53"
+    },
+    {
+      "file": "year-2003.clean.jsonl.zst",
+      "sha256": "6f9acbf0b90ba7a0f71e425bb183bc455d7f898e03fb8e0bcee29ee94ec0bffe"
+    },
+    {
+      "file": "year-2004.clean.jsonl.zst",
+      "sha256": "bc6535e9f7596c083aee5c779e117ccc3b0f334512ddfe22ba7296320a4fb150"
+    },
+    {
+      "file": "year-2005.clean.jsonl.zst",
+      "sha256": "1c9b8e477c04ffae9e91c517d573704b0515710e0927cb6cf8a1ddb0a5f7bce4"
+    },
+    {
+      "file": "year-2006.clean.jsonl.zst",
+      "sha256": "2aa316e8695072a011821a33e7e5c64b3f471417b5b83896248b0773ba406c36"
+    },
+    {
+      "file": "year-2007.clean.jsonl.zst",
+      "sha256": "99a02e14bde6a53ffa21c892f7c20e484f2bf7e11217f14bb21f9cc6ad63ce39"
+    },
+    {
+      "file": "year-2008.clean.jsonl.zst",
+      "sha256": "eaf70e643457ce161395bf0ff309a19e31b33562d7a37fba368f14f5a459de8d"
+    },
+    {
+      "file": "year-2009.clean.jsonl.zst",
+      "sha256": "3c47629b5450f1acd14140ad6db9fecc78cdf23a60b59a3158bc42b0ed4a7491"
+    },
+    {
+      "file": "year-2010.clean.jsonl.zst",
+      "sha256": "be8df13d46625e8780ada7bfffeddb15565e8bb8439b7f50bb26079b6a1fa5d0"
+    },
+    {
+      "file": "year-2011.clean.jsonl.zst",
+      "sha256": "64d4b26ed775152491cd4bd4a3757f2c9f11264742d9061c0ea86c279331ccaf"
+    },
+    {
+      "file": "year-2012.clean.jsonl.zst",
+      "sha256": "21ece12d4f822836dd70e405413cb6446ef2e55d10f7da7c22cd33f419789d95"
+    },
+    {
+      "file": "year-2013.clean.jsonl.zst",
+      "sha256": "3bf15d36b336e10080e20b40af414a28293be2be10e8d0b2ddfa5a4971056baa"
+    },
+    {
+      "file": "year-2014.clean.jsonl.zst",
+      "sha256": "534c8f58e84cc9251bf63180528774acd4a7599d0fe68f6a85296b92c448d2d2"
+    },
+    {
+      "file": "year-2015.clean.jsonl.zst",
+      "sha256": "7c52c5419b23155f18113a470d9beae10504e3947981f140b91dc3fc7a364e50"
+    },
+    {
+      "file": "year-2016.clean.jsonl.zst",
+      "sha256": "3cfc09762c692ce4e6b7397748e2d7e9e43a0dc064590a3710163a818ea7eac6"
+    },
+    {
+      "file": "year-2017.clean.jsonl.zst",
+      "sha256": "4b2066b653f7b36ad9ab4c9753deb90d846b0c1ea7c1269c55371ccacf34dfb9"
+    },
+    {
+      "file": "year-2018.clean.jsonl.zst",
+      "sha256": "514d99b0a7b6351b448fcc3e32aede1bbc99c492e317b07f5e9ce43791adf523"
+    },
+    {
+      "file": "year-2019.clean.jsonl.zst",
+      "sha256": "d005254311289df5c1696f49287f21a08644dd8807c0f3c62dc32cc4222f75a8"
+    },
+    {
+      "file": "year-2020.clean.jsonl.zst",
+      "sha256": "e2bf24dfb8d93dd610e3148d36761a52d85fb6044f4beb81e650e1fcec84b90d"
+    },
+    {
+      "file": "year-2021.clean.jsonl.zst",
+      "sha256": "bdd47f12e76412e2f3c340ede885e0c86605f9c9d7de0ceeed0638230c4ae22f"
+    },
+    {
+      "file": "year-2022.clean.jsonl.zst",
+      "sha256": "11f516e583d5387822af505045468ef1793e42e84603f83fc7b7457186b720c1"
+    },
+    {
+      "file": "year-2023.clean.jsonl.zst",
+      "sha256": "cd7eba9cb35c0b0cfaf3eb585632a42d7e36ecbe60d126e90bb763096765bc5a"
+    },
+    {
+      "file": "year-2024.clean.jsonl.zst",
+      "sha256": "5a85f6d56ca92e5216fe020627f25e44b5f817538551b7ba421fb8c7f01f7aaa"
+    },
+    {
+      "file": "year-2025.clean.jsonl.zst",
+      "sha256": "c351196b07d0871f9af4bc68f51d225f2fd95896df85de87a648c4d11f59e7f4"
+    },
+    {
+      "file": "year-2026.clean.jsonl.zst",
+      "sha256": "2d15389324ed50339a450a52df7b4c970eb8dfc8c66d462b55d96262eb302e0a"
+    }
+  ],
+  "input_policy": "all supplied years, sorted; no sampling",
+  "growth": [
+    {
+      "file": "year-1950.clean.jsonl.zst",
+      "new_candidates": 2089,
+      "cumulative_candidates": 2089
+    },
+    {
+      "file": "year-1951.clean.jsonl.zst",
+      "new_candidates": 120,
+      "cumulative_candidates": 2209
+    },
+    {
+      "file": "year-1952.clean.jsonl.zst",
+      "new_candidates": 72,
+      "cumulative_candidates": 2281
+    },
+    {
+      "file": "year-1953.clean.jsonl.zst",
+      "new_candidates": 36,
+      "cumulative_candidates": 2317
+    },
+    {
+      "file": "year-1954.clean.jsonl.zst",
+      "new_candidates": 48,
+      "cumulative_candidates": 2365
+    },
+    {
+      "file": "year-1955.clean.jsonl.zst",
+      "new_candidates": 60,
+      "cumulative_candidates": 2425
+    },
+    {
+      "file": "year-1956.clean.jsonl.zst",
+      "new_candidates": 36,
+      "cumulative_candidates": 2461
+    },
+    {
+      "file": "year-1957.clean.jsonl.zst",
+      "new_candidates": 48,
+      "cumulative_candidates": 2509
+    },
+    {
+      "file": "year-1958.clean.jsonl.zst",
+      "new_candidates": 36,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1959.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1960.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1961.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1962.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1963.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1964.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1965.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1966.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1967.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1968.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1969.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1970.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1971.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1972.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1973.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1974.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1975.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1976.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1977.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1978.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1979.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1980.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1981.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1982.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1983.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1984.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1985.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1986.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1987.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1988.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1989.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1990.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1991.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1992.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1993.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1994.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1995.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1996.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1997.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1998.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-1999.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2000.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2001.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2002.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2003.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2004.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2005.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2006.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2007.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2008.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2009.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2010.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2011.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2012.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2013.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2014.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2015.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2016.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2017.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2018.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2019.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2020.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2021.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2022.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2023.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2024.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2025.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    },
+    {
+      "file": "year-2026.clean.jsonl.zst",
+      "new_candidates": 0,
+      "cumulative_candidates": 2545
+    }
+  ],
+  "tables": {
+    "aux": {
+      "keys": 83,
+      "rules": 83,
+      "texts": 83
+    },
+    "sihua": {
+      "keys": 264,
+      "rules": 264,
+      "texts": 22
+    },
+    "pair": {
+      "keys": 1284,
+      "rules": 1284,
+      "texts": 107
+    }
+  },
+  "text_count": 212,
+  "text_chars": 5424,
+  "output_bytes": 91921,
+  "candidate_occurrences": 40656298,
+  "unique_candidates": 2545,
+  "kept_sentence_occurrences": 33348786,
+  "dropped_occurrences": {
+    "ambiguous_brightness": 182134,
+    "disease_organ": 1666910,
+    "ji_not_mild": 2049310,
+    "malformed": 15685,
+    "overlay": 268946,
+    "restricted_internal": 472054,
+    "unbound_condition": 3257431,
+    "unsafe_fatalistic": 3652136
+  },
+  "rewrites": [
+    {
+      "before": "兄弟合伙稳赚，但规模有限。",
+      "after": "与手足合作可以偏重稳健经营，先明确分工与规模。",
+      "occurrences": 224992
+    },
+    {
+      "before": "化忌，福德受损，感情多波折，生活中不顺心事增多，宜主动调整心态积极面对。",
+      "after": "情绪容易受牵动，可以为压力安排稳定的疏解方式。",
+      "occurrences": 303898
+    },
+    {
+      "before": "天同 + 天魁，主温和命格得长辈疼爱——一辈子总有男性长辈疼你、保护你。",
+      "after": "待人温和，容易得到男性长辈的关照与建议。",
+      "occurrences": 70820
+    },
+    {
+      "before": "天府 + 右弼，主下属忠诚 + 财库稳——一辈子身边总有几位关键人物为你守护财源。",
+      "after": "可以通过可靠的团队协作，建立稳定的财务管理。",
+      "occurrences": 30142
+    },
+    {
+      "before": "天梁 + 天魁，男性长辈关照你的命——一辈子有男性贵人持续支持。",
+      "after": "容易从男性长辈处获得经验支持，可以主动请教。",
+      "occurrences": 34594
+    },
+    {
+      "before": "左辅入命——稳重厚道，一生多助缘，贵人在侧。",
+      "after": "为人稳重厚道，可以通过协作积累支持。",
+      "occurrences": 281240
+    }
+  ],
+  "artifact_sha256": "c90715ac76e16ae2ac28aff40f1b0949f85b47010c438e3314fff26f995351f1"
+}

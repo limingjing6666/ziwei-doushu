@@ -4,6 +4,7 @@ import { STAR_IN_FUQI_GU } from '@/lib/ziwei/heming-knowledge';
 import type { ZiweiChart } from '@/lib/ziwei/types';
 import { palaceKey } from './chart-to-text';
 import { retrieveMethod } from '@/lib/ziwei/method/retrieve';
+import { normalizeReferenceText, ruleReferences, type RuleReference } from './star-rules';
 
 // Defense in depth for existing knowledge modules too. Never feed retired quotation fields or raw methodology.
 export function safeReference(value: string): string {
@@ -35,13 +36,32 @@ function chartReferences(chart: ZiweiChart, label: string, patternLimit = 6): st
     });
     const exact = exactKey ? STAR_DB[exactKey]?.[field] : undefined;
     const references = exact ? [exact] : stars.map(s => Object.hasOwn(STAR_DB, s) ? STAR_DB[s]?.[field] : undefined).filter((s): s is string => !!s);
-    for (const reference of references) parts.push(`${label}${p.name}（${stars.join('、') || '空宫，借对宫参照'}）：\n${safeReference(reference).slice(0, 650)}`);
+    for (const reference of references) parts.push(`${label}${p.name}（${stars.join('、') || '空宫，借对宫参照'}）：\n${safeReference(reference)}`);
   }
   return parts;
 }
 
+/** Both people share six entries / 800 characters, including labels and separators. */
+export function knowledgeRuleReferences(a: ZiweiChart, b?: ZiweiChart, question?: string): RuleReference[] {
+  const first = ruleReferences(a, { question, label: b ? 'A' : '本盘' });
+  const second = b ? ruleReferences(b, { question, label: 'B' }) : [];
+  const selected: RuleReference[] = [], seen = new Set<string>();
+  let chars = 0;
+  for (let i = 0; i < Math.max(first.length, second.length); i++) for (const entry of [first[i], second[i]]) {
+    if (!entry || selected.length >= 6) continue;
+    const text = safeReference(entry.text);
+    const normalized = normalizeReferenceText(text);
+    if (!text || seen.has(normalized)) continue;
+    const reference = entry.reference.replace(entry.text, text);
+    const cost = reference.length + (selected.length ? 2 : 0);
+    if (chars + cost > 800) continue;
+    seen.add(normalized); selected.push({ ...entry, text, reference }); chars += cost;
+  }
+  return selected;
+}
+
 /** Hard cap applies across both charts AND marriage references, not separately. */
-export function retrieveKnowledge(a: ZiweiChart, b?: ZiweiChart): string {
+export function retrieveKnowledge(a: ZiweiChart, b?: ZiweiChart, question?: string): string {
   const parts = chartReferences(a, b ? 'A' : '本盘', b ? 3 : 6);
   if (b) {
     const other = chartReferences(b, 'B', 3);
@@ -63,6 +83,22 @@ export function retrieveKnowledge(a: ZiweiChart, b?: ZiweiChart): string {
     parts.unshift(...spouses);
   }
   const method = [a.birthInfo.birthTimeKnown === false ? '' : retrieveMethod(a, b ? 'A' : '本盘', b ? 1000 : 1400), b && b.birthInfo.birthTimeKnown !== false ? retrieveMethod(b, 'B', 1000) : ''].filter(Boolean).join('\n');
-  // Reserve method space before legacy references so it cannot be truncated away.
-  return `${method}\n\n${parts.join('\n\n')}`.slice(0, 6000);
+  // Reserve method, then exact conditional rules, then whole legacy entries. Never
+  // truncate a newly matched sentence or star/brightness predicate at the boundary.
+  const selected = method ? [method] : [];
+  let chars = method.length;
+  const seen: string[] = [];
+  const append = (reference: string, text = reference, legacy = false) => {
+    const normalized = normalizeReferenceText(text);
+    if (!normalized || seen.includes(normalized) || (legacy && seen.some(s => s.includes(normalized) || normalized.includes(s)))) return;
+    const cost = reference.length + (selected.length ? 2 : 0);
+    if (chars + cost > 6000) return;
+    selected.push(reference); seen.push(normalized); chars += cost;
+  };
+  for (const entry of knowledgeRuleReferences(a, b, question)) append(entry.reference, entry.text);
+  for (const part of parts) {
+    const reference = safeReference(part);
+    append(reference, reference.replace(/^[^：\n]*：\s*/, ''), true);
+  }
+  return selected.join('\n\n');
 }

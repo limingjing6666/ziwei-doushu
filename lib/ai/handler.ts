@@ -41,7 +41,7 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     if (factsB && !factsB.birthTimeKnown) factsA.marriage = { unavailable: true, reason: '乙方出生时辰未知', rangeText: '', years: [], candidates: [] };
     const chartA = chartToText(a, { facts: factsA, question });
     const chartB = b ? chartToText(b, { facts: factsB, question: isHealthQuestion(question) ? '健康' : '' }) : undefined;
-    const references = retrieveKnowledge(a, b);
+    const references = retrieveKnowledge(a, b, question);
     // Place client-provided chart/reference data in a user message, never interpolate into system instructions.
     const context = b
       ? `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chartA, chartB, selectedViewA: viewToText(viewA, a), selectedViewB: viewToText(viewB, b), reportSummary: text(body.reportSummary, 1600), crossTransformations: crossTransformations(a, b), references, glossary: glossaryForChart(`${chartA}\n${chartB}\n${references}`) })}`
