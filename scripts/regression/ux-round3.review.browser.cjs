@@ -33,7 +33,7 @@ async function fill(page) {
       await page.getByRole('button', { name: '排盘', exact: true }).click();
       await page.getByRole('group', { name: '十二宫命盘' }).waitFor();
       await page.getByText(/按真太阳时校正后，出生时辰由「辰时」变为「卯时」/).first().waitFor();
-      await page.getByRole('radio', { name: '大限', exact: true }).click();
+      await page.getByRole('radio', { name: /^大限(?: \d+–\d+)?$/ }).click();
       const badge = page.locator('[data-palace-branch] button[aria-label*="限化"]:visible').first();
       const palace = badge.locator('xpath=ancestor::*[@data-palace-branch]');
       await badge.click();
