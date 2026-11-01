@@ -4,7 +4,7 @@ import { resolveEffectiveLunarDate, type LunarMonthPolicy } from './algorithm';
 import { getSiHuaByStem } from './sihua';
 import type { ZiweiChart } from './types';
 
-export interface FactOptions { currentYear?: number; currentDate?: string; selectedYear?: number }
+export interface FactOptions { currentYear?: number; currentDate?: string; selectedYear?: number; omitSelected?: boolean }
 export interface YearFact {
   year: number; nominalAge: number; marriagePalace: string; palaceNames: string[];
   transformations: { star: string; mark: string; palace: string; branch: number }[];
@@ -14,7 +14,7 @@ export interface MarriageCandidate extends YearFact { score: number; reasons: st
 export interface MarriageFacts { unavailable: boolean; reason?: string; rangeText: string; years: number[]; candidates: MarriageCandidate[] }
 export interface AgeWhitelist { ages: number[]; years: number[]; ageRanges: [number, number][]; yearRanges: [number, number][] }
 export interface AgeFacts {
-  birthYear: number; lunarBirthYear: number; currentYear: number; currentDate: string; natalTransformations: string; currentAge?: number; selected?: YearFact;
+  birthYear: number; lunarBirthYear: number; currentYear: number; currentDate: string; natalTransformations: string; currentAge?: number; selected?: YearFact; selectedOmitted?: boolean;
   currentDecadal?: YearFact['decadal']; decadals: NonNullable<YearFact['decadal']>[];
   marriage: MarriageFacts; health: { years: number[]; entries: { year: number; nominalAge: number; reasons: string[] }[] };
   whitelist: AgeWhitelist; birthTimeKnown: boolean; discrepancies: string[];
@@ -123,13 +123,14 @@ export function buildAgeFacts(chart: ZiweiChart, opts: FactOptions = {}): AgeFac
   const facts: AgeFacts = { birthYear: chart.birthInfo.year, lunarBirthYear: chart.lunarInfo.lunarYear,
     currentYear: opts.currentYear ?? new Date().getFullYear(),
     currentDate: opts.currentDate ?? new Date().toISOString().slice(0, 10),
+    ...(opts.omitSelected ? { selectedOmitted: true } : {}),
     natalTransformations: Object.entries(getSiHuaByStem(chart.lunarInfo.yearStem)).map(([mark, star]) => `${star}化${mark}`).join('、'),
     decadals: [], marriage: getMarriageCandidates(chart, opts), health: getHealthYears(chart, opts), birthTimeKnown: chart.birthInfo.birthTimeKnown !== false,
     whitelist: { ages: [], years: [], ageRanges: [], yearRanges: [] }, discrepancies: [] };
   try {
     const e = engine(chart, opts);
     facts.currentAge = e.currentAge;
-    facts.selected = e.yearFact(opts.selectedYear ?? e.currentYear);
+    if (!opts.omitSelected) facts.selected = e.yearFact(opts.selectedYear ?? e.currentYear);
     facts.decadals = e.decadals;
     facts.currentDecadal = e.decadals.find(d => facts.currentAge! >= d.startAge && facts.currentAge! <= d.endAge);
     for (const p of e.a.palaces) {
@@ -137,8 +138,8 @@ export function buildAgeFacts(chart: ZiweiChart, opts: FactOptions = {}): AgeFac
       if (!own || own.startAge !== p.decadal.range[0] || own.endAge !== p.decadal.range[1]) facts.discrepancies.push(`本命${p.name}大限范围不同，以页面数据为准`);
     }
     const w = facts.whitelist;
-    w.ages = [facts.currentAge, facts.selected.nominalAge, ...facts.marriage.candidates.map(c => c.nominalAge), ...facts.health.entries.map(c => c.nominalAge)];
-    w.years = [facts.birthYear, facts.currentYear, facts.selected.year, ...facts.marriage.years, ...facts.health.years];
+    w.ages = [facts.currentAge, ...(facts.selected?.nominalAge === undefined ? [] : [facts.selected.nominalAge]), ...facts.marriage.candidates.map(c => c.nominalAge), ...facts.health.entries.map(c => c.nominalAge)];
+    w.years = [facts.birthYear, facts.currentYear, ...(facts.selected?.year === undefined ? [] : [facts.selected.year]), ...facts.marriage.years, ...facts.health.years];
     w.ageRanges = e.decadals.map(d => [d.startAge, d.endAge]);
     w.yearRanges = e.decadals.map(d => [d.startYear, d.endYear]);
   } catch { /* partial chart supported */ }

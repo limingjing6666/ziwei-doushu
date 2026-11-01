@@ -9,16 +9,16 @@ export { isMarriageQuestion, isHealthQuestion, isNumericSensitive } from './inte
 
 export function ageFactsToText(f: AgeFacts, question = ''): string {
   const dx = f.currentDecadal, selected = f.selected;
-  const today = `今天：${f.currentDate}（公历）；你现年虚岁${f.currentAge ?? '未提供'}；所选流年：${selected ? `${selected.year}年（虚岁${selected.nominalAge}）` : '未提供'}。`;
+  const today = `今天：${f.currentDate}（公历）；你现年虚岁${f.currentAge ?? '未提供'}${f.selectedOmitted ? '' : `；所选流年：${selected ? `${selected.year}年（虚岁${selected.nominalAge}）` : '未提供'}`}。`;
   const transformations = [
     `【生年四化】${f.natalTransformations}`,
     ...(f.birthTimeKnown ? [dx ? `【当前大限四化（大限宫干${dx.stem}）】${dx.transformations}` : '【当前大限四化】未提供或尚未起限。'] : []),
-    selected ? `【所选流年四化（流年干${STEMS[((selected.year - 4) % 10 + 10) % 10]}）】${selected.transformations.map(t => `${t.star}化${t.mark}${f.birthTimeKnown ? `落本命${t.palace}` : ''}`).join('、')}` : '【所选流年四化】未提供。',
+    ...(f.selectedOmitted ? [] : [selected ? `【所选流年四化（流年干${STEMS[((selected.year - 4) % 10 + 10) % 10]}）】${selected.transformations.map(t => `${t.star}化${t.mark}${f.birthTimeKnown ? `落本命${t.palace}` : ''}`).join('、')}` : '【所选流年四化】未提供。']),
   ];
   const lines = [today, '【年龄与运限事实（唯一来源）】',
     `出生公历年：${f.birthYear > 0 ? f.birthYear : '未提供'}；农历生年：${f.lunarBirthYear > 0 ? f.lunarBirthYear : '未提供'}。所有年龄均为虚岁。`,
     ...transformations,
-    '“今年”“最近”均指所选流年；现实当前大限按今天的虚岁。过去年份只作回顾，不作为未来候选。',
+    `${f.selectedOmitted ? `“今年”“最近”均指今天所在的年份（${f.currentDate.slice(0, 4)}年）` : '“今年”“最近”均指所选流年'}；现实当前大限按今天的虚岁。过去年份只作回顾，不作为未来候选。`,
     `birthTimeKnown: ${f.birthTimeKnown}。`];
   if (!f.birthTimeKnown) return lines.join('\n');
   if (dx) lines.push(`当前大限：第${dx.index}限，本命${dx.palace}；虚岁 ${dx.startAge}–${dx.endAge}（公历 ${dx.startYear}–${dx.endYear}）。`);
@@ -37,9 +37,9 @@ export function ageFactsToText(f: AgeFacts, question = ''): string {
  * A client-selected decade is matched back to the page chart, never trusted as a second fact source. */
 export function viewToText(raw: unknown, chart: ZiweiChart, currentYear = new Date().getFullYear()): string {
   const v = normalizeView(raw, chart, currentYear);
-  if (chart.birthInfo.birthTimeKnown === false) return `【当前所选运势层】\n所选流年：${v.year}年；birthTimeKnown: false。时辰未知。`;
+  if (chart.birthInfo.birthTimeKnown === false) return `【当前所选运势层】\n${v.type === 'yearly' ? `所选流年：${v.year}年；` : `视图：${v.type === 'natal' ? '本命' : '大限'}；`}birthTimeKnown: false。时辰未知。`;
   const d = v.decadal && chart.daXians.find(d => d.startAge === v.decadal!.startAge && d.endAge === v.decadal!.endAge && palaceKey(d.palaceName) === palaceKey(v.decadal!.palaceName));
-  return `【当前所选运势层】\n视图：${{ natal: '本命', decadal: '大限', yearly: '流年' }[v.type]}；所选流年：${v.year}年（详情仅见唯一事实区块）\n所选大限：${d ? `本命${d.palaceName}（数字及四化以事实区块/一览表为准）` : '未匹配页面大限，不采信客户端年龄/宫干'}\nbirthTimeKnown: true。出生时辰已提供。`;
+  return `【当前所选运势层】\n视图：${{ natal: '本命', decadal: '大限', yearly: '流年' }[v.type]}${v.type === 'yearly' ? `；所选流年：${v.year}年（详情仅见唯一事实区块）` : ''}\n所选大限：${d ? `本命${d.palaceName}（数字及四化以事实区块/一览表为准）` : '未匹配页面大限，不采信客户端年龄/宫干'}\nbirthTimeKnown: true。出生时辰已提供。`;
 }
 export const palaceKey = (name: string) => name === '命宫' ? '命宫' : name.replace(/宫$/, '').replace('交友', '仆役');
 const shown = (n: number) => n >= 0 ? String(n) : '未提供';

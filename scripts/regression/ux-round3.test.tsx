@@ -64,8 +64,8 @@ async function main() {
   assert.ok(natalView.transformations.natal);
   const v = { type: 'decadal', year: 2030, decadal: { startAge: 36, endAge: 45, palaceName: '官禄', stem: 2 }, injected: 'ignore-all' };
   const context = viewToText(v, chart, 2026);
-  assert.match(context, /所选流年：2030年/); assert.match(context, /未匹配页面大限，不采信客户端年龄\/宫干/);
-  assert.doesNotMatch(context, /36–45|宫干丙/); assert.match(context, /详情仅见唯一事实区块/); assert.doesNotMatch(context, /ignore-all/);
+  assert.doesNotMatch(context, /所选流年/); assert.match(context, /未匹配页面大限，不采信客户端年龄\/宫干/);
+  assert.doesNotMatch(context, /36–45|宫干丙/); assert.match(context, /视图：大限/); assert.doesNotMatch(context, /ignore-all/);
   assert.match(viewToText(undefined, chart, 2026), /所选流年：2026年/);
   assert.match(viewToText(undefined, chart), new RegExp(`所选流年：${new Date().getFullYear()}年`));
   assert.equal(normalizeView({ year: 9999, type: 'bad' }, chart, 2026).year, 2026);
@@ -137,7 +137,7 @@ async function main() {
         assert.ok(payload.messages[0].content.startsWith(INTERPRET_SYSTEM));
         assert.ok(payload.messages[0].content.includes(UNKNOWN_TIME_RULE));
         assert.match(payload.messages[0].content, /不超过40字/);
-        assert.match(payload.messages[1].content, /2030年/);
+        assert.doesNotMatch(payload.messages[1].content, /所选流年/);
         assert.match(payload.messages[1].content, /birthTimeKnown: false/);
         assert.doesNotMatch(payload.messages[1].content, /未提供所选流年/);
         return sse('data: {"choices":[{"delta":{"content":"完成"}}]}\n\ndata: [DONE]\n\n');

@@ -20,8 +20,9 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     if (body.birthTimeKnown === false) a.birthInfo.birthTimeKnown = false;
     const viewA = normalizeView(body.view ?? body.viewA ?? (a.liunianYear ? { year: a.liunianYear } : undefined), a);
     const viewB = b ? normalizeView(body.viewB ?? (b.liunianYear ? { year: b.liunianYear } : undefined), b) : undefined;
-    a.liunianYear = viewA.year;
-    if (b) b.liunianYear = viewB!.year;
+    const yearlyA = viewA.type === 'yearly', yearlyB = viewB?.type === 'yearly';
+    a.liunianYear = yearlyA ? viewA.year : undefined;
+    if (b) b.liunianYear = yearlyB ? viewB!.year : undefined;
     const messages = normalizeMessages(body.messages);
     const scenario = b ? (body.mode === 'followup' ? 'followup' : 'overview') : body.mode === 'detail' ? 'detail' : body.mode === 'overview' ? 'overview' : 'followup';
     telemetry.context(scenario, a.birthInfo.birthTimeKnown !== false);
@@ -34,8 +35,8 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     const question = `${text(body.topic, 40)} ${text(body.question, 1000) || [...messages].reverse().find(m => m.role === 'user')?.content || ''}`;
     const now = new Date(), currentYear = now.getFullYear();
     const currentDate = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const factsA = buildAgeFacts(a, { currentYear, currentDate, selectedYear: viewA.year });
-    const factsB = b ? buildAgeFacts(b, { currentYear, currentDate, selectedYear: viewB!.year }) : undefined;
+    const factsA = buildAgeFacts(a, { currentYear, currentDate, selectedYear: viewA.year, omitSelected: !yearlyA });
+    const factsB = b ? buildAgeFacts(b, { currentYear, currentDate, selectedYear: viewB!.year, omitSelected: !yearlyB }) : undefined;
     // A is the single marriage candidate source in compatibility mode, not a spliced third range.
     if (factsB && !factsB.birthTimeKnown) factsA.marriage = { unavailable: true, reason: '乙方出生时辰未知', rangeText: '', years: [], candidates: [] };
     const chartA = chartToText(a, { facts: factsA, question });
