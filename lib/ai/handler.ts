@@ -7,6 +7,7 @@ import { retrieveKnowledge } from './knowledge';
 import { INTERPRET_SYSTEM, HEMING_SYSTEM, systemForTime } from './prompts';
 import { checkOrigin, checkRateLimit } from './rate-limit';
 import { AiTelemetry } from './telemetry';
+import { detectDatasetTopic, getDatasetReference } from './dataset-reference';
 
 export async function handleAi(request: Request, mode: 'interpret' | 'heming'): Promise<Response> {
   // Leave 3 seconds before the routes' 60-second limit for stream cleanup/errors.
@@ -42,11 +43,15 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     const chartA = chartToText(a, { facts: factsA, question });
     const chartB = b ? chartToText(b, { facts: factsB, question: isHealthQuestion(question) ? '健康' : '' }) : undefined;
     const references = retrieveKnowledge(a, b);
+    const topic = mode === 'interpret' && !b ? detectDatasetTopic(scenario, !!b, messages) : null;
+    const dataset = topic ? await getDatasetReference(a, topic) : undefined;
+    if (dataset) telemetry.dataset(dataset.hit, dataset.ms);
     // Place client-provided chart/reference data in a user message, never interpolate into system instructions.
     const context = b
       ? `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chartA, chartB, selectedViewA: viewToText(viewA, a), selectedViewB: viewToText(viewB, b), reportSummary: text(body.reportSummary, 1600), crossTransformations: crossTransformations(a, b), references, glossary: glossaryForChart(`${chartA}\n${chartB}\n${references}`) })}`
-      : `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chart: chartA, selectedView: viewToText(viewA, a), references, glossary: glossaryForChart(`${chartA}\n${references}`) })}`;
-    const upstream = await streamDeepSeek(request, `${systemForTime(b ? HEMING_SYSTEM : INTERPRET_SYSTEM, a.birthInfo.birthTimeKnown === false || b?.birthInfo.birthTimeKnown === false)}\n【本次篇幅硬约束】${lengthRule}`, [
+      : `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chart: chartA, selectedView: viewToText(viewA, a), references, glossary: glossaryForChart(`${chartA}\n${references}`), ...(dataset?.text ? { referenceReading: dataset.text } : {}) })}`;
+    const datasetRule = dataset?.text ? '\n【参考解读】数据里的 referenceReading 只是措辞与方向的参考，优先级低于命盘事实与事实区块：与命盘事实、四化来源标注、年份年龄、字数/首句/格式规则冲突时一律以后者为准；只吸收与本盘星曜相符的部分，不照抄原句，不提及“参考解读”本身，不引用其中任何年龄、年份、婚期。' : '';
+    const upstream = await streamDeepSeek(request, `${systemForTime(b ? HEMING_SYSTEM : INTERPRET_SYSTEM, a.birthInfo.birthTimeKnown === false || b?.birthInfo.birthTimeKnown === false)}${datasetRule}\n【本次篇幅硬约束】${lengthRule}`, [
       { role: 'user', content: context },
       ...(b ? [...messages, { role: 'user' as const, content: text(body.question, 1000) || '请分析双方的相处模式与建议。' }] : messages.length ? messages : [{ role: 'user' as const, content: text(body.question, 1000) || '请解读这张命盘的核心特点和实际建议。' }]),
     ], Math.max(1, deadline - Date.now()), maxTokens, telemetry);

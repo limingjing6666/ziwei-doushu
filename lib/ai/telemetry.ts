@@ -11,6 +11,9 @@ export class AiTelemetry {
   truncated = false;
   private finishReason?: string;
   private requested = false;
+  private datasetHit = false;
+  private datasetMs = 0;
+  dataset(hit: boolean, ms: number) { this.datasetHit = hit === true; this.datasetMs = Number.isFinite(ms) ? Math.max(0, ms) : 0; }
   constructor(readonly route: 'interpret' | 'heming') {}
   context(mode: string, timeKnown: boolean) { this.requested = true; syslog('info', 'ai.request', { requestId: this.requestId, route: this.route, mode, timeKnown }); }
   begin() { this.upstreamStart = Date.now(); }
@@ -44,7 +47,7 @@ export class AiTelemetry {
         for (const line of lines) if (line.startsWith('data: ')) { try { const data = JSON.parse(line.slice(6)); const content = data.delta?.text; if (typeof content === 'string') outputChars += content.length; if (data.error) telemetry.error(new Error('stream failed')); } catch {} }
         controller.enqueue(chunk);
       },
-      flush() { syslog('info', 'ai.done', { requestId: telemetry.requestId, route: telemetry.route, status: 200, durationMs: Date.now() - telemetry.start, ttfbMs: telemetry.first ? telemetry.first - telemetry.start : null, upstreamMs: telemetry.upstreamMs, promptTokens: telemetry.usage.prompt_tokens, completionTokens: telemetry.usage.completion_tokens, totalTokens: telemetry.usage.total_tokens, cacheHitTokens: telemetry.usage.prompt_cache_hit_tokens, cacheMissTokens: telemetry.usage.prompt_cache_miss_tokens, outputChars, truncated: telemetry.truncated, finishReason: telemetry.finishReason }); },
+      flush() { syslog('info', 'ai.done', { requestId: telemetry.requestId, route: telemetry.route, status: 200, durationMs: Date.now() - telemetry.start, ttfbMs: telemetry.first ? telemetry.first - telemetry.start : null, upstreamMs: telemetry.upstreamMs, promptTokens: telemetry.usage.prompt_tokens, completionTokens: telemetry.usage.completion_tokens, totalTokens: telemetry.usage.total_tokens, cacheHitTokens: telemetry.usage.prompt_cache_hit_tokens, cacheMissTokens: telemetry.usage.prompt_cache_miss_tokens, outputChars, truncated: telemetry.truncated, finishReason: telemetry.finishReason, datasetHit: telemetry.datasetHit, datasetMs: telemetry.datasetMs }); },
     });
     return new Response(response.body.pipeThrough(counter), { status: response.status, headers });
   }
