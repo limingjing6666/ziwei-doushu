@@ -81,7 +81,7 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
         </div>}
         {!messages.length && <p className="py-6 text-[13px] text-ink-3">命盘已生成。先看看宫位简介，再选一个想了解的话题；以下话题会请求 AI。</p>}
         <div className="space-y-4" aria-live="polite">{messages.map((m, i) => m.role === 'user' && m.hidden ? null : m.role === 'user' ? <div key={i} className="flex justify-end"><p className="max-w-[85%] break-words rounded-sm border border-line/20 bg-surface-2 px-3 py-2 text-[13px] text-ink-2">{m.content}</p></div> : <div key={i}><p className="mb-1.5 text-xs text-ink-3">命理解读</p><AiProse text={m.content} streaming={loading && i === messages.length - 1} /></div>)}</div>
-        {loading && <AiLoading />}
+        {loading && !messages[last.current?.index ?? -1]?.content && <AiLoading />}
         <AiErrorNotice error={error} loading={loading} retry={() => { if (last.current) void execute(last.current.payload, last.current.index); }} />
       </div>
       <form className="shrink-0 border-t border-line/12 px-3 py-2.5 sm:px-4" onSubmit={e => { e.preventDefault(); send(input); }}>

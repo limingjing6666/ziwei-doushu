@@ -716,7 +716,7 @@ colors: {
 | 全局壳层 | `SiteHeader`（4 项导航 + 当前项朱砂下划线 + 主题切换 + 排盘 CTA + 移动菜单）、`SiteFooter`（产品/条款/数据署名/免责）、`MobileTabBar`（4 项）、skip link、`not-found` / `error` / `global-error` / `loading` |
 | UI 原语 | Button / IconButton / Card / Badge / SiHuaBadge / Field / Input / Select / SegmentedControl / Tabs / Disclosure / Breadcrumb / PageHeader / SectionHeading / EmptyState / Skeleton / Spinner / AiProse / `cn` |
 | 首页 | 5 段式（Hero + 静态示例盘 / 三步 / 三层读法 / 古籍引文 / 双入口 + FAQ + 署名），server component，约 4.6 屏；删除星空 canvas、光晕、渐变文字、满高 section、framer-motion |
-| 起盘页 | 桌面 40/60 两栏（左 sticky 说明/步骤/隐私/FAQ，右表单卡）+ 移动端单列；表单拆成 5 个子组件；真太阳时换算沿用原逻辑；隐私文案改为「在本机完成排盘，姓名与城市不会发送给 AI」；去掉误导性进度条，改「必填项：出生日期 / 信息已齐全」文字状态 |
+| 起盘页 | 桌面 40/60 两栏（左 sticky 说明/步骤/隐私/FAQ，右表单卡）+ 移动端单列；表单拆成 5 个子组件；真太阳时换算沿用原逻辑；去掉误导性进度条，改「必填项：出生日期 / 信息已齐全」文字状态 |
 | 结果页 | 命盘信息条 + 桌面两栏（4×4 印刷表格命盘 + 右 AI 解读）；宫位为可聚焦 button + 完整 aria-label；选中/三方四正朱砂细线与极浅底；中央信息区；TimeNav 受控单实例；移动端 <640px 隐藏辅煞、信息条压缩至 ~192px |
 | 合盘页 | 桌面 A/B 双卡 + 中间竖线「合」印 + 常显分析卡（空态/加载/流式/错误）+ 追问区；移动端单列；原 fetch/abort/追问逻辑保持不变 |
 | 知识库 | 索引去重为 14 星印章卡 + 13 宫 chips + 推荐阅读 + 古籍入口；详情页 xl 三栏（左目录 / 中 680 正文 / 右 CTA + 内链 + 数据署名），移动端 details 折叠；182 页 URL/metadata/JSON-LD/内链全部保留；深色白底 bug 消除 |

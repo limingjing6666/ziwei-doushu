@@ -45,12 +45,6 @@ export function buildSiHuaOverlay(stemIndex: number): Record<string, string> {
   };
 }
 
-const VIEW_OPTIONS: SegmentedOption<TimeView>[] = [
-  { value: "mingpan", label: "本命" },
-  { value: "daxian", label: "大限" },
-  { value: "liunian", label: "流年" },
-];
-
 const SIHUA_ORDER = ["禄", "权", "科", "忌"] as const;
 
 /** 运限切换：本命 / 大限 / 流年 + 流年年份步进 + 叠加四化说明。 */
@@ -62,6 +56,11 @@ export default function TimeNav({
   onYearChange,
 }: TimeNavProps) {
   const currentDx = chart.daXians[chart.currentDaXianIndex];
+  const viewOptions: SegmentedOption<TimeView>[] = [
+    { value: "mingpan", label: "本命" },
+    { value: "daxian", label: currentDx ? `大限 ${currentDx.startAge}–${currentDx.endAge}` : "大限" },
+    { value: "liunian", label: "流年" },
+  ];
 
   const overlayInfo = ((): { stemName: string; overlay: Record<string, string> } | null => {
     if (view === "mingpan") return null;
@@ -98,7 +97,7 @@ export default function TimeNav({
         <div className="flex min-w-0 items-center gap-2">
           <span className="hidden text-[12px] tracking-[0.16em] text-ink-3 sm:inline">运限</span>
           <SegmentedControl<TimeView>
-            options={VIEW_OPTIONS}
+            options={viewOptions}
             value={view}
             onChange={onViewChange}
             ariaLabel="运限视图"

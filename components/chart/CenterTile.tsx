@@ -9,7 +9,7 @@ export default function CenterTile({ chart }: { chart: ZiweiChart }) {
 
   return (
     <div className="flex w-full flex-col items-center justify-center gap-3 px-3 py-4 text-center">
-      <span className="text-[12px] tracking-[0.3em] text-ink-3">本命盘</span>
+      <span className="text-[12px] tracking-[0.3em] text-ink-3">紫微斗数</span>
       <span aria-hidden="true" className="h-px w-8 bg-line/25" />
 
       <div className="flex items-center justify-center gap-3">
