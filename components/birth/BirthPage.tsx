@@ -3,7 +3,6 @@
 import type { BirthInfo } from "@/lib/ziwei/types";
 import { Card } from "@/components/ui/Card";
 import { Disclosure } from "@/components/ui/Disclosure";
-import { IconInfo } from "@/components/icons";
 import BirthForm, { type BirthFormState } from "./BirthForm";
 
 const STEPS = [
@@ -93,13 +92,6 @@ export default function BirthPage({ onStart, initialData, onFormSave }: BirthPag
                   </li>
                 ))}
               </ol>
-            </div>
-
-            <div className="mt-6 flex items-start gap-2.5 rounded-sm border border-line/12 bg-surface px-3.5 py-3">
-              <IconInfo size={16} className="mt-0.5 shrink-0 text-ink-3" />
-              <p className="text-[12.5px] leading-[1.75] text-ink-2">
-                在本机完成排盘，姓名与城市不会发送给 AI。
-              </p>
             </div>
 
             <div className="mt-8">
