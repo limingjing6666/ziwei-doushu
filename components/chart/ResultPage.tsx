@@ -50,7 +50,7 @@ export default function ResultPage({ chart, onReset }: ResultPageProps) {
 
         <aside
           aria-label="AI 解读"
-          className="min-w-0 lg:sticky lg:top-[calc(var(--header-h)+1.5rem)]"
+          className="min-w-0"
         >
           <StarDetailPanel star={selectedStar} palaceName={selectedPalace?.name} onClose={() => setSelectedStar(null)} />
           <InsightPanel
@@ -59,7 +59,7 @@ export default function ResultPage({ chart, onReset }: ResultPageProps) {
             selectedStar={selectedStar}
             selectedSiHua={selectedSiHua}
             view={buildAiView(chart, view, year)}
-            className="min-h-[420px] max-h-[calc(100vh-var(--header-h)-2rem)]"
+            className="min-h-[420px]"
           />
         </aside>
       </div>
