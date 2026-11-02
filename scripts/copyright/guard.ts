@@ -153,9 +153,10 @@ export const isTextTarget = (path: string) => /\.(?:[cm]?[jt]sx?|json|map|md|txt
 
 export function scan(root = process.cwd()) {
   const source = loadFingerprints();
-  // The tracked tree is the boundary, including scripts, CI, licenses and comments.
-  const targets = execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' }).split('\0')
-    .filter(Boolean).map(p => join(root, p))
+  // Include new text artifacts before staging too. Configuration files are never
+  // content targets: do not read local environment files (including examples).
+  const targets = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: root, encoding: 'utf8' }).split('\0')
+    .filter(p => p && !/(?:^|\/)\.env[^/]*$/.test(p)).map(p => join(root, p))
     .filter(p => existsSync(p) && (isTextTarget(p) || !readFileSync(p).includes(0)));
   const units = targets.flatMap(p => collectFile(p));
   const failures = units.map(u => ({ ...u, result: check(u.text, source) })).filter(u => u.result.failed);
