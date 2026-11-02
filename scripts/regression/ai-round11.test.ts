@@ -7,6 +7,7 @@ import keys from './fixtures/round11-charts300.json';
 import { matchesStarRule, normalizeReferenceText, rulePalaces, ruleReferences, type StoredRule } from '../../lib/ai/star-rules';
 import { knowledgeRuleReferences, retrieveKnowledge, safeReference } from '../../lib/ai/knowledge';
 import { palaceKey } from '../../lib/ai/chart-to-text';
+import { normalizeChart } from '../../lib/ai/input';
 import { retrieveMethod } from '../../lib/ziwei/method/retrieve';
 import buildStats from '../build-star-rules/stats.json';
 import { check, collectFile, loadFingerprints } from '../copyright/guard';
@@ -89,6 +90,11 @@ const paired = knowledgeRuleReferences(fixtures[0], fixtures[2]);
 assert.ok(paired.some(r => r.reference.startsWith('A')) && paired.some(r => r.reference.startsWith('B')));
 assert.ok(joined(paired).length <= 800 && paired.length <= 6);
 assert.ok(knowledgeRuleReferences(fixtures[0], { ...fixtures[1], birthInfo: { ...fixtures[1].birthInfo, birthTimeKnown: false } }).every(r => r.reference.startsWith('A')));
+
+const requestChart = normalizeChart(JSON.parse(JSON.stringify(fixtures[2])));
+const requestBorrowed = knowledgeRuleReferences(requestChart).find(r => r.key === 'bpair|官禄|天机|右弼|');
+assert.ok(requestBorrowed, 'C chart retains its borrowed career rule after request normalization');
+assert.ok(retrieveKnowledge(requestChart).includes(requestBorrowed.reference));
 
 const empty = fixtures[2].palaces.find(p => palaceKey(p.name) === '命宫')!;
 assert.equal(empty.stars.filter(s => s.type === 'major').length, 0);

@@ -6,15 +6,6 @@
  * 由 isValidDate 判定「X 月没有 Y 日」）。
  */
 
-export const YEAR_MIN = 1900;
-export const YEAR_MAX = 2026;
-
-/** 年份下拉：由近到远（2026 → 1900），与旧实现的顺序一致。 */
-export const YEAR_OPTIONS: number[] = Array.from(
-  { length: YEAR_MAX - YEAR_MIN + 1 },
-  (_, index) => YEAR_MAX - index,
-);
-
 export const MONTH_OPTIONS: number[] = Array.from({ length: 12 }, (_, index) => index + 1);
 
 export const DAY_OPTIONS: number[] = Array.from({ length: 31 }, (_, index) => index + 1);
