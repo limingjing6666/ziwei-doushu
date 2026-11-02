@@ -20,6 +20,7 @@ export function normalizeChart(raw: unknown): ZiweiChart & { liunianYear?: numbe
   const lunar = isObject(raw.lunarInfo) ? raw.lunarInfo : {};
   const palaces: Palace[] = list(raw.palaces, 12).map(p => ({
     name: palaceName(p.name), branch: index(p.branch, 12), stem: index(p.stem, 10),
+    oppositeBranch: index(p.oppositeBranch, 12) >= 0 ? index(p.oppositeBranch, 12) : undefined,
     stars: list(p.stars, 60).map(s => ({
       name: text(s.name, 20),
       type: ['major', 'lucky', 'sha', 'minor'].includes(text(s.type)) ? s.type as Star['type'] : 'minor',
