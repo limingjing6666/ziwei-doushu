@@ -1,12 +1,12 @@
-name: 正式站问题 / metisziwei.com issue
-description: 线上网站（metisziwei.com）登录、支付、显示等问题
+name: 网站问题 / Site issue
+description: 天机盘页面显示、排盘或 AI 解读等使用问题
 labels: ["bug"]
 body:
   - type: input
     id: url
     attributes:
       label: 出问题的页面地址
-      placeholder: https://metisziwei.com/……
+      placeholder: https://tianjipan.tech/……
     validations:
       required: true
   - type: textarea

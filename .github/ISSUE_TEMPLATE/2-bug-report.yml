@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        先确认：开源版**不含**任何 `/api/*` 后端接口（AI 解读、合盘分析），这些功能出现 404 是预期行为，需要你自己实现，见 README「快速开始」。排盘本身不需要 API Key。
+        本仓库包含 AI 解读和合盘 API，运行配置见 README。排盘本身不需要 API Key。
   - type: textarea
     id: steps
     attributes:

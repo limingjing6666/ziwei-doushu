@@ -5,7 +5,7 @@ import type { ZiweiChart } from '@/lib/ziwei/types';
 import { normalizeChart, normalizeView } from './input';
 import { isMarriageQuestion, isHealthQuestion } from './intent';
 
-export { isMarriageQuestion, isHealthQuestion, isNumericSensitive } from './intent';
+export { isMarriageQuestion, isHealthQuestion } from './intent';
 
 export function ageFactsToText(f: AgeFacts, question = ''): string {
   const dx = f.currentDecadal, selected = f.selected;

@@ -20,29 +20,6 @@ export const SHICHEN = [
   { branch: 11, name: '亥时', range: '21:00-23:00' },
 ];
 
-// 十二宫名顺序；地支索引从命宫起每减 1 前进一宫（排盘界面为逆时针）
-export const PALACE_NAMES_ORDER = [
-  '命宫', '兄弟宫', '夫妻宫', '子女宫', '财帛宫', '疾厄宫',
-  '迁移宫', '交友宫', '官禄宫', '田宅宫', '福德宫', '父母宫'
-];
-
-// 纳音五行（30组干支对的五行）
-export const NAYIN_ELEMENTS = [
-  '金','火','木','土','金','火','水','土','金','木',
-  '水','土','火','木','水','金','火','木','土','金',
-  '火','水','土','金','木','水','土','火','木','水'
-];
-
-// 五行 → 局数
-export const ELEMENT_TO_JU: Record<string, number> = {
-  '水': 2, '木': 3, '金': 4, '土': 5, '火': 6
-};
-
-// 局数名称
-export const JU_NAMES: Record<number, string> = {
-  2: '水二局', 3: '木三局', 4: '金四局', 5: '土五局', 6: '火六局'
-};
-
 // 四化表（年干 → [化禄, 化权, 化科, 化忌]）
 export const SI_HUA_TABLE: Record<number, [string, string, string, string]> = {
   0: ['廉贞', '破军', '武曲', '太阳'],   // 甲
@@ -57,20 +34,6 @@ export const SI_HUA_TABLE: Record<number, [string, string, string, string]> = {
   9: ['破军', '巨门', '太阴', '贪狼'],   // 癸
 };
 
-// 天魁天钺表（年干 → [天魁branch, 天钺branch]）
-export const TIANKUI_TABLE: Record<number, [number, number]> = {
-  0: [1, 7],   // 甲: 魁丑 钺未
-  1: [0, 8],   // 乙: 魁子 钺申
-  2: [11, 9],  // 丙: 魁亥 钺酉
-  3: [11, 9],  // 丁: 魁亥 钺酉
-  4: [1, 7],   // 戊: 魁丑 钺未
-  5: [0, 8],   // 己: 魁子 钺申
-  6: [1, 7],   // 庚: 魁丑 钺未
-  7: [6, 2],   // 辛: 魁午 钺寅
-  8: [3, 5],   // 壬: 魁卯 钺巳
-  9: [3, 5],   // 癸: 魁卯 钺巳
-};
-
 // 禄存表（年干 → 禄存branch）
 export const LUCUN_TABLE: Record<number, number> = {
   0: 2,   // 甲: 寅
@@ -83,23 +46,6 @@ export const LUCUN_TABLE: Record<number, number> = {
   7: 9,   // 辛: 酉
   8: 11,  // 壬: 亥
   9: 0,   // 癸: 子
-};
-
-// 天马表（年支三合 → 天马branch）
-// 寅午戌→申, 申子辰→寅, 巳酉丑→亥, 亥卯未→巳
-export const TIANMA_TABLE: Record<number, number> = {
-  2: 8,   // 寅年 → 申
-  6: 8,   // 午年 → 申
-  10: 8,  // 戌年 → 申
-  8: 2,   // 申年 → 寅
-  0: 2,   // 子年 → 寅
-  4: 2,   // 辰年 → 寅
-  5: 11,  // 巳年 → 亥
-  9: 11,  // 酉年 → 亥
-  1: 11,  // 丑年 → 亥
-  11: 5,  // 亥年 → 巳
-  3: 5,   // 卯年 → 巳
-  7: 5,   // 未年 → 巳
 };
 
 // ★ 所有星曜亮度（主星 + 辅星）已迁移到 algorithm.ts → astro.config({ brightness })

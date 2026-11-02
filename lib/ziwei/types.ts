@@ -113,8 +113,6 @@ export interface ZiweiChart {
   daXians: DaXian[];
   currentAge: number;
   currentDaXianIndex: number;
-  /** Signed analysis-cache eligibility marker assigned by /api/generate. */
-  analysisCacheProfile?: string;
   /** 命主星（按命宫地支查表） */
   mingZhu?: string;
   /** 身主星（按生年地支查表） */
