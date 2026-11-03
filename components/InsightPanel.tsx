@@ -78,11 +78,11 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
   };
   const send = sendTo(activeTopic);
   useEffect(() => scheduleAutoOverview(overviewSent.current, chart, () => {
-    setActiveTopic('overview');
     const saved = loadTopics(chart);
-    setTopics({ ...EMPTY_TOPICS, ...saved });
+    setActiveTopic(saved.active ?? 'overview');
+    setTopics({ ...EMPTY_TOPICS, ...saved.topics });
     const send = sendTo('overview', []);
-    if (!saved.overview?.length) send(TOPICS[0][2], 'overview', true, true);
+    if (!saved.topics.overview?.length) send(TOPICS[0][2], 'overview', true, true);
     // Only a new chart triggers this effect; selection/view changes remain manual.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [chart]);
@@ -102,16 +102,16 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
       <div className="flex shrink-0 flex-wrap gap-1.5 border-b border-line/12 px-3 py-2 sm:px-4">
         {TOPICS.map(([key, label, question]) => {
           const send = sendTo(key);
-          return <button key={key} type="button" disabled={topicLoading[key]} aria-pressed={activeTopic === key} onClick={() => { setActiveTopic(key); if (!topics[key].length && !request.current.has(key)) send(question, 'overview', true, true); }} className={cn('inline-flex h-9 items-center rounded-sm border px-2.5 text-[12px] transition-colors disabled:opacity-45', activeTopic === key ? 'border-cinnabar/35 bg-cinnabar/8 font-medium text-cinnabar' : 'border-line/20 text-ink-2 hover:bg-surface-2')}>{label}</button>;
+          return <button key={key} type="button" disabled={topicLoading[key]} aria-pressed={activeTopic === key} onClick={() => { setActiveTopic(key); saveTopics(chart, {}, key); if (!topics[key].length && !request.current.has(key)) send(question, 'overview', true, true); }} className={cn('inline-flex h-9 items-center rounded-sm border px-2.5 text-[12px] transition-colors disabled:opacity-45', activeTopic === key ? 'border-cinnabar/35 bg-cinnabar/8 font-medium text-cinnabar' : 'border-line/20 text-ink-2 hover:bg-surface-2')}>{label}</button>;
         })}
-        <Button variant="secondary" size="sm" className="ml-auto" disabled={loading} onClick={() => sendTo(activeTopic, [])(TOPICS.find(([key]) => key === activeTopic)![2], 'overview', true, true, true)}>重新解读</Button>
+        <Button variant="secondary" size="sm" className="ml-auto" disabled={loading} onClick={() => { if (window.confirm('重新解读会替换这个板块现在的内容和追问，确定吗？')) sendTo(activeTopic, [])(TOPICS.find(([key]) => key === activeTopic)![2], 'overview', true, true, true); }}>重新解读</Button>
       </div>
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-3 py-3 sm:px-4">
         {(selectedPalace || selectedSiHua) && <div className="rounded-sm border border-line/20 bg-surface-2 p-3 text-sm text-ink-2" aria-label="简介">
           {selectedPalace && <><h3><Term name={selectedPalace.name} /></h3><p className="my-2">{termDescription(selectedPalace.name)}</p><p>主星：{selectedPalace.stars.filter(s => s.type === 'major').map(s => s.name).join('、') || '空宫，可参考对宫主星'}</p></>}
           {selectedStar && <p className="my-2"><Term name={selectedStar.name} />：{termDescription(selectedStar.name)}</p>}
           {selectedSiHua && <p><Term name={`化${selectedSiHua.siHua}`} />：{termDescription(`化${selectedSiHua.siHua}`)}</p>}
-          <Button variant="secondary" className="mt-3" disabled={loading || !!topicLoading.overview} onClick={() => { setActiveTopic('overview'); const send = sendTo('overview'); send(localQuestion, 'detail', true, true); }}>让 AI 解读{selectedStar ? '这颗星' : selectedSiHua ? '这一四化' : '这一宫'}</Button>
+          <Button variant="secondary" className="mt-3" disabled={loading || !!topicLoading.overview} onClick={() => { setActiveTopic('overview'); saveTopics(chart, {}, 'overview'); const send = sendTo('overview'); send(localQuestion, 'detail', true, true); }}>让 AI 解读{selectedStar ? '这颗星' : selectedSiHua ? '这一四化' : '这一宫'}</Button>
         </div>}
         {!messages.length && <p className="py-6 text-[13px] text-ink-3">命盘已生成。先看看宫位简介，再选一个想了解的话题。</p>}
         <div className="space-y-4" aria-live="polite">{messages.map((m, i) => {

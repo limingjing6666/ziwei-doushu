@@ -17,7 +17,7 @@ const SECTIONS: LegalSection[] = [
 export default function PrivacyPage() {
   return <LegalLayout title="隐私政策" updated="2026年10月31日" sections={SECTIONS} other={{ href: '/terms', label: '服务条款' }}>
     <h2 id="collect" className="scroll-mt-24">1. 出生信息与对话</h2>
-    <p>个人排盘与双方合盘的排盘计算在浏览器中完成。出生日期、时间、性别、选填称呼及地点保留在当前页面内存中；命盘本身不写入 localStorage。AI 解读结果（含你的追问和回答）会按话题保存在你自己浏览器的 localStorage 中，以出生信息的哈希值区分不同命盘，不含姓名和出生地点，也不会上传；之后再排同一张盘时可直接看到。请勿输入不必要的身份、联系方式等敏感信息。</p>
+    <p>排盘在浏览器中完成；填写的出生信息和排出的命盘保存在本次打开的浏览器标签页（sessionStorage）中，刷新页面可恢复，关闭标签页后清除。AI 解读结果与追问对话按话题保存在你自己浏览器的 localStorage 中（只在你的设备上，不上传、不存放在本站服务器），以出生信息的哈希值区分命盘，键名不含姓名和出生地点，最多保留最近 20 张盘的结果；之后再排同一张盘时可直接看到。请勿输入不必要的身份、联系方式等敏感信息。</p>
     <h2 id="use" className="scroll-mt-24">2. 请求 AI 时发送什么</h2>
     <p>只有明确点击 AI 解读话题、解读按钮、提问或开始合盘分析时，浏览器才向本站 AI 接口提交命盘与问题；点击宫位和星曜查看简介不会调用 AI。本站服务端整理出生日期、性别、时辰及其是否已知、星曜宫位、所选年份与大限、最近对话为文本，发送给 DeepSeek 生成回复。合盘追问还会带上原报告摘要。服务端不主动将称呼、出生城市或经度发给 DeepSeek；但你在问题中写出的个人信息可能随对话发送。</p>
     <p>本站 AI 接口没有将命盘及对话持久存入数据库的实现。第三方 AI 服务商可能依其自身政策处理请求，请参阅 <a href="https://cdn.deepseek.com/policies/zh-CN/deepseek-privacy-policy.html" rel="noopener noreferrer">DeepSeek 隐私政策</a>。浏览器会在内存中缓存最近成功的回答，避免同一问题重复请求；各话题的解读另保存在 localStorage 中，可在浏览器设置中清除。</p>
@@ -31,7 +31,7 @@ export default function PrivacyPage() {
     <h2 id="rights" className="scroll-mt-24">5. 你的权利</h2>
     <p>可在浏览器设置中清除本站数据。当前未提供个人数据导出入口，命盘与 AI 解读结果仅保存在你自己的浏览器中。</p>
     <h2 id="cookies" className="scroll-mt-24">6. 浏览器存储与清理</h2>
-    <p>当前页面使用 localStorage 保存主题偏好（ziwei-theme）、是否关闭首次阅读引导（tianjipan-result-guide-v1），以及各话题的 AI 解读结果（键名以 tianjipan-ai-topics-v1 开头）。没有用于登录或保存命盘的本站 cookie。旧版本使用者可能有残留数据；可以在浏览器设置中清除本站存储。禁用浏览器存储不影响本次排盘，但主题和引导偏好可能不能记住。</p>
+    <p>当前页面使用 sessionStorage（tianjipan-chart）在本次标签页内保留排盘表单与命盘，并使用 localStorage 保存主题偏好（ziwei-theme）、是否关闭首次阅读引导（tianjipan-result-guide-v1），以及各话题的 AI 解读结果（键名以 tianjipan-ai-topics-v1 开头，最多保留最近 20 张盘的 AI 解读）。没有用于登录或保存命盘的本站 cookie。旧版本使用者可能有残留数据；可以在浏览器设置中清除本站存储。禁用浏览器存储不影响本次排盘，但主题和引导偏好可能不能记住。</p>
     <h2 id="minors" className="scroll-mt-24">7. 未成年人</h2>
     <p>本站面向成年用户；未成年人应在监护人同意下使用，不得将解读用于重大人生决策。</p>
     <h2 id="changes" className="scroll-mt-24">8. 政策更新</h2>

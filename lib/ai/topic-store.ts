@@ -15,15 +15,27 @@ function storageKey(chart: ZiweiChart) {
   return 'tianjipan-ai-topics-v1:' + (4294967296 * (h2 & 2097151) + (h1 >>> 0)).toString(36);
 }
 
-export function loadTopics(chart: ZiweiChart): Partial<Record<TopicKey, Message[]>> {
-  try { return JSON.parse(localStorage.getItem(storageKey(chart)) ?? '{}'); }
-  catch { return {}; }
+export function loadTopics(chart: ZiweiChart): { topics: Partial<Record<TopicKey, Message[]>>; active?: TopicKey } {
+  try {
+    const saved = JSON.parse(localStorage.getItem(storageKey(chart)) ?? '{}');
+    const keys: TopicKey[] = ['overview', 'love', 'career', 'wealth', 'health', 'personality'];
+    return { topics: Object.fromEntries(keys.filter(key => saved[key]).map(key => [key, saved[key]])), active: keys.includes(saved.active) ? saved.active : undefined };
+  }
+  catch { return { topics: {} }; }
 }
 
-export function saveTopics(chart: ZiweiChart, topics: Partial<Record<TopicKey, Message[]>>) {
+export function saveTopics(chart: ZiweiChart, topics: Partial<Record<TopicKey, Message[]>>, active?: TopicKey) {
   try {
     const key = storageKey(chart);
     const saved = JSON.parse(localStorage.getItem(key) ?? '{}');
-    localStorage.setItem(key, JSON.stringify({ ...saved, ...topics }));
+    localStorage.setItem(key, JSON.stringify({ ...saved, ...topics, ...(active ? { active } : {}), updated: Date.now() }));
+    const keys = Object.keys(localStorage).filter(key => key.startsWith('tianjipan-ai-topics-v1:'));
+    if (keys.length > 20) {
+      const records = keys.map(key => {
+        const updated = JSON.parse(localStorage.getItem(key)!).updated;
+        return { key, updated: typeof updated === 'number' && Number.isFinite(updated) ? updated : 0 };
+      }).sort((a, b) => a.updated - b.updated);
+      for (const record of records.slice(0, records.length - 20)) localStorage.removeItem(record.key);
+    }
   } catch {}
 }
