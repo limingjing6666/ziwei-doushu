@@ -19,10 +19,11 @@ export function fingerprint(texts: string[]): Fingerprints {
     ten: new Set(texts.flatMap(t => grams(t, 10).map(digest))) };
 }
 export function check(text: string, source: Fingerprints) {
+  const branches = '子丑寅卯辰巳午未申酉戌亥'; // Generic plain 十二地支 order.
   const eight = grams(text, 8);
-  const overlap = eight.filter(g => source.eight.has(digest(g))).length;
+  const overlap = eight.filter(g => !branches.includes(g) && source.eight.has(digest(g))).length;
   const ratio = eight.length ? overlap / eight.length : 0;
-  const continuous = grams(text, 10).some(g => source.ten.has(digest(g)));
+  const continuous = grams(text, 10).some(g => !branches.includes(g) && source.ten.has(digest(g)));
   return { failed: continuous || ratio > 0.1, continuous, ratio, overlap, windows: eight.length };
 }
 

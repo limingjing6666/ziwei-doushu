@@ -11,6 +11,10 @@ assert.equal(check(sample.repeat(2), source).failed, true);
 assert.equal(check(sample.slice(0, 8), source).ratio, 1);
 assert.equal(check(sample.slice(0, 7), source).failed, false);
 assert.equal(check('开窗看云吹风读书做饭', source).failed, false);
+const branches = '子丑寅卯辰巳午未申酉戌亥';
+const branchSource = fingerprint([branches]);
+assert.equal(check(branches, branchSource).failed, false);
+assert.equal(check('甲' + branches + '乙', fingerprint(['甲' + branches + '乙'])).failed, true);
 // Exactly 10% is allowed, greater than 10% fails (window count, not unique grams).
 const eightOnly = fingerprint([sample.slice(0, 8)]);
 assert.equal(check(sample.slice(0, 8) + '风'.repeat(9), eightOnly).ratio, 0.1);
