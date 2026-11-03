@@ -83,11 +83,11 @@ async function autoOverview() {
     await wait(10); assert.equal(calls, 3, 'failed auto overview never starts a retry loop');
     send(); await pending; assert.equal(calls, 4, 'explicit retry remains possible');
   } finally { globalThis.fetch = originalFetch; }
-  assert.match(panel, /useEffect\(\(\) => scheduleAutoOverview\(overviewSent.current, chart, \(\) => \{\s*setActiveTopic\('overview'\);\s*send\(TOPICS\[0\]\[2\], 'overview', true, true\);[\s\S]*?\}\), \[chart\]\)/);
+  assert.match(panel, /useEffect\(\(\) => scheduleAutoOverview\(overviewSent.current, chart, \(\) => \{\s*const saved = loadTopics\(chart\);\s*setActiveTopic\(saved.active \?\? 'overview'\);\s*setTopics\(\{ \.\.\.EMPTY_TOPICS, \.\.\.saved.topics \}\);\s*const send = sendTo\('overview', \[\]\);\s*if \(!saved.topics.overview\?\.length\) send\(TOPICS\[0\]\[2\], 'overview', true, true\);[\s\S]*?\}\), \[chart\]\)/);
   const effect = panel.match(/useEffect\(\(\) => scheduleAutoOverview[\s\S]*?\}\), \[chart\]\)/)![0];
   assert.doesNotMatch(effect, /selectedPalace|selectedStar|selectedSiHua|\bview\b(?=\s*[,\]])/);
-  assert.equal((panel.match(/useEffect\(/g) ?? []).length, 2, 'only abort cleanup and chart overview effects');
-  assert.match(panel, /useEffect\(\(\) => \(\) => request.current\?\.abort\(\), \[\]\)/);
+  assert.equal((panel.match(/useEffect\(/g) ?? []).length, 3, 'only abort cleanup, chart overview and topic persistence effects');
+  assert.match(panel, /useEffect\(\(\) => \(\) => \{ for \(const controller of request.current.values\(\)\) controller.abort\(\); \}, \[\]\)/);
   assert.match(panel, /aria-pressed=\{activeTopic === key\}/);
   assert.match(panel, /last.current.payload, last.current.index/);
   assert.doesNotMatch(panel, /scrollIntoView|scrollTo|scrollTop/);

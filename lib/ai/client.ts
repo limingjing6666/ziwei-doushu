@@ -43,13 +43,13 @@ export async function consumeAiResponse(response: Response, onText: (text: strin
   throw interrupted();
 }
 
-// Session-memory only: no birth data or conversation is written to browser storage.
+// Session-memory cache; InsightPanel also saves AI answers in localStorage.
 const cache = new Map<string, string>();
-export async function requestAi(endpoint: string, body: Record<string, unknown>, onText: (text: string) => void, signal: AbortSignal): Promise<void> {
+export async function requestAi(endpoint: string, body: Record<string, unknown>, onText: (text: string) => void, signal: AbortSignal, fresh = false): Promise<void> {
   // Follow-ups depend on the complete conversation, not just the final question.
   // Explicit topics/details send a standalone message, so repeated topics still hit.
   const key = JSON.stringify({ endpoint, ...body });
-  if (cache.has(key)) { onText(cache.get(key)!); return; }
+  if (!fresh && cache.has(key)) { onText(cache.get(key)!); return; }
   let result = '';
   try {
     const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal });
