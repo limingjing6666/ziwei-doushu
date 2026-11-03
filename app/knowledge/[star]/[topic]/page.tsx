@@ -190,7 +190,7 @@ export default async function KnowledgePage({
               ) : null}
             </header>
 
-            <div className="prose-cn mt-8">
+            <div className="prose-cn mt-6 [&>section:first-child>h2]:mt-0 [&>section:first-child>h2]:border-t-0 [&>section:first-child>h2]:pt-0">
               {data.parsed.dingdiao ? (
                 <section id="dingdiao" className="scroll-mt-24">
                   <h2>一句话定调</h2>
