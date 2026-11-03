@@ -113,7 +113,7 @@ export default async function BookPage({
             原文来源：<a href={CLASSICS_SOURCE} className="text-cinnabar">维基文库《紫微斗数全书》（{CLASSICS_SOURCE}）</a>，CC BY-SA 4.0，繁转简，未逐字校勘。
           </p>
 
-          <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <div className="mt-6 flex flex-wrap items-baseline justify-between gap-3">
             <h2 className="font-serif text-[20px] font-semibold text-ink">
               章节目录
             </h2>

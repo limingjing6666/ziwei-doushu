@@ -1,20 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BirthPage from "@/components/birth/BirthPage";
 import ResultPage from "@/components/chart/ResultPage";
 import { generateChart } from "@/lib/ziwei/algorithm";
 import type { BirthFormState } from '@/components/BirthForm';
 import type { BirthInfo, ZiweiChart } from "@/lib/ziwei/types";
 
+const SESSION_KEY = 'tianjipan-chart';
+
 /**
- * 排盘页：先出生信息，再命盘结果。
- * 当前为 UI 重构阶段的编排层；结果页复用用户本次输入，刷新后回到起盘页。
+ * 排盘页：先出生信息，再命盘结果；本次浏览会话内保留输入与结果。
  */
 export default function ChartPage() {
   const [form, setForm] = useState<BirthFormState | undefined>();
   const [chart, setChart] = useState<ZiweiChart | null>(null);
+  const [restored, setRestored] = useState(false);
 
+  useEffect(() => {
+    const saved = sessionStorage.getItem(SESSION_KEY);
+    if (saved) {
+      const data = JSON.parse(saved) as { form?: BirthFormState; chart: ZiweiChart | null };
+      setForm(data.form);
+      setChart(data.chart);
+    }
+    setRestored(true);
+  }, []);
+  useEffect(() => {
+    if (restored) sessionStorage.setItem(SESSION_KEY, JSON.stringify({ form, chart }));
+  }, [form, chart, restored]);
+
+  if (!restored) return null;
   if (!chart) {
     return (
       <BirthPage

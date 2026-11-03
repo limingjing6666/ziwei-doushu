@@ -313,6 +313,7 @@ export default function HemingPage() {
         </Card>
       </section>
 
+      {analysis && <div className="mt-6 text-right"><Button variant="secondary" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>回到顶部</Button></div>}
     </div>
   );
 }

@@ -24,7 +24,13 @@ export interface InsightPanelProps {
   view?: AiView;
   className?: string;
 }
-interface Message extends ChatMessage { hidden?: boolean }
+interface Message extends ChatMessage {
+  hidden?: boolean;
+  interpretation?: { view: AiView; question: string; mode: 'overview' | 'detail' | 'followup'; standalone: boolean; hidden: boolean };
+}
+function viewLabel(view: AiView) {
+  return `${{ natal: '本命', decadal: '大限', yearly: '流年' }[view.type]} · ${view.year} 年${view.decadal ? ` · ${view.decadal.startAge}–${view.decadal.endAge} 岁大限` : ''}`;
+}
 const TOPICS = [
   ['overview', '整盘', '【整盘】首句直答整体特点。之后分节：性格底色、主要优势、近期重心、三条建议。'],
   ['love', '感情', '【感情】首句直答关系特点。之后分节：关系期待、双方相处、容易遇到对象、结婚或感情变动的大限/流年依据、三条建议。'],
@@ -41,6 +47,7 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<AiClientError | null>(null);
   const [activeTopic, setActiveTopic] = useState('');
+  const currentView = view ?? { type: 'natal', year: new Date().getFullYear() };
   const overviewSent = useRef(new WeakSet<object>());
   const request = useRef<AbortController | null>(null);
   const last = useRef<{ payload: Record<string, unknown>; index: number } | null>(null);
@@ -52,15 +59,15 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
     last.current = { payload, index };
     setLoading(true); setError(null);
     try {
-      await requestAi('/api/interpret', payload, text => setMessages(prev => prev.map((m, i) => i === index ? { role: 'assistant', content: text } : m)), controller.signal);
+      await requestAi('/api/interpret', payload, text => setMessages(prev => prev.map((m, i) => i === index ? { ...m, content: text } : m)), controller.signal);
     } catch (e) { if (!controller.signal.aborted) setError(classifyAiError(e)); }
     finally { if (request.current === controller) { request.current = null; if (!controller.signal.aborted) setLoading(false); } }
   };
   const send = (question: string, mode: 'overview' | 'detail' | 'followup' = 'followup', standalone = false, hidden = false) => {
     if (!question.trim() || request.current) return;
     const next: Message[] = [...messages, { role: 'user', content: question, hidden }];
-    setMessages([...next, { role: 'assistant', content: '' }]); setInput('');
-    void execute({ chart, messages: (standalone ? next.slice(-1) : next.filter(m => m.content).slice(-12)).map(m => ({ role: m.role, content: m.content.slice(0, 2000) })), view: view ?? { type: 'natal', year: new Date().getFullYear() }, birthTimeKnown: chart.birthInfo.birthTimeKnown !== false, mode }, next.length);
+    setMessages([...next, { role: 'assistant', content: '', interpretation: { view: currentView, question, mode, standalone, hidden } }]); setInput('');
+    void execute({ chart, messages: (standalone ? next.slice(-1) : next.filter(m => m.content).slice(-12)).map(m => ({ role: m.role, content: m.content.slice(0, 2000) })), view: currentView, birthTimeKnown: chart.birthInfo.birthTimeKnown !== false, mode }, next.length);
   };
   useEffect(() => scheduleAutoOverview(overviewSent.current, chart, () => {
     setActiveTopic('overview');
@@ -88,7 +95,12 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
           <Button variant="secondary" className="mt-3" disabled={loading} onClick={() => send(localQuestion, 'detail', true, true)}>让 AI 解读{selectedStar ? '这颗星' : selectedSiHua ? '这一四化' : '这一宫'}</Button>
         </div>}
         {!messages.length && <p className="py-6 text-[13px] text-ink-3">命盘已生成。先看看宫位简介，再选一个想了解的话题。</p>}
-        <div className="space-y-4" aria-live="polite">{messages.map((m, i) => m.role === 'user' && m.hidden ? null : m.role === 'user' ? <div key={i} className="flex justify-end"><p className="max-w-[85%] break-words rounded-sm border border-line/20 bg-surface-2 px-3 py-2 text-[13px] text-ink-2">{m.content}</p></div> : <div key={i}><p className="mb-1.5 text-xs text-ink-3">命理解读</p><AiProse text={m.content} streaming={loading && i === messages.length - 1} /></div>)}</div>
+        <div className="space-y-4" aria-live="polite">{messages.map((m, i) => {
+          const interpretation = m.interpretation;
+          return m.role === 'user' && m.hidden ? null : m.role === 'user' ? <div key={i} className="flex justify-end"><p className="max-w-[85%] break-words rounded-sm border border-line/20 bg-surface-2 px-3 py-2 text-[13px] text-ink-2">{m.content}</p></div> : <div key={i}><p className="mb-1.5 text-xs text-ink-3">命理解读</p><AiProse text={m.content} streaming={loading && i === messages.length - 1} />
+            {m.content && interpretation && JSON.stringify(interpretation.view) !== JSON.stringify(currentView) && <div className="mt-3 space-y-2 text-xs text-ink-3"><p>以上解读针对 {viewLabel(interpretation.view)}</p><Button variant="secondary" size="sm" disabled={loading} onClick={() => send(interpretation.question, interpretation.mode, interpretation.standalone, interpretation.hidden)}>按当前运限重新解读</Button></div>}
+          </div>;
+        })}</div>
         {loading && !messages[last.current?.index ?? -1]?.content && <AiLoading />}
         <AiErrorNotice error={error} loading={loading} retry={() => { if (last.current) void execute(last.current.payload, last.current.index); }} />
       </div>
