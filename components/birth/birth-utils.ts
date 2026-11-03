@@ -10,6 +10,34 @@ export const MONTH_OPTIONS: number[] = Array.from({ length: 12 }, (_, index) => 
 
 export const DAY_OPTIONS: number[] = Array.from({ length: 31 }, (_, index) => index + 1);
 
+export function lunarMonthLabel(n: number): string {
+  return (
+    {
+      1: "正月",
+      2: "二月",
+      3: "三月",
+      4: "四月",
+      5: "五月",
+      6: "六月",
+      7: "七月",
+      8: "八月",
+      9: "九月",
+      10: "十月",
+      11: "十一月",
+      12: "腊月",
+    } as Record<number, string>
+  )[n];
+}
+
+export function lunarDayLabel(n: number): string {
+  const digits = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+  if (n <= 10) return n === 10 ? "初十" : `初${digits[n]}`;
+  if (n < 20) return `十${digits[n - 10]}`;
+  if (n === 20) return "二十";
+  if (n < 30) return `廿${digits[n - 20]}`;
+  return "三十";
+}
+
 export function isValidDate(year: number, month: number, day: number): boolean {
   if (!year || !month || !day) return false;
   const date = new Date(year, month - 1, day);
