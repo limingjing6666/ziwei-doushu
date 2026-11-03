@@ -33,12 +33,12 @@ function viewLabel(view: AiView) {
   return `${{ natal: '本命', decadal: '大限', yearly: '流年' }[view.type]} · ${view.year} 年${view.decadal ? ` · ${view.decadal.startAge}–${view.decadal.endAge} 岁大限` : ''}`;
 }
 const TOPICS = [
-  ['overview', '整盘', '【整盘】首句直答这张盘整体特点。之后分节：命宫与身宫定下的性格底色、三方四正里的主要优势与短板、所选大限或流年的近期重心、三条建议。每节都点明星曜、宫位和四化来源。'],
-  ['love', '感情', '【感情】首句直答关系特点。之后分节：关系期待（看夫妻宫及对宫）、双方相处（看福德宫与命宫）、容易遇到对象、结婚或感情变动的大限/流年依据、三条建议。每节讲清星曜、宫位与四化来源。'],
-  ['career', '事业', '【事业】首句直答工作特点。之后分节：工作方式（看命宫与官禄宫）、事业依据（官禄宫、迁移宫、财帛宫的星曜与四化）、所选年份的事业重心、三条建议。'],
-  ['wealth', '财运', '【财运】首句直答收入特点。之后分节：收入方式（看财帛宫）、资源与积累安排（看田宅宫与福德宫）、盘面依据与所选年份的财务重心、三条建议。'],
-  ['health', '健康', '【健康】首句直答体质特点。之后分节：身体倾向（只讲有数据支持的器官系统类别）、疾厄与福德及命宫依据、下面给出的健康年份、三条建议。时辰未知时仅讲允许的大方向。'],
-  ['personality', '性格', '【性格】首句直答性格特点。之后分节：行为方式（看命宫与身宫）、人际互动（看迁移宫与仆役宫）、优势与课题（看福德宫与四化）、三条建议。'],
+  ['overview', '整盘', '【整盘】首句直答这张盘整体特点。之后分节：命宫与身宫定下的性格底色、三方四正里的主要优势与短板、所选大限或流年的近期重心、三条建议。每节都点明星曜、宫位和四化来源。', '继续追问，如：今年运势的重点是什么？'],
+  ['love', '感情', '【感情】首句直答关系特点。之后分节：关系期待（看夫妻宫及对宫）、双方相处（看福德宫与命宫）、容易遇到对象、结婚或感情变动的大限/流年依据、三条建议。每节讲清星曜、宫位与四化来源。', '继续追问，如：我的正缘大概什么时候出现？'],
+  ['career', '事业', '【事业】首句直答工作特点。之后分节：工作方式（看命宫与官禄宫）、事业依据（官禄宫、迁移宫、财帛宫的星曜与四化）、所选年份的事业重心、三条建议。', '继续追问，如：今年适合换工作吗？'],
+  ['wealth', '财运', '【财运】首句直答收入特点。之后分节：收入方式（看财帛宫）、资源与积累安排（看田宅宫与福德宫）、盘面依据与所选年份的财务重心、三条建议。', '继续追问，如：我适合投资，还是稳健存钱？'],
+  ['health', '健康', '【健康】首句直答体质特点。之后分节：身体倾向（只讲有数据支持的器官系统类别）、疾厄与福德及命宫依据、下面给出的健康年份、三条建议。时辰未知时仅讲允许的大方向。', '继续追问，如：为什么我总是很累、睡不好？'],
+  ['personality', '性格', '【性格】首句直答性格特点。之后分节：行为方式（看命宫与身宫）、人际互动（看迁移宫与仆役宫）、优势与课题（看福德宫与四化）、三条建议。', '继续追问，如：我的性格有哪些优点和短板？'],
 ] as const;
 export type TopicKey = typeof TOPICS[number][0];
 const EMPTY_TOPICS: Record<TopicKey, Message[]> = { overview: [], love: [], career: [], wealth: [], health: [], personality: [] };
@@ -124,7 +124,7 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
         <AiErrorNotice error={error} loading={loading} retry={() => { if (last.current) void execute(activeTopic, last.current.payload, last.current.index, last.current.fresh); }} />
       </div>
       <form className="shrink-0 border-t border-line/12 px-3 py-2.5 sm:px-4" onSubmit={e => { e.preventDefault(); send(input); }}>
-        <div className="flex items-center gap-2"><Input aria-label="向 AI 提问" className="min-w-0" maxLength={2000} value={input} onChange={e => setInput(e.target.value)} placeholder="继续追问，如：今年适合换工作吗？" disabled={loading} /><Button type="submit" variant="secondary" disabled={loading || !input.trim()} className="shrink-0">{loading ? '生成中' : '追问'}</Button></div>
+        <div className="flex items-center gap-2"><Input aria-label="向 AI 提问" className="min-w-0" maxLength={2000} value={input} onChange={e => setInput(e.target.value)} placeholder={TOPICS.find(([key]) => key === activeTopic)![3]} disabled={loading} /><Button type="submit" variant="secondary" disabled={loading || !input.trim()} className="shrink-0">{loading ? '生成中' : '追问'}</Button></div>
       </form>
     </Card>
   );
