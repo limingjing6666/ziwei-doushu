@@ -2,7 +2,7 @@
 
 import { Field, Input, Select } from "@/components/ui/Field";
 import { cn } from "@/lib/ui/cn";
-import { DAY_OPTIONS, MONTH_OPTIONS } from "./birth-utils";
+import { DAY_OPTIONS, MONTH_OPTIONS, lunarDayLabel, lunarMonthLabel } from "./birth-utils";
 
 export interface BirthDateErrors {
   year?: string;
@@ -56,7 +56,7 @@ export default function BirthDateFields({
             <option value="">月份</option>
             {MONTH_OPTIONS.map((option) => (
               <option key={option} value={String(option)}>
-                {option} 月
+                {lunar ? lunarMonthLabel(option) : `${option} 月`}
               </option>
             ))}
           </Select>
@@ -74,7 +74,7 @@ export default function BirthDateFields({
             <option value="">日期</option>
             {DAY_OPTIONS.filter(day => !lunar || day <= 30).map((option) => (
               <option key={option} value={String(option)}>
-                {option} 日
+                {lunar ? lunarDayLabel(option) : `${option} 日`}
               </option>
             ))}
           </Select>
