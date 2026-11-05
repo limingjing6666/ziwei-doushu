@@ -34,10 +34,18 @@ const conclusion = '你走的是靠口碑和服务慢慢攒钱的财运。后面
 const highlighted = renderToStaticMarkup(<Markdown text={conclusion} highlightFirstSentence />);
 assert.match(highlighted, /<strong class="text-\[17px\] font-semibold leading-relaxed">你走的是靠口碑和服务慢慢攒钱的财运。<\/strong>后面是具体依据。/);
 const strip = (html: string) => html.replace(/<[^>]*>/g, '');
-for (const text of [conclusion, '**你走的是靠口碑和服务慢慢攒钱的财运。**后面是具体依据。', '**第一句。第二句。**', '第一句\n到这里结束。下一句。', '首句含`代码`和*重点*。后续。']) {
+for (const text of [conclusion, '**你走的是靠口碑和服务慢慢攒钱的财运。**后面是具体依据。', '**第一句。第二句。**', '第一句\n到这里结束。下一句。', '首句含`代码`和*重点*。后续。', '**“句末带引号。**”后续。']) {
   assert.equal(strip(renderToStaticMarkup(<Markdown text={text} highlightFirstSentence />)), strip(renderToStaticMarkup(<Markdown text={text} />)));
 }
-for (const text of ['没有中文句号', '## 标题\n正文。', '**短标题**\n正文。', '- 列表。', '* 列表。', '1. 列表。', '+ 列表。', '“句末带引号。”后续。', '**“句末带引号。**”后续。', '第一段无句号\n\n第二段。']) {
+for (const firstSentence of ['“句末带引号。”', '“第一句。”', '「第一句。」', '‘第一句。’', '『第一句。』', '"第一句。"', "'第一句。'", '“「第一句。」”']) {
+  const text = `${firstSentence}后续。`;
+  const html = renderToStaticMarkup(<Markdown text={text} highlightFirstSentence />);
+  assert.ok(html.includes(renderToStaticMarkup(<strong className="text-[17px] font-semibold leading-relaxed">{firstSentence}</strong>)));
+  assert.equal(strip(html), strip(renderToStaticMarkup(<Markdown text={text} />)));
+}
+const boldQuote = renderToStaticMarkup(<Markdown text={'**“句末带引号。**”后续。'} highlightFirstSentence />);
+assert.match(boldQuote, /<strong><strong class="text-\[17px\] font-semibold leading-relaxed">“句末带引号。<\/strong><\/strong><strong class="text-\[17px\] font-semibold leading-relaxed">”<\/strong>后续。/);
+for (const text of ['没有中文句号', '## 标题\n正文。', '**短标题**\n正文。', '- 列表。', '* 列表。', '1. 列表。', '+ 列表。', '第一段无句号\n\n第二段。']) {
   assert.doesNotMatch(renderToStaticMarkup(<Markdown text={text} highlightFirstSentence />), /text-\[17px\]/);
 }
 assert.doesNotMatch(renderToStaticMarkup(<AiProse text={conclusion} />), /text-\[17px\]/);
