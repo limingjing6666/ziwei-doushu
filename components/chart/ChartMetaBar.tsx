@@ -96,7 +96,6 @@ export default function ChartMetaBar({ chart, onReset, useTrueSolar, className }
         </Button>
       </div>
 
-      {useTrueSolar === undefined && !chart.birthInfo.city && <p role="note" className="ux-notice mt-3">这张旧盘没有保存城市信息。如果要按出生地校时，请重新起盘并选择城市。</p>}
       <dl className="mt-2.5 flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-line/12 pt-2.5 text-[13px] leading-snug sm:mt-3 sm:gap-y-1.5 sm:pt-3">
         {items.map((item) => (
           <div key={item.label} className="inline-flex max-w-full items-baseline gap-1.5">
