@@ -35,7 +35,10 @@ async function main() {
     assert.match(prompt, /第一句必须直接回答用户所问，不超过40字，大白话、无术语、不加粗不加标题/);
     assert.match(prompt, /小标题必须独占一行，写成 ## 标题 后换行再写正文/);
     assert.ok(prompt.includes(UNKNOWN_TIME_RULE));
-    assert.match(prompt, /第二句固定为“因出生时辰未知，命宫\/身宫\/宫位排布不可靠，以下只讲生年四化与流年的大方向。”/);
+    assert.doesNotMatch(prompt, /第二句|因出生时辰未知|排布不可靠/);
+    assert.match(prompt, /不写时辰未知的免责开场/);
+    assert.match(prompt, /未知方之后只能依据生年四化各自象义与所选流年四化/);
+    assert.match(prompt, /禁止宫位、格局、亮度依据/);
     assert.match(prompt, /禁止给出具体职业或岗位名称.*婚期年份、健康病症、财富结论/);
     assert.match(prompt, /双方时辰都已知时完全不提时辰/);
     assert.match(prompt, /年份\/年龄只可引用下面【年龄与运限事实】给出的数字/);

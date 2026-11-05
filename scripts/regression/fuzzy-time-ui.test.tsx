@@ -155,8 +155,8 @@ async function main() {
       assert.equal(boardCount(), 1);
       assert.ok(requestAiSpy.mock.callCount() > requests);
       assert.equal(scrollSpy.mock.callCount(), count);
-      assert.equal(container.querySelectorAll('[role="note"]').length, timeMode === 'exact' ? 0 : 1);
-      if (timeMode === 'unknown') assert.match(container.textContent!, /出生时辰未知，以子时占位，只看生年四化和流年大方向。/);
+      assert.equal(container.querySelectorAll('[role="note"]').length, 0);
+      if (timeMode === 'unknown') assert.doesNotMatch(container.textContent!, /出生时辰未知|不可靠|只看生年四化和流年大方向/);
       cleanText();
       await askAi();
     }
