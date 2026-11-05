@@ -55,9 +55,12 @@ export default function BirthTimeFields({
             <Select
               id={hourId}
               invalid={!!errors.clockHour}
-              value={clockHour}
-              onChange={(event) => onHourChange(event.target.value)}
+              value={unknownTime ? "__unknown__" : clockHour}
+              onChange={(event) => {
+                if (event.target.value !== "__unknown__") onHourChange(event.target.value);
+              }}
             >
+              {unknownTime && <option value="__unknown__">—</option>}
               <option value="">小时</option>
               {Array.from({ length: 24 }, (_, index) => index).map((hour) => (
                 <option key={hour} value={String(hour)}>
@@ -71,9 +74,12 @@ export default function BirthTimeFields({
             <Select
               id={minuteId}
               invalid={!!errors.clockMinute}
-              value={clockMinute}
-              onChange={(event) => onMinuteChange(event.target.value)}
+              value={unknownTime ? "__unknown__" : clockMinute}
+              onChange={(event) => {
+                if (event.target.value !== "__unknown__") onMinuteChange(event.target.value);
+              }}
             >
+              {unknownTime && <option value="__unknown__">—</option>}
               <option value="">分钟</option>
               {Array.from({ length: 60 }, (_, index) => index).map((minute) => (
                 <option key={minute} value={String(minute)}>
