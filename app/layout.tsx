@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SiteHeader } from "@/components/shell/SiteHeader";
@@ -8,6 +9,9 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SITE_URL } from "@/lib/site";
 import { SITE_TITLE, SITE_SLOGAN } from "@/lib/brand";
+
+// 公开 website-id，来自 stats.tianjipan.tech 的「天机盘」站点。
+const UMAMI_WEBSITE_ID = "46e0d794-c08d-4135-9bd4-f0466131c713";
 
 export const metadata: Metadata = {
   title: SITE_TITLE,
@@ -89,6 +93,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           <MobileTabBar />
         </ThemeProvider>
+        <Script
+          src="https://stats.tianjipan.tech/script.js"
+          data-website-id={UMAMI_WEBSITE_ID}
+          strategy="afterInteractive"
+        />
         {process.env.VERCEL === '1' && <><Analytics /><SpeedInsights /></>}
       </body>
     </html>
