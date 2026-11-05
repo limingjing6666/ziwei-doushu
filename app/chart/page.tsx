@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import BirthPage from "@/components/birth/BirthPage";
 import ResultPage from "@/components/chart/ResultPage";
 import { generateChart } from "@/lib/ziwei/algorithm";
-import { restoreBirthSession } from "@/lib/birth-session";
+import { restoreBirthSession, serializeBirthSession } from "@/lib/birth-session";
 import type { BirthFormState } from '@/components/BirthForm';
 import type { BirthInfo, ZiweiChart } from "@/lib/ziwei/types";
 
@@ -32,7 +32,7 @@ export default function ChartPage() {
     setRestored(true);
   }, []);
   useEffect(() => {
-    if (restored) sessionStorage.setItem(SESSION_KEY, JSON.stringify({ form, chart, useTrueSolar }));
+    if (restored) sessionStorage.setItem(SESSION_KEY, serializeBirthSession({ form, chart, useTrueSolar }));
   }, [form, chart, useTrueSolar, restored]);
 
   if (!restored) return null;

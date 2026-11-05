@@ -28,7 +28,7 @@ for (const longitude of [75, 113.6, 120, 130]) {
     assert.doesNotMatch(description.summary + description.detail, /真太阳时/);
   }
 }
-const preview = renderToStaticMarkup(<BirthTimeFields idPrefix="test" clockHour="7" clockMinute="20" unknownTime={false} branch={3} city="郑州" longitude={113.6} onHourChange={() => {}} onMinuteChange={() => {}} onUnknownTimeChange={() => {}} />);
+const preview = renderToStaticMarkup(<BirthTimeFields idPrefix="test" clockHour="7" clockMinute="20" timeMode="exact" branch={3} city="郑州" longitude={113.6} onHourChange={() => {}} onMinuteChange={() => {}} onTimeModeChange={() => {}} />);
 const chart = generateChart(formToBirthInfo({ name: '', year: '1990', month: '5', day: '15', clockHour: '7', clockMinute: '20', unknownTime: false, province: '河南省', city: '郑州', longitude: 113.6, gender: 'female' }, 'current-day'));
 const meta = renderToStaticMarkup(<ChartMetaBar chart={chart} useTrueSolar onReset={() => {}} />);
 assert.ok(preview.includes(result.summary.replace(/>/g, '&gt;')) || preview.includes(result.summary));

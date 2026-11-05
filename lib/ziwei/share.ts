@@ -1,6 +1,6 @@
 import type { BirthFormState } from '@/components/BirthForm';
 import type { BirthInfo } from './types';
-import { formSolarDate, validateBirthForm } from '@/lib/birth-form';
+import { formSolarDate, getBirthTimeMode, normalizeBirthTimeState, validateBirthForm } from '@/lib/birth-form';
 import { BRANCHES } from './constants';
 
 /** 根据北京时间 + 经度计算真太阳时时辰支 (0-11) */
@@ -20,6 +20,8 @@ export function calcTrueSolarBranch(clockHour: number, clockMinute: number, long
  * 这与「时辰支同为子(0)」并不冲突——子时分早晚两段，需要在日期上区分。
  */
 export function formToBirthInfo(form: BirthFormState, lateZishiRule: 'next-day' | 'current-day' = 'next-day'): BirthInfo {
+  if (getBirthTimeMode(form) === 'fuzzy') throw new Error('大概时段不能转换为单张命盘');
+  form = normalizeBirthTimeState(form);
   if (Object.keys(validateBirthForm(form)).length || !form.gender) throw new Error('请检查出生信息');
   const solar = formSolarDate(form)!;
   let { year: y, month: m, day: d } = solar;
