@@ -443,7 +443,7 @@ function applySchoolFuxun(palaces: Palace[]): void {
 
 export function generateChart(
   birthInfo: BirthInfo,
-  opts?: { leapMonth?: LunarMonthPolicy },
+  opts?: { leapMonth?: LunarMonthPolicy; evaluatedAt?: Date },
 ): ZiweiChart {
   const { year, month, day, hour, gender } = birthInfo;
   if (!Number.isInteger(hour) || hour < 0 || hour > 11) {
@@ -573,12 +573,16 @@ export function generateChart(
   // 旧实现 `currentYear - year` 是年份差（少 1），导致大限边界年份错位 → 用户感觉
   // "大限没走对，似乎还在走上一个大限"。统一用 iztro 自身口径修复。
   let currentAge: number;
-  try {
-    const horo = (astrolabe as unknown as { horoscope: () => { age: { nominalAge: number } } }).horoscope();
-    currentAge = horo.age.nominalAge;
-  } catch {
-    // fallback：iztro 接口异常时回退到虚岁推导
-    currentAge = new Date().getFullYear() - year + 1;
+  if (opts?.evaluatedAt !== undefined) {
+    currentAge = astrolabe.horoscope(opts.evaluatedAt).age.nominalAge;
+  } else {
+    try {
+      const horo = (astrolabe as unknown as { horoscope: () => { age: { nominalAge: number } } }).horoscope();
+      currentAge = horo.age.nominalAge;
+    } catch {
+      // fallback：iztro 接口异常时回退到虚岁推导
+      currentAge = new Date().getFullYear() - year + 1;
+    }
   }
 
   palaces.forEach(p => {
