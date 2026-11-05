@@ -12,7 +12,7 @@ const STEPS = [
   },
   {
     title: "时刻与地点",
-    detail: "填北京时间与出生城市，系统按经度换算真太阳时后再定时辰。",
+    detail: "填北京时间与出生城市，系统按经度校正时间后再定时辰。",
   },
   {
     title: "复核与排盘",
@@ -29,7 +29,7 @@ const FAQS = [
   {
     question: "出生时间填北京时间还是当地时间？",
     answer:
-      "填出生时的北京时间（东八区标准时）。系统再按出生地经度换算真太阳时，换算结果会在填写时实时显示。",
+      "填出生时的北京时间（东八区标准时）。系统再按出生地经度校正，校正后时间会在填写时实时显示。",
   },
   {
     question: "出生地不填可以吗？",
@@ -65,7 +65,7 @@ export default function BirthPage({ onStart, initialData, onFormSave }: BirthPag
               先补齐生辰，再读命盘
             </h1>
             <p className="mt-4 max-w-[40ch] text-[15px] leading-[1.85] text-ink-2">
-              填写公历或农历出生日期、北京时间与出生地点，按三合四化起盘，并按经度换算真太阳时。
+              填写公历或农历出生日期、北京时间与出生地点，按三合四化起盘，并按出生地经度校正时间。
             </p>
 
             <div className="mt-8">

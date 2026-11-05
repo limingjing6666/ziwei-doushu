@@ -1,10 +1,10 @@
 "use client";
 
 import { Field, Select } from "@/components/ui/Field";
-import { SHICHEN } from "@/lib/ziwei/constants";
+import { describeBirthTime } from "@/lib/birth-time";
 import { cn } from "@/lib/ui/cn";
 
-/** 出生时间：北京时间 → 真太阳时时辰预览；未知时辰时整块禁用。 */
+/** 出生时间：北京时间 → 按出生地校时预览；未知时辰时整块禁用。 */
 export default function BirthTimeFields({
   idPrefix,
   clockHour,
@@ -17,12 +17,14 @@ export default function BirthTimeFields({
   compact = false,
   errors = {},
   useTrueSolar = true,
+  city,
+  longitude,
 }: {
   idPrefix: string;
   clockHour: string;
   clockMinute: string;
   unknownTime: boolean;
-  /** 真太阳时对应的时辰支（0–11），由表单统一计算 */
+  /** 经度校正对应的时辰支（0–11），由表单统一计算 */
   branch: number;
   onHourChange: (hour: string) => void;
   onMinuteChange: (minute: string) => void;
@@ -30,10 +32,12 @@ export default function BirthTimeFields({
   compact?: boolean;
   errors?: Record<string, string>;
   useTrueSolar?: boolean;
+  city: string;
+  longitude: number;
 }) {
   const hourId = `${idPrefix}-clock-hour`;
   const minuteId = `${idPrefix}-clock-minute`;
-  const shichen = SHICHEN[branch];
+  const description = describeBirthTime({ clockHour: Number(clockHour), clockMinute: Number(clockMinute), unknownTime, city, longitude, useTrueSolar, branch });
 
   return (
     <div className={cn("space-y-3", compact && "space-y-2.5")}>
@@ -83,18 +87,13 @@ export default function BirthTimeFields({
         <div className="mt-3 flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 border-t border-line/12 pt-2.5">
           {unknownTime ? (
             <p className="text-[12.5px] leading-relaxed text-ink-3">
-              时辰不详，按子时（23:00–01:00）起盘
+              {description.summary}
             </p>
           ) : clockHour === '' || clockMinute === '' ? <p className="text-xs text-ink-3">请选择出生时间，或明确勾选未知。</p> : (
-            <p className="text-[13px] text-ink-2" aria-live="polite">
-              {useTrueSolar ? '真太阳时' : '钟表时间'}{" "}
-              <span className="font-serif text-[18px] font-semibold tracking-[0.03em] text-ink">
-                {shichen.name}
-              </span>
-              <span className="ml-1 font-mono text-[12px] text-ink-3">
-                （{shichen.range}）
-              </span>
-            </p>
+            <div aria-live="polite" className="min-w-0">
+              <p className="text-[12px] leading-relaxed text-ink-2">{description.summary}</p>
+              {description.detail && <p className="mt-1 text-[11px] leading-relaxed text-ink-3">{description.detail}</p>}
+            </div>
           )}
         </div>
       </fieldset>

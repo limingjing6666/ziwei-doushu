@@ -254,7 +254,7 @@ export default function HemingPage() {
               </div>
             ) : null}
 
-            {charts && [charts.chartA, charts.chartB].map((c, i) => <div key={i}>{c.birthInfo.birthTimeKnown === false && <p className="ux-notice my-3">{i === 0 ? '甲方' : '乙方'}出生时辰未知，命宫、身宫与各宫排布不可靠，仅解读生年四化与流年的大方向。</p>}{c.birthInfo.timeCorrectionNotice && <p className="ux-notice my-3">{i === 0 ? '甲方' : '乙方'}：{c.birthInfo.timeCorrectionNotice}。可在表单改按钟表时间后重新合盘。</p>}</div>)}
+            {charts && [charts.chartA, charts.chartB].map((c, i) => <div key={i}>{c.birthInfo.birthTimeKnown === false && <p className="ux-notice my-3">{i === 0 ? '甲方' : '乙方'}出生时辰未知，命宫、身宫与各宫排布不可靠，仅解读生年四化与流年的大方向。</p>}{c.birthInfo.timeCorrectionNotice && <p className="ux-notice my-3">{i === 0 ? '甲方' : '乙方'}：{c.birthInfo.timeCorrectionNotice.replace(/真太阳时/g, '出生地经度')}。可在表单改按钟表时间后重新合盘。</p>}</div>)}
             {analysis ? <div aria-label="原始合盘报告"><AiProse text={analysis} streaming={analyzing && last.current?.index === -1} /></div> : null}
             {analyzing && (last.current?.index === -1 ? !analysis : !turns[last.current?.index ?? -1]?.answer) && <AiLoading />}
             <AiErrorNotice error={error} loading={analyzing} retry={() => { if (last.current) void execute(last.current.payload, last.current.index); }} />

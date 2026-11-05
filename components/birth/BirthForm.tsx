@@ -332,6 +332,8 @@ export default function BirthForm({
           compact={compact}
           errors={submitAttempted ? errors : {}}
           useTrueSolar={form.useTrueSolar !== false}
+          city={form.city}
+          longitude={form.longitude}
         />
         {!form.unknownTime && form.clockHour === '23' && <p className="ux-notice">23 点至 24 点属晚子时，本页按{lateZishiRule === 'next-day' ? '次日' : '本日'}排盘；0 点至 1 点按本日处理。</p>}
         {solar && isChinaDST(solar.year, solar.month, solar.day) && <div className="ux-notice">该时段中国实行过夏令时。默认不自动调整；已换算为标准时间则无需操作。
@@ -348,9 +350,9 @@ export default function BirthForm({
         hint="经度校正"
         compact={compact}
       >
-        <SegmentedControl<'solar' | 'clock'> ariaLabel="校时方式" options={[{ value: 'solar', label: '按真太阳时' }, { value: 'clock', label: '按钟表时间' }]} value={form.useTrueSolar === false ? 'clock' : 'solar'} onChange={v => updateForm({ useTrueSolar: v === 'solar' })} />
-        <p className="text-xs text-ink-3">真太阳时是按出生地经度校正的当地太阳时间；经度每差 1° 约差 4 分钟，可能改变时辰，所以需要出生城市。不选地点不作偏移。</p>
-        {!form.unknownTime && form.clockHour !== '' && form.clockMinute !== '' && branch !== calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120) && <p className="ux-notice">按真太阳时校正后，时辰由{SHICHEN[calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120)].name}变为{SHICHEN[branch].name}。<Button variant="quiet" onClick={() => updateForm({ useTrueSolar: false })}>改按钟表时间</Button></p>}
+        <SegmentedControl<'solar' | 'clock'> ariaLabel="校时方式" options={[{ value: 'solar', label: '按出生地校正' }, { value: 'clock', label: '按钟表时间' }]} value={form.useTrueSolar === false ? 'clock' : 'solar'} onChange={v => updateForm({ useTrueSolar: v === 'solar' })} />
+        <p className="text-xs text-ink-3">目前只按出生地经度校正；经度每差 1° 约差 4 分钟，可能改变时辰，所以需要出生城市。不选地点不作偏移。</p>
+        {!form.unknownTime && form.clockHour !== '' && form.clockMinute !== '' && branch !== calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120) && <p className="ux-notice">按出生地经度校正后，时辰由{SHICHEN[calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120)].name}变为{SHICHEN[branch].name}。<Button variant="quiet" onClick={() => updateForm({ useTrueSolar: false })}>改按钟表时间</Button></p>}
         <BirthLocationFields
           idPrefix={uid}
           province={form.province}
@@ -360,6 +362,7 @@ export default function BirthForm({
           onCityChange={handleCity}
           compact={compact}
           error={errors.city}
+          useTrueSolar={form.useTrueSolar !== false && !form.unknownTime}
         />
       </FormSection>
 
