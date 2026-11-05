@@ -18,6 +18,7 @@ export function validateBirthForm(f: BirthFormState, now = new Date()): Record<s
   if (solar && new Date(solar.year, solar.month - 1, solar.day).getTime() > new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) errors.day = '出生日期不能是未来日期';
   if (!f.unknownTime && (f.clockHour === '' || !Number.isInteger(Number(f.clockHour)) || Number(f.clockHour) < 0 || Number(f.clockHour) > 23)) errors.clockHour = '请选择小时，或勾选不知道出生时辰';
   if (!f.unknownTime && (f.clockMinute === '' || !Number.isInteger(Number(f.clockMinute)) || Number(f.clockMinute) < 0 || Number(f.clockMinute) > 59)) errors.clockMinute = '请选择分钟';
+  if (f.province && !f.city) errors.city = '你已选择省份，请再选择出生城市';
   if (!f.gender) errors.gender = '请选择性别';
   return errors;
 }

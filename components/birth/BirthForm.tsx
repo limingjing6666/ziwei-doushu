@@ -228,13 +228,7 @@ export default function BirthForm({
   };
 
   const handleProvince = (province: string) => {
-    const provinceData = PROVINCES.find((item) => item.name === province);
-    const firstCity = provinceData?.cities[0];
-    updateForm({
-      province,
-      city: firstCity?.name || "",
-      longitude: firstCity?.longitude ?? 120,
-    });
+    updateForm({ province, city: "", longitude: 120 });
   };
 
   const handleCity = (city: string) => {
@@ -365,6 +359,7 @@ export default function BirthForm({
           onProvinceChange={handleProvince}
           onCityChange={handleCity}
           compact={compact}
+          error={errors.city}
         />
       </FormSection>
 
@@ -391,7 +386,7 @@ export default function BirthForm({
               type="submit"
               size={compact ? "md" : "lg"}
               className="w-full"
-              disabled={loading || busy}
+              disabled={loading || busy || !!errors.city}
               aria-busy={loading || busy || undefined}
             >
               {loading || busy ? (

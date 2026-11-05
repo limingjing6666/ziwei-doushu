@@ -14,6 +14,7 @@ export default function BirthLocationFields({
   onProvinceChange,
   onCityChange,
   compact = false,
+  error,
 }: {
   idPrefix: string;
   province: string;
@@ -22,6 +23,7 @@ export default function BirthLocationFields({
   onProvinceChange: (province: string) => void;
   onCityChange: (city: string) => void;
   compact?: boolean;
+  error?: string;
 }) {
   const provinceId = `${idPrefix}-province`;
   const cityId = `${idPrefix}-city`;
@@ -46,9 +48,11 @@ export default function BirthLocationFields({
           </Select>
         </Field>
 
-        <Field id={cityId} label="城市">
+        <Field id={cityId} label="城市" error={error}>
           <Select
             id={cityId}
+            invalid={!!error}
+            aria-describedby={error ? `${cityId}-error` : undefined}
             value={city}
             disabled={!province}
             className={cn(!province && "opacity-40")}
@@ -65,9 +69,9 @@ export default function BirthLocationFields({
       </div>
 
       <p className="text-[12px] leading-relaxed text-ink-3">
-        {province ? (
+        {province && !city ? "请选择出生城市" : province ? (
           <>
-            {city || "请选择城市"} · 经度{" "}
+            {city} · 经度{" "}
             <span className="font-mono tabular-nums">{longitude.toFixed(1)}°E</span>{" "}
             · 时差{" "}
             <span className="font-mono tabular-nums">
