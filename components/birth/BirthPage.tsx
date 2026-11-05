@@ -1,7 +1,6 @@
 "use client";
 
 import type { BirthInfo } from "@/lib/ziwei/types";
-import type { FuzzyBirthInput } from '@/lib/ziwei/fuzzy-time';
 import { Card } from "@/components/ui/Card";
 import { Disclosure } from "@/components/ui/Disclosure";
 import BirthForm, { type BirthFormState } from "./BirthForm";
@@ -41,7 +40,7 @@ const FAQS = [
 
 export interface BirthPageProps {
   onStart: (info: BirthInfo) => void;
-  onFuzzySubmit?: (input: FuzzyBirthInput) => void;
+  allowSegment?: boolean;
   initialData?: Partial<BirthFormState>;
   initialDateNotice?: string;
   onFormSave?: (form: BirthFormState) => void;
@@ -51,7 +50,7 @@ export interface BirthPageProps {
  * 起盘信息填写页：桌面左栏说明 + 右栏表单，移动端单列且表单在前。
  * 页面级 header / footer 由 app/layout.tsx 的 AppShell 提供，这里不重复渲染。
  */
-export default function BirthPage({ onStart, onFuzzySubmit, initialData, initialDateNotice, onFormSave }: BirthPageProps) {
+export default function BirthPage({ onStart, allowSegment = false, initialData, initialDateNotice, onFormSave }: BirthPageProps) {
   return (
     <section aria-labelledby="birth-page-title" className="bg-paper">
       <div className="container-page py-8 md:py-12 lg:py-14">
@@ -104,7 +103,7 @@ export default function BirthPage({ onStart, onFuzzySubmit, initialData, initial
               <div className="mt-1 border-t border-line/12">
                 {FAQS.map((faq) => (
                   <Disclosure key={faq.question} title={faq.question}>
-                    {faq.answer}{onFuzzySubmit && faq.question === '出生地不填可以吗？' ? '大概时段必须选择出生省份和城市。' : ''}
+                    {faq.answer}
                   </Disclosure>
                 ))}
               </div>
@@ -125,7 +124,7 @@ export default function BirthPage({ onStart, onFuzzySubmit, initialData, initial
                   双历 · 北京时间
                 </span>
               </div>
-              <BirthForm onSubmit={onStart} onFuzzySubmit={onFuzzySubmit} initialData={initialData} initialDateNotice={initialDateNotice} onFormSave={onFormSave} />
+              <BirthForm onSubmit={onStart} allowSegment={allowSegment} initialData={initialData} initialDateNotice={initialDateNotice} onFormSave={onFormSave} />
             </Card>
           </div>
         </div>

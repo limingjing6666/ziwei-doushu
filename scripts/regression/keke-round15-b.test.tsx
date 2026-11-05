@@ -34,5 +34,5 @@ const meta = renderToStaticMarkup(<ChartMetaBar chart={chart} useTrueSolar onRes
 assert.ok(preview.includes(result.summary.replace(/>/g, '&gt;')) || preview.includes(result.summary));
 assert.ok(meta.includes('校正后 06:54'));
 assert.match(renderToStaticMarkup(<ChartMetaBar chart={chart} onReset={() => {}} />), /卯时（旧记录未保存校时方式）/);
-assert.match(renderToStaticMarkup(<ChartMetaBar chart={{ ...chart, birthInfo: { ...chart.birthInfo, city: undefined } }} onReset={() => {}} />), /这张旧盘没有保存城市信息。如果要按出生地校时，请重新起盘并选择城市。/);
+assert.doesNotMatch(renderToStaticMarkup(<ChartMetaBar chart={{ ...chart, birthInfo: { ...chart.birthInfo, city: undefined } }} onReset={() => {}} />), /这张旧盘没有保存城市信息。如果要按出生地校时，请重新起盘并选择城市。/);
 console.log('✓ Round15 B: 同源校时展示、去秒/时辰边界、跨午夜、钟表/无地点/未知/旧盘');

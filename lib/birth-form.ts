@@ -1,7 +1,6 @@
 import type { BirthFormState } from '@/components/BirthForm';
 import { leapMonthOfLunarYear, lunarToSolar, solarToLunar } from './ziwei/lunar-solar';
 import { isChinaDST } from './ziwei/dst-cn';
-import type { FuzzyBirthInput } from './ziwei/fuzzy-time';
 
 export type BirthTimeMode = 'exact' | 'fuzzy' | 'unknown';
 
@@ -84,20 +83,6 @@ export function validateBirthForm(f: BirthFormState, now = new Date()): Record<s
   }
   if (!f.gender) errors.gender = '请选择性别';
   return errors;
-}
-
-export function formToFuzzyBirthInput(form: BirthFormState): FuzzyBirthInput {
-  if (getBirthTimeMode(form) !== 'fuzzy' || Object.keys(validateBirthForm(form)).length || !form.gender) {
-    throw new Error('请检查大概时段出生信息');
-  }
-  return {
-    dateInfo: formSolarDate(form)!,
-    city: { province: form.province, city: form.city, longitude: form.longitude },
-    segment: form.segment as FuzzyBirthInput['segment'],
-    dstApplied: form.dstApplied === true,
-    gender: form.gender,
-    name: form.name || undefined,
-  };
 }
 
 export function isFormReady(form: BirthFormState | null): boolean {

@@ -11,6 +11,8 @@ import ResultGuide from '@/components/ResultGuide';
 import { buildAiView, type TimeView } from '@/components/TimeNav';
 import ChartMetaBar from "./ChartMetaBar";
 import { formatBirthDate } from '@/lib/birth-time';
+import { SHICHEN } from '@/lib/ziwei/constants';
+import { Button } from '@/components/ui/Button';
 
 export interface ResultPageProps {
   chart: ZiweiChart;
@@ -34,12 +36,18 @@ export default function ResultPage({ chart, onReset, useTrueSolar }: ResultPageP
     setSelectedPalace(palace); setSelectedStar(null); setSelectedSiHua(null);
   };
 
+  const { birthInfo } = chart;
+  const chartDate = formatBirthDate(birthInfo);
+  const inputDate = birthInfo.origInput && formatBirthDate(birthInfo.origInput);
+  const askAi = () => document.getElementById('chart-ai')!.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
   return (
     <div className="container-wide py-6 md:py-8">
       <ChartMetaBar chart={chart} onReset={onReset} useTrueSolar={useTrueSolar} />
-      {chart.birthInfo.birthTimeKnown === false && <p role="note" className="ux-notice my-3">出生时辰未知，命宫、身宫和各宫排布不可靠，当前以子时占位，解读只讲生年四化与流年的大方向。</p>}
-      {chart.birthInfo.timeCorrectionNotice && <p className="ux-notice my-3">{chart.birthInfo.timeCorrectionNotice.replace(/真太阳时/g, '出生地经度')}。可重新起盘改按钟表时间。</p>}
-      {chart.birthInfo.birthTimeKnown !== false && <p role="note" className="ux-notice my-3">{chart.birthInfo.origInput?.year && chart.birthInfo.origInput.month && chart.birthInfo.origInput.day ? <>原填写公历日：{formatBirthDate(chart.birthInfo.origInput)}；本张排盘日：{formatBirthDate(chart.birthInfo)}。本站现统一按所选校时方式处理后的 23:00 换排盘日。历史会话中保存的命盘不会自动重算；按新口径查看请重新起盘。</> : '旧记录信息不完整，请重新起盘。'}</p>}
+      <Button variant="secondary" className="my-3 w-full lg:hidden" onClick={askAi}>AI 解读 · 点这里直接问</Button>
+      {birthInfo.timeBasis ? <p role="note" className="ux-notice my-3">你选了「{birthInfo.timeBasis.segmentLabel}」，按中间 {birthInfo.timeBasis.clock} 排盘，出生地校正后为{SHICHEN[birthInfo.hour].name}。想更准，重新起盘填具体时间。</p>
+        : birthInfo.birthTimeKnown === false ? <p role="note" className="ux-notice my-3">出生时辰未知，以子时占位，只看生年四化和流年大方向。</p>
+        : inputDate && chartDate !== inputDate && <p role="note" className="ux-notice my-3">按出生地校正后，排盘日是 {chartDate}（{chartDate > inputDate ? '次日' : '前一日'}）。</p>}
       <ResultGuide />
 
       <div className="mt-5 grid gap-5 md:mt-6 lg:grid-cols-[minmax(0,1fr)_minmax(350px,400px)] lg:items-start lg:gap-8">
@@ -47,12 +55,13 @@ export default function ResultPage({ chart, onReset, useTrueSolar }: ResultPageP
           <ChartBoard chart={chart} timeView={view} liunianYear={year} onViewChange={v => { setView(v); setSelectedSiHua(null); }} onYearChange={y => { setYear(y); setSelectedSiHua(null); }} onPalaceSelect={handlePalaceSelect}
             onStarSelect={(star, palace) => { setSelectedStar(star); setSelectedPalace(palace); setSelectedSiHua(null); }}
             onSiHuaClick={(starName, siHua, v) => { setSelectedStar(null); setSelectedSiHua({ starName, siHua, view: v }); }} />
-          {(selectedPalace || selectedSiHua) && <div className="ux-notice mt-3 lg:hidden" aria-label="手机简介"><strong><Term name={selectedStar?.name ?? (selectedSiHua ? `化${selectedSiHua.siHua}` : selectedPalace!.name)} /> · 简介</strong><p>{termDescription(selectedStar?.name ?? (selectedSiHua ? `化${selectedSiHua.siHua}` : selectedPalace!.name))}</p><p className="text-xs text-ink-3">下方可查看完整简介与 AI 面板。</p></div>}
+          {(selectedPalace || selectedSiHua) && <div className="ux-notice mt-3 lg:hidden" aria-label="手机简介"><strong><Term name={selectedStar?.name ?? (selectedSiHua ? `化${selectedSiHua.siHua}` : selectedPalace!.name)} /> · 简介</strong><p>{termDescription(selectedStar?.name ?? (selectedSiHua ? `化${selectedSiHua.siHua}` : selectedPalace!.name))}</p><Button variant="secondary" size="sm" onClick={askAi}>问 AI</Button></div>}
         </section>
 
         <aside
+          id="chart-ai"
           aria-label="AI 解读"
-          className="min-w-0"
+          className="min-w-0 scroll-mt-[calc(var(--header-h)_+_1rem)]"
         >
           <StarDetailPanel star={selectedStar} palaceName={selectedPalace?.name} onClose={() => setSelectedStar(null)} />
           <InsightPanel

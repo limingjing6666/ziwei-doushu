@@ -5,8 +5,8 @@ import type { FormEvent, ReactNode } from "react";
 import type { BirthInfo } from "@/lib/ziwei/types";
 import { SHICHEN } from "@/lib/ziwei/constants";
 import { PROVINCES } from "@/lib/ziwei/cities";
-import { changeBirthDate, formSolarDate, formToFuzzyBirthInput, getBirthTimeMode, normalizeBirthTimeState, updateBirthForm, validateBirthForm, type BirthTimeMode } from '@/lib/birth-form';
-import { SEGMENTS, type FuzzyBirthInput, type Segment } from '@/lib/ziwei/fuzzy-time';
+import { changeBirthDate, formSolarDate, getBirthTimeMode, normalizeBirthTimeState, updateBirthForm, validateBirthForm, type BirthTimeMode } from '@/lib/birth-form';
+import { SEGMENTS, type Segment } from '@/lib/ziwei/fuzzy-time';
 import { solarToLunar, leapMonthOfLunarYear } from '@/lib/ziwei/lunar-solar';
 import { isChinaDST } from '@/lib/ziwei/dst-cn';
 import { shiftClock } from '@/lib/ziwei/clock-adjust';
@@ -47,7 +47,7 @@ export type BirthFormVariant = "full" | "compact";
 
 export interface BirthFormProps {
   onSubmit: (info: BirthInfo) => void;
-  onFuzzySubmit?: (input: FuzzyBirthInput) => void;
+  allowSegment?: boolean;
   loading?: boolean;
   initialData?: Partial<BirthFormState>;
   initialDateNotice?: string;
@@ -108,7 +108,7 @@ function FormSection({
  */
 export default function BirthForm({
   onSubmit,
-  onFuzzySubmit,
+  allowSegment = false,
   loading = false,
   initialData,
   initialDateNotice,
@@ -171,7 +171,7 @@ export default function BirthForm({
   const d = parseInt(form.day) || 0;
 
   const errors = validateBirthForm(form);
-  if (timeMode === 'fuzzy' && !onFuzzySubmit) errors.timeMode = '此处暂不支持大概时段，请选择精确到分钟或完全不知道';
+  if (timeMode === 'fuzzy' && !allowSegment) errors.timeMode = '此处暂不支持大概时段，请选择精确到分钟或完全不知道';
   // 保留 #9 的实际日数校验，并加入未来日期、时间和性别校验。
   if (form.calendar !== 'lunar' && y && m && d && !isValidDate(y, m, d)) errors.day = `${m}月没有${d}日`;
   const solar = formSolarDate(form);
@@ -277,10 +277,7 @@ export default function BirthForm({
     await new Promise(resolve => setTimeout(resolve, 32));
     try {
       onFormSave?.({ ...form });
-      if (timeMode === 'fuzzy') {
-        if (!onFuzzySubmit) throw new Error('此处不支持大概时段');
-        onFuzzySubmit(formToFuzzyBirthInput(form));
-      } else onSubmit(formToBirthInfo(form));
+      onSubmit(formToBirthInfo(form));
     } catch { setFailure('排盘未完成，请检查出生信息后重试'); }
     finally { submitting.current = false; setBusy(false); }
   };
@@ -360,7 +357,8 @@ export default function BirthForm({
           clockMinute={form.clockMinute}
           timeMode={timeMode}
           segment={form.segment}
-          onSegmentChange={onFuzzySubmit ? (segment) => updateForm({ segment }) : undefined}
+          allowSegment={allowSegment}
+          onSegmentChange={(segment) => updateForm({ segment })}
           branch={branch}
           onHourChange={(clockHour) => updateForm({ clockHour })}
           onMinuteChange={(clockMinute) => updateForm({ clockMinute })}
@@ -371,9 +369,8 @@ export default function BirthForm({
           city={form.city}
           longitude={form.longitude}
         />
-        {timeMode === 'exact' && <p className="ux-notice">排盘日界现已统一：按所选校时方式处理后，23:00 起归下一排盘日。旧版精确页按填写日排盘，重新起盘时结果可能变化；填写的出生日期不会被修改。</p>}
         {chartDateError && <p role="alert" className="text-sm text-cinnabar">{chartDateError}</p>}
-        {chartDate && solar && <p className="ux-notice">原填写公历日：{formatBirthDate(solar)}；本次排盘日：{formatBirthDate(chartDate)}（{formatBirthDate(chartDate) === formatBirthDate(solar) ? '本日' : formatBirthDate(chartDate) > formatBirthDate(solar) ? '次日' : '前一日'}{SHICHEN[chartDate.hour].name}）。</p>}
+        {chartDate && solar && formatBirthDate(chartDate) !== formatBirthDate(solar) && <p className="ux-notice">按出生地校正后，排盘日是 {formatBirthDate(chartDate)}（{formatBirthDate(chartDate) > formatBirthDate(solar) ? '次日' : '前一日'}）。</p>}
         {timeMode === 'fuzzy' && solar && isChinaDST(solar.year, solar.month, solar.day) && <label className="flex min-h-10 items-center gap-2 text-sm text-ink-2">
           <input type="checkbox" checked={form.dstApplied === true} onChange={event => updateForm({ dstApplied: event.target.checked })} className="accent-cinnabar" />
           按夏令时减一小时
@@ -394,7 +391,6 @@ export default function BirthForm({
         compact={compact}
       >
         {timeMode !== 'fuzzy' && <SegmentedControl<'solar' | 'clock'> ariaLabel="校时方式" options={[{ value: 'solar', label: '按出生地校正' }, { value: 'clock', label: '按钟表时间' }]} value={form.useTrueSolar === false ? 'clock' : 'solar'} onChange={v => updateForm({ useTrueSolar: v === 'solar' })} />}
-        <p className="text-xs text-ink-3">{timeMode === 'fuzzy' ? '大概时段必须选择出生省份和城市，固定按出生地经度校正；经度每差 1° 约差 4 分钟。' : '目前只按出生地经度校正；经度每差 1° 约差 4 分钟，可能改变时辰，所以需要出生城市。不选地点不作偏移。'}</p>
         {timeMode === 'exact' && form.clockHour !== '' && form.clockMinute !== '' && branch !== calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120) && <p className="ux-notice">按出生地经度校正后，时辰由{SHICHEN[calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120)].name}变为{SHICHEN[branch].name}。<Button variant="quiet" onClick={() => updateForm({ useTrueSolar: false })}>改按钟表时间</Button></p>}
         <BirthLocationFields
           idPrefix={uid}
@@ -447,12 +443,6 @@ export default function BirthForm({
                 "排盘"
               )}
             </Button>
-          )}
-
-          {compact || hideSubmit ? null : (
-            <p className="text-center text-[12px] leading-relaxed text-ink-3">
-              排盘后可查看十二宫、四化落点与大限，结果仅供文化学习参考。
-            </p>
           )}
         </div>
       </FormSection>

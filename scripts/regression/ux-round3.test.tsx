@@ -73,8 +73,9 @@ async function main() {
     assert.deepEqual(chartTuple(converted), [1990, 5, day, branch]);
     assert.deepEqual(converted.origInput, { year: 1990, month: 5, day: 15, clockHour: Number(clockHour), clockMinute: Number(clockMinute) });
     const preview = renderToStaticMarkup(<BirthForm initialData={input} onSubmit={() => {}} />);
-    assert.match(preview, new RegExp(`原填写公历日：1990-05-15；本次排盘日：1990-05-${day}`));
-    assert.match(preview, /旧版精确页按填写日排盘.*填写的出生日期不会被修改/);
+    if (day !== 15) assert.match(preview, new RegExp(`按出生地校正后，排盘日是 1990-05-${day}（${day > 15 ? '次日' : '前一日'}）。`));
+    else assert.doesNotMatch(preview, /排盘日是/);
+    assert.doesNotMatch(preview, /排盘日界现已统一|旧版精确页/);
   }
   for (const [year, month, day, next] of [
     ['1990', '1', '31', [1990, 2, 1, 0]], ['1990', '12', '31', [1991, 1, 1, 0]],
@@ -103,12 +104,13 @@ async function main() {
   const lateZi = formToBirthInfo({ ...exact, clockHour: '23', clockMinute: '30' });
   const newChart = generateChart(lateZi);
   const newResult = renderToStaticMarkup(<ResultPage chart={newChart} onReset={() => {}} useTrueSolar />);
-  assert.match(newResult, /原填写公历日：1990-05-15；本张排盘日：1990-05-16/);
-  assert.match(newResult, /历史会话中保存的命盘不会自动重算；按新口径查看请重新起盘/);
-  assert.ok(newResult.indexOf('原填写公历日') < newResult.indexOf('aria-label="命盘"'));
+  assert.match(newResult, /按出生地校正后，排盘日是 1990-05-16（次日）。/);
+  assert.doesNotMatch(newResult, /仅供|候选|不是在猜|历史会话/);
+  assert.match(newResult, /选一个话题，或直接在下面提问。/);
+  assert.ok(newResult.indexOf('排盘日是') < newResult.indexOf('aria-label="命盘"'));
   const oldChart = generateChart({ ...lateZi, day: 15 });
-  assert.match(renderToStaticMarkup(<ResultPage chart={oldChart} onReset={() => {}} />), /原填写公历日：1990-05-15；本张排盘日：1990-05-15/);
-  assert.match(renderToStaticMarkup(<ResultPage chart={{ ...oldChart, birthInfo: { ...oldChart.birthInfo, origInput: undefined } }} onReset={() => {}} />), /旧记录信息不完整，请重新起盘/);
+  assert.doesNotMatch(renderToStaticMarkup(<ResultPage chart={oldChart} onReset={() => {}} />), /排盘日是/);
+  assert.doesNotMatch(renderToStaticMarkup(<ResultPage chart={{ ...oldChart, birthInfo: { ...oldChart.birthInfo, origInput: undefined } }} onReset={() => {}} />), /排盘日是|旧记录信息不完整/);
   assert.doesNotMatch(newResult, /沿用本日|原始输入为晚子时/);
   const unknownInfo = formToBirthInfo({ ...exact, unknownTime: true, clockHour: '23' });
   assert.deepEqual(chartTuple(unknownInfo), [1990, 5, 15, 0]);

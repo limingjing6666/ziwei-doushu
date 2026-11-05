@@ -74,7 +74,8 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
     if (!question.trim() || request.current.has(topic)) return;
     const next: Message[] = [...messages, { role: 'user', content: question, hidden }];
     setTopics(prev => ({ ...prev, [topic]: [...next, { role: 'assistant', content: '', interpretation: { view: currentView, question, mode, standalone, hidden } }] })); setInput('');
-    void execute(topic, { chart, messages: (standalone ? next.slice(-1) : next.filter(m => m.content).slice(-12)).map(m => ({ role: m.role, content: m.content.slice(0, 2000) })), view: currentView, birthTimeKnown: chart.birthInfo.birthTimeKnown !== false, mode }, next.length, fresh);
+    const { timeBasis, ...birthInfo } = chart.birthInfo;
+    void execute(topic, { chart: { ...chart, birthInfo }, messages: (standalone ? next.slice(-1) : next.filter(m => m.content).slice(-12)).map(m => ({ role: m.role, content: m.content.slice(0, 2000) })), view: currentView, birthTimeKnown: chart.birthInfo.birthTimeKnown !== false, mode }, next.length, fresh);
   };
   const send = sendTo(activeTopic);
   useEffect(() => scheduleAutoOverview(overviewSent.current, chart, () => {
@@ -113,7 +114,7 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
           {selectedSiHua && <p><Term name={`化${selectedSiHua.siHua}`} />：{termDescription(`化${selectedSiHua.siHua}`)}</p>}
           <Button variant="secondary" className="mt-3" disabled={loading || !!topicLoading.overview} onClick={() => { setActiveTopic('overview'); saveTopics(chart, {}, 'overview'); const send = sendTo('overview'); send(localQuestion, 'detail', true, true); }}>让 AI 解读{selectedStar ? '这颗星' : selectedSiHua ? '这一四化' : '这一宫'}</Button>
         </div>}
-        {!messages.length && <p className="py-6 text-[13px] text-ink-3">命盘已生成。先看看宫位简介，再选一个想了解的话题。</p>}
+        {!messages.length && <p className="py-6 text-[13px] text-ink-3">选一个话题，或直接在下面提问。</p>}
         <div className="space-y-4" aria-live="polite">{messages.map((m, i) => {
           const interpretation = m.interpretation;
           return m.role === 'user' && m.hidden ? null : m.role === 'user' ? <div key={i} className="flex justify-end"><p className="max-w-[85%] break-words rounded-sm border border-line/20 bg-surface-2 px-3 py-2 text-[13px] text-ink-2">{m.content}</p></div> : <div key={i}><p className="mb-1.5 text-xs text-ink-3">命理解读</p><AiProse text={m.content} streaming={loading && i === messages.length - 1} highlightFirstSentence />
