@@ -46,8 +46,7 @@ export default function ResultPage({ chart, onReset, useTrueSolar }: ResultPageP
       <ChartMetaBar chart={chart} onReset={onReset} useTrueSolar={useTrueSolar} />
       <Button variant="secondary" className="my-3 w-full lg:hidden" onClick={askAi}>AI 解读 · 点这里直接问</Button>
       {birthInfo.timeBasis ? <p role="note" className="ux-notice my-3">你选了「{birthInfo.timeBasis.segmentLabel}」，按中间 {birthInfo.timeBasis.clock} 排盘，出生地校正后为{SHICHEN[birthInfo.hour].name}。想更准，重新起盘填具体时间。</p>
-        : birthInfo.birthTimeKnown === false ? <p role="note" className="ux-notice my-3">出生时辰未知，以子时占位，只看生年四化和流年大方向。</p>
-        : inputDate && chartDate !== inputDate && <p role="note" className="ux-notice my-3">按出生地校正后，排盘日是 {chartDate}（{chartDate > inputDate ? '次日' : '前一日'}）。</p>}
+        : birthInfo.birthTimeKnown !== false && inputDate && chartDate !== inputDate && <p role="note" className="ux-notice my-3">按出生地校正后，排盘日是 {chartDate}（{chartDate > inputDate ? '次日' : '前一日'}）。</p>}
       <ResultGuide />
 
       <div className="mt-5 grid gap-5 md:mt-6 lg:grid-cols-[minmax(0,1fr)_minmax(350px,400px)] lg:items-start lg:gap-8">

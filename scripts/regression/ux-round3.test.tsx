@@ -115,7 +115,8 @@ async function main() {
   const unknownInfo = formToBirthInfo({ ...exact, unknownTime: true, clockHour: '23' });
   assert.deepEqual(chartTuple(unknownInfo), [1990, 5, 15, 0]);
   const unknownResult = renderToStaticMarkup(<ResultPage chart={generateChart(unknownInfo)} onReset={() => {}} />);
-  assert.match(unknownResult, /出生时辰未知.*子时占位/);
+  assert.doesNotMatch(unknownResult, /出生时辰未知|只看生年四化和流年大方向/);
+  assert.doesNotMatch(readFileSync('app/heming/page.tsx', 'utf8'), /出生时辰未知|命宫、身宫与各宫排布不可靠/);
   assert.doesNotMatch(unknownResult, /23:00 换排盘日|原填写公历日|晚子时/);
   const chart = generateChart(info);
   const natalView = buildAiView(chart, 'mingpan', 2030);
