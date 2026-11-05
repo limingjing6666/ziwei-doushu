@@ -1,5 +1,32 @@
 import type { BirthFormState } from '@/components/BirthForm';
-import { lunarToSolar, solarToLunar } from './ziwei/lunar-solar';
+import { leapMonthOfLunarYear, lunarToSolar, solarToLunar } from './ziwei/lunar-solar';
+
+export function februaryDays(year: string): number {
+  if (!/^\d{4}$/.test(year)) return 29;
+  const y = Number(year);
+  return y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0) ? 29 : 28;
+}
+
+export function hasInvalidFebruaryDay(f: Partial<BirthFormState>): boolean {
+  return f.calendar !== 'lunar' && Number(f.month) === 2 && Number(f.day) > februaryDays(f.year ?? '');
+}
+
+export function changeBirthDate(form: BirthFormState, patch: { year?: string; month?: string; day?: string }) {
+  const next = { ...form, ...patch };
+  let dateNotice = '', leapNotice = '';
+  if ('year' in patch || 'month' in patch) {
+    if (hasInvalidFebruaryDay(next)) {
+      next.day = '';
+      dateNotice = '原来选择的日期在这个年月不存在，请重新选择“日”';
+    }
+    const leap = leapMonthOfLunarYear(Number(next.year));
+    if (next.calendar === 'lunar' && next.leapMonth && (!leap || leap !== Number(next.month))) {
+      next.leapMonth = false;
+      leapNotice = '该年该月没有闰月，已取消“闰月”，请核对';
+    }
+  }
+  return { form: next, dateNotice, leapNotice };
+}
 
 export function formSolarDate(f: BirthFormState) {
   const y = Number(f.year), m = Number(f.month), d = Number(f.day);

@@ -2,6 +2,7 @@
 
 import { Field, Input, Select } from "@/components/ui/Field";
 import { cn } from "@/lib/ui/cn";
+import { februaryDays } from "@/lib/birth-form";
 import { DAY_OPTIONS, MONTH_OPTIONS, lunarDayLabel, lunarMonthLabel } from "./birth-utils";
 
 export interface BirthDateErrors {
@@ -32,6 +33,8 @@ export default function BirthDateFields({
   const yearId = `${idPrefix}-year`;
   const monthId = `${idPrefix}-month`;
   const dayId = `${idPrefix}-day`;
+  const february = !lunar && Number(month) === 2;
+  const dayLimit = lunar ? 30 : february ? februaryDays(year) : 31;
 
   // 错误文案由 ui/Field 渲染为 `${id}-error`，这里通过 aria-describedby 关联。
   return (
@@ -72,7 +75,7 @@ export default function BirthDateFields({
             onChange={(event) => onChange({ day: event.target.value })}
           >
             <option value="">日期</option>
-            {DAY_OPTIONS.filter(day => !lunar || day <= 30).map((option) => (
+            {DAY_OPTIONS.filter(day => day <= dayLimit).map((option) => (
               <option key={option} value={String(option)}>
                 {lunar ? lunarDayLabel(option) : `${option} 日`}
               </option>
@@ -80,6 +83,7 @@ export default function BirthDateFields({
           </Select>
         </Field>
       </div>
+      {february && !/^\d{4}$/.test(year) && <p role="status" className="mt-2 text-xs text-ink-3">请先填写年份，再选择2月的日期</p>}
     </fieldset>
   );
 }

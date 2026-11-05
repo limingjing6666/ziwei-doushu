@@ -2,8 +2,7 @@
  * 出生信息表单的纯函数与选项集合。
  *
  * 这些规则与 /chart、/heming 共用，拆分出来只是为了让字段组件无状态，
- * 校验口径保持与旧版 BirthForm 完全一致（年份范围 1900–2026、日数固定 31 项、
- * 由 isValidDate 判定「X 月没有 Y 日」）。
+ * 公历二月日数按年份联动，其它公历月份仍由 isValidDate 判定「X 月没有 Y 日」。
  */
 
 export const MONTH_OPTIONS: number[] = Array.from({ length: 12 }, (_, index) => index + 1);

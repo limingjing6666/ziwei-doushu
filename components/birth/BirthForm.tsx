@@ -5,7 +5,7 @@ import type { FormEvent, ReactNode } from "react";
 import type { BirthInfo } from "@/lib/ziwei/types";
 import { SHICHEN } from "@/lib/ziwei/constants";
 import { PROVINCES } from "@/lib/ziwei/cities";
-import { formSolarDate, validateBirthForm } from '@/lib/birth-form';
+import { changeBirthDate, formSolarDate, validateBirthForm } from '@/lib/birth-form';
 import { solarToLunar, leapMonthOfLunarYear } from '@/lib/ziwei/lunar-solar';
 import { isChinaDST } from '@/lib/ziwei/dst-cn';
 import { shiftClock } from '@/lib/ziwei/clock-adjust';
@@ -44,6 +44,7 @@ export interface BirthFormProps {
   onSubmit: (info: BirthInfo) => void;
   loading?: boolean;
   initialData?: Partial<BirthFormState>;
+  initialDateNotice?: string;
   onFormSave?: (data: BirthFormState) => void;
   /** 隐藏内部「排盘」按钮（合盘等场景由父级统一触发） */
   hideSubmit?: boolean;
@@ -104,6 +105,7 @@ export default function BirthForm({
   onSubmit,
   loading = false,
   initialData,
+  initialDateNotice,
   onFormSave,
   hideSubmit = false,
   variant = "full",
@@ -133,6 +135,8 @@ export default function BirthForm({
   const formRef = useRef<HTMLFormElement>(null);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState('');
+  const [dateNotice, setDateNotice] = useState(initialDateNotice ?? '');
+  const [leapNotice, setLeapNotice] = useState('');
   const [dstOriginal, setDstOriginal] = useState<{ clockHour: string; clockMinute: string } | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
@@ -223,7 +227,10 @@ export default function BirthForm({
     month?: string;
     day?: string;
   }) => {
-    updateForm({ ...patch, ...(('month' in patch || 'year' in patch) ? { leapMonth: false } : {}) });
+    const next = changeBirthDate(form, patch);
+    updateForm(next.form);
+    setDateNotice(next.dateNotice);
+    setLeapNotice(next.leapNotice);
     markTouched(Object.keys(patch));
   };
 
@@ -310,6 +317,8 @@ export default function BirthForm({
           compact={compact}
           lunar={form.calendar === 'lunar'}
         />
+        {dateNotice && <p role="status" className="text-xs text-cinnabar">{dateNotice}</p>}
+        {leapNotice && <p role="status" className="text-xs text-cinnabar">{leapNotice}</p>}
         {form.calendar === 'lunar' && <label className="block text-sm text-ink-2"><input type="checkbox" checked={!!form.leapMonth} disabled={!leap || m !== leap} onChange={e => updateForm({ leapMonth: e.target.checked })} /> 闰月 · {leap ? `该年闰${leap}月，仅选该月可勾选` : '该年没有闰月'}</label>}
         {solar && lunar && <p role="status" className="text-sm text-ink-2">公历 {solar.year}-{String(solar.month).padStart(2, '0')}-{String(solar.day).padStart(2, '0')} ＝ {lunar.label}</p>}
       </FormSection>
