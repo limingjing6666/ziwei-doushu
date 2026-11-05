@@ -12,6 +12,7 @@ import { isChinaDST } from '@/lib/ziwei/dst-cn';
 import { shiftClock } from '@/lib/ziwei/clock-adjust';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { calcTrueSolarBranch, formToBirthInfo } from "@/lib/ziwei/share";
+import { formatBirthDate } from '@/lib/birth-time';
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 import { cn } from "@/lib/ui/cn";
@@ -55,7 +56,6 @@ export interface BirthFormProps {
   hideSubmit?: boolean;
   /** full：起盘页完整版；compact：合盘页嵌入式紧凑版 */
   variant?: BirthFormVariant;
-  lateZishiRule?: 'next-day' | 'current-day';
 }
 
 /** 表单分区标题：编号 + 宋体小标题 + 右侧口径提示。 */
@@ -115,7 +115,6 @@ export default function BirthForm({
   onFormSave,
   hideSubmit = false,
   variant = "full",
-  lateZishiRule = 'current-day',
 }: BirthFormProps) {
   const compact = variant === "compact";
   const uid = useId();
@@ -200,6 +199,7 @@ export default function BirthForm({
 
   // ─── 复核摘要：全部必填完成后显示 ────────────────────────
   const showSummary = steps[0] && steps[2] && steps[3] && !hasError;
+  const chartDate = showSummary && timeMode === 'exact' ? formToBirthInfo(form) : null;
   const summaryText = showSummary
     ? [
         `${form.calendar === 'lunar' ? '农历' : '公历'} ${y}年${m}月${d}日`,
@@ -272,7 +272,7 @@ export default function BirthForm({
       if (timeMode === 'fuzzy') {
         if (!onFuzzySubmit) throw new Error('此处不支持大概时段');
         onFuzzySubmit(formToFuzzyBirthInput(form));
-      } else onSubmit(formToBirthInfo(form, lateZishiRule));
+      } else onSubmit(formToBirthInfo(form));
     } catch { setFailure('排盘未完成，请检查出生信息后重试'); }
     finally { submitting.current = false; setBusy(false); }
   };
@@ -363,7 +363,8 @@ export default function BirthForm({
           city={form.city}
           longitude={form.longitude}
         />
-        {timeMode === 'exact' && form.clockHour === '23' && <p className="ux-notice">23 点至 24 点属晚子时，本页按{lateZishiRule === 'next-day' ? '次日' : '本日'}排盘；0 点至 1 点按本日处理。</p>}
+        {timeMode === 'exact' && <p className="ux-notice">排盘日界现已统一：按所选校时方式处理后，23:00 起归下一排盘日。旧版精确页按填写日排盘，重新起盘时结果可能变化；填写的出生日期不会被修改。</p>}
+        {chartDate && solar && <p className="ux-notice">原填写公历日：{formatBirthDate(solar)}；本次排盘日：{formatBirthDate(chartDate)}（{formatBirthDate(chartDate) === formatBirthDate(solar) ? '本日' : formatBirthDate(chartDate) > formatBirthDate(solar) ? '次日' : '前一日'}{SHICHEN[chartDate.hour].name}）。</p>}
         {timeMode === 'fuzzy' && solar && isChinaDST(solar.year, solar.month, solar.day) && <label className="flex min-h-10 items-center gap-2 text-sm text-ink-2">
           <input type="checkbox" checked={form.dstApplied === true} onChange={event => updateForm({ dstApplied: event.target.checked })} className="accent-cinnabar" />
           按夏令时减一小时

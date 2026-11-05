@@ -3,6 +3,8 @@ import { readFileSync, existsSync } from 'node:fs';
 import { buildAiView } from '../../components/TimeNav';
 import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
+import BirthForm from '../../components/birth/BirthForm';
+import ResultPage from '../../components/chart/ResultPage';
 import Markdown from '../../components/Markdown';
 import { solarToLunar, lunarToSolar, isValidLunarDate, leapMonthOfLunarYear } from '../../lib/ziwei/lunar-solar';
 import { formToBirthInfo } from '../../lib/ziwei/share';
@@ -52,9 +54,67 @@ async function main() {
   assert.ok(validateBirthForm({ ...f, gender: '', clockHour: '', clockMinute: '' }).gender);
   assert.ok(validateBirthForm({ ...f, clockHour: '24', clockMinute: '-1' }).clockHour);
   assert.ok(validateBirthForm({ ...f, calendar: 'solar', year: '2026', month: '11', day: '1' }, new Date(2026, 9, 31)).day);
-  assert.deepEqual([formToBirthInfo({ ...f, clockHour: '23' }).month, formToBirthInfo({ ...f, clockHour: '23' }).day], [5, 16], 'existing next-day late-zi convention');
-
-  assert.equal(formToBirthInfo({ ...f, clockHour: '23' }, 'current-day').day, 15, 'chart page retains its original current-day convention');
+  const chartTuple = (value: ReturnType<typeof formToBirthInfo>) => [value.year, value.month, value.day, value.hour];
+  const exact: BirthFormState = { ...f, calendar: 'solar', month: '5', day: '15', longitude: 120 };
+  for (const useTrueSolar of [true, false]) for (const [clockHour, clockMinute, day, branch] of [
+    ['22', '59', 15, 11], ['23', '0', 16, 0], ['23', '59', 16, 0], ['0', '0', 15, 0],
+  ] as const) {
+    assert.deepEqual(chartTuple(formToBirthInfo({ ...exact, clockHour, clockMinute, useTrueSolar, longitude: useTrueSolar ? 120 : 87.6 })), [1990, 5, day, branch]);
+  }
+  for (const [longitude, clockHour, clockMinute, day, branch] of [
+    [116.4, '23', '5', 15, 11], [116.4, '23', '30', 16, 0], [116.4, '0', '5', 15, 0],
+    [87.6, '23', '30', 15, 11], [87.6, '0', '30', 14, 11], [121.5, '22', '58', 16, 0],
+    [120 - 1e-8, '23', '0', 15, 11], [120 + 1e-8, '23', '0', 16, 0],
+    [105 - 1e-8, '0', '0', 14, 11], [105, '0', '0', 15, 0], [105 + 1e-8, '0', '0', 15, 0],
+    [135, '23', '0', 16, 0],
+  ] as const) {
+    const input = { ...exact, longitude, clockHour, clockMinute };
+    const converted = formToBirthInfo(input);
+    assert.deepEqual(chartTuple(converted), [1990, 5, day, branch]);
+    assert.deepEqual(converted.origInput, { year: 1990, month: 5, day: 15, clockHour: Number(clockHour), clockMinute: Number(clockMinute) });
+    const preview = renderToStaticMarkup(<BirthForm initialData={input} onSubmit={() => {}} />);
+    assert.match(preview, new RegExp(`原填写公历日：1990-05-15；本次排盘日：1990-05-${day}`));
+    assert.match(preview, /旧版精确页按填写日排盘.*填写的出生日期不会被修改/);
+  }
+  for (const [year, month, day, next] of [
+    ['1990', '1', '31', [1990, 2, 1, 0]], ['1990', '12', '31', [1991, 1, 1, 0]],
+    ['2024', '2', '28', [2024, 2, 29, 0]], ['2024', '2', '29', [2024, 3, 1, 0]],
+    ['2026', '2', '16', [2026, 2, 17, 0]], ['2026', '2', '17', [2026, 2, 18, 0]],
+  ] as const) {
+    const solarForm = { ...exact, year, month, day, clockHour: '23', clockMinute: '30' };
+    const lunarDate = solarToLunar(Number(year), Number(month), Number(day))!;
+    const lunarForm = { ...solarForm, calendar: 'lunar' as const, year: String(lunarDate.year), month: String(lunarDate.month), day: String(lunarDate.day), leapMonth: lunarDate.leapMonth };
+    assert.deepEqual(chartTuple(formToBirthInfo(solarForm)), next);
+    assert.deepEqual(formToBirthInfo(lunarForm), formToBirthInfo(solarForm), '双历先转换一次，再平移排盘日');
+  }
+  const springForm = { ...exact, year: '2026', month: '2', day: '16', clockMinute: '30' };
+  const beforeSpring = generateChart(formToBirthInfo({ ...springForm, clockHour: '22' }));
+  const afterSpring = generateChart(formToBirthInfo({ ...springForm, clockHour: '23' }));
+  const transformations = (value: typeof beforeSpring) => value.palaces.flatMap(p => p.stars.filter(s => s.siHua).map(s => `${s.name}化${s.siHua}`)).sort();
+  assert.equal(beforeSpring.lunarInfo.lunarYear, 2025);
+  assert.equal(afterSpring.lunarInfo.lunarYear, 2026);
+  assert.deepEqual(transformations(beforeSpring), ['天机化禄', '天梁化权', '太阴化忌', '紫微化科'].sort());
+  assert.deepEqual(transformations(afterSpring), ['天同化禄', '天机化权', '文昌化科', '廉贞化忌'].sort());
+  assert.deepEqual(afterSpring.palaces, generateChart({ year: 2026, month: 2, day: 17, hour: 0, gender: 'male' }).palaces);
+  assert.throws(() => formToBirthInfo({ ...exact, longitude: NaN }), /校正范围非法/);
+  assert.throws(() => formToBirthInfo({ ...exact, longitude: Infinity }), /校正范围非法/);
+  assert.throws(() => formToBirthInfo({ ...exact, longitude: Number.MAX_VALUE }), /校正范围非法/);
+  assert.throws(() => formToBirthInfo({ ...exact, year: '1900', month: '1', day: '1', clockHour: '0', longitude: 87.6 }), /排盘日期超出支持范围/);
+  const lateZi = formToBirthInfo({ ...exact, clockHour: '23', clockMinute: '30' });
+  const newChart = generateChart(lateZi);
+  const newResult = renderToStaticMarkup(<ResultPage chart={newChart} onReset={() => {}} useTrueSolar />);
+  assert.match(newResult, /原填写公历日：1990-05-15；本张排盘日：1990-05-16/);
+  assert.match(newResult, /历史会话中保存的命盘不会自动重算；按新口径查看请重新起盘/);
+  assert.ok(newResult.indexOf('原填写公历日') < newResult.indexOf('aria-label="命盘"'));
+  const oldChart = generateChart({ ...lateZi, day: 15 });
+  assert.match(renderToStaticMarkup(<ResultPage chart={oldChart} onReset={() => {}} />), /原填写公历日：1990-05-15；本张排盘日：1990-05-15/);
+  assert.match(renderToStaticMarkup(<ResultPage chart={{ ...oldChart, birthInfo: { ...oldChart.birthInfo, origInput: undefined } }} onReset={() => {}} />), /旧记录信息不完整，请重新起盘/);
+  assert.doesNotMatch(newResult, /沿用本日|原始输入为晚子时/);
+  const unknownInfo = formToBirthInfo({ ...exact, unknownTime: true, clockHour: '23' });
+  assert.deepEqual(chartTuple(unknownInfo), [1990, 5, 15, 0]);
+  const unknownResult = renderToStaticMarkup(<ResultPage chart={generateChart(unknownInfo)} onReset={() => {}} />);
+  assert.match(unknownResult, /出生时辰未知.*子时占位/);
+  assert.doesNotMatch(unknownResult, /23:00 换排盘日|原填写公历日|晚子时/);
   const chart = generateChart(info);
   const natalView = buildAiView(chart, 'mingpan', 2030);
   assert.equal(natalView.type, 'natal');
