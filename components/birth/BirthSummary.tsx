@@ -19,7 +19,7 @@ export function BirthStatus({ ready }: { ready: boolean }) {
 
   return (
     <span aria-live="polite" className="text-ink-3">
-      必填项：出生日期
+      请补齐必填信息
     </span>
   );
 }

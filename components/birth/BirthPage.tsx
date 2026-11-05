@@ -12,7 +12,7 @@ const STEPS = [
   },
   {
     title: "时刻与地点",
-    detail: "填北京时间与出生城市，系统按经度换算真太阳时后再定时辰。",
+    detail: "填北京时间与出生城市，系统按经度校正时间后再定时辰。",
   },
   {
     title: "复核与排盘",
@@ -29,18 +29,19 @@ const FAQS = [
   {
     question: "出生时间填北京时间还是当地时间？",
     answer:
-      "填出生时的北京时间（东八区标准时）。系统再按出生地经度换算真太阳时，换算结果会在填写时实时显示。",
+      "填出生时的北京时间（东八区标准时）。系统再按出生地经度校正，校正后时间会在填写时实时显示。",
   },
   {
     question: "出生地不填可以吗？",
     answer:
-      "可以。不填出生地时不校正经度，按北京时间对应时辰起盘；填了会按经度换算真太阳时（经度每差 1° 约差 4 分钟）。",
+      "可以不填出生地，这时按北京时间对应时辰排盘，不作地点校正。如果选了省份，请把城市也选完整。",
   },
 ];
 
 export interface BirthPageProps {
   onStart: (info: BirthInfo) => void;
   initialData?: Partial<BirthFormState>;
+  initialDateNotice?: string;
   onFormSave?: (form: BirthFormState) => void;
 }
 
@@ -48,7 +49,7 @@ export interface BirthPageProps {
  * 起盘信息填写页：桌面左栏说明 + 右栏表单，移动端单列且表单在前。
  * 页面级 header / footer 由 app/layout.tsx 的 AppShell 提供，这里不重复渲染。
  */
-export default function BirthPage({ onStart, initialData, onFormSave }: BirthPageProps) {
+export default function BirthPage({ onStart, initialData, initialDateNotice, onFormSave }: BirthPageProps) {
   return (
     <section aria-labelledby="birth-page-title" className="bg-paper">
       <div className="container-page py-8 md:py-12 lg:py-14">
@@ -65,7 +66,7 @@ export default function BirthPage({ onStart, initialData, onFormSave }: BirthPag
               先补齐生辰，再读命盘
             </h1>
             <p className="mt-4 max-w-[40ch] text-[15px] leading-[1.85] text-ink-2">
-              填写公历或农历出生日期、北京时间与出生地点，按三合四化起盘，并按经度换算真太阳时。
+              填写公历或农历出生日期、北京时间与出生地点，按三合四化起盘，并按出生地经度校正时间。
             </p>
 
             <div className="mt-8">
@@ -122,7 +123,7 @@ export default function BirthPage({ onStart, initialData, onFormSave }: BirthPag
                   双历 · 北京时间
                 </span>
               </div>
-              <BirthForm onSubmit={onStart} initialData={initialData} onFormSave={onFormSave} />
+              <BirthForm onSubmit={onStart} initialData={initialData} initialDateNotice={initialDateNotice} onFormSave={onFormSave} />
             </Card>
           </div>
         </div>

@@ -5,7 +5,7 @@ import { PROVINCES } from "@/lib/ziwei/cities";
 import { cn } from "@/lib/ui/cn";
 import { longitudeOffsetMinutes } from "./birth-utils";
 
-/** 出生地点：省 → 市联动，并显示用于真太阳时校正的经度与时差。 */
+/** 出生地点：省 → 市联动，地点校时启用时才显示经度时差。 */
 export default function BirthLocationFields({
   idPrefix,
   province,
@@ -14,6 +14,8 @@ export default function BirthLocationFields({
   onProvinceChange,
   onCityChange,
   compact = false,
+  error,
+  useTrueSolar = true,
 }: {
   idPrefix: string;
   province: string;
@@ -22,6 +24,8 @@ export default function BirthLocationFields({
   onProvinceChange: (province: string) => void;
   onCityChange: (city: string) => void;
   compact?: boolean;
+  error?: string;
+  useTrueSolar?: boolean;
 }) {
   const provinceId = `${idPrefix}-province`;
   const cityId = `${idPrefix}-city`;
@@ -46,9 +50,11 @@ export default function BirthLocationFields({
           </Select>
         </Field>
 
-        <Field id={cityId} label="城市">
+        <Field id={cityId} label="城市" error={error}>
           <Select
             id={cityId}
+            invalid={!!error}
+            aria-describedby={error ? `${cityId}-error` : undefined}
             value={city}
             disabled={!province}
             className={cn(!province && "opacity-40")}
@@ -65,19 +71,14 @@ export default function BirthLocationFields({
       </div>
 
       <p className="text-[12px] leading-relaxed text-ink-3">
-        {province ? (
+        {province && !city ? "请选择出生城市" : province ? (
           <>
-            {city || "请选择城市"} · 经度{" "}
+            {city} · 经度{" "}
             <span className="font-mono tabular-nums">{longitude.toFixed(1)}°E</span>{" "}
-            · 时差{" "}
-            <span className="font-mono tabular-nums">
-              {offsetMinutes > 0 ? "+" : ""}
-              {offsetMinutes}
-            </span>{" "}
-            分钟
+            {useTrueSolar ? <>· 时差{" "}<span className="font-mono tabular-nums">{offsetMinutes > 0 ? "+" : ""}{offsetMinutes}</span> 分钟</> : '（未作地点校正）'}
           </>
         ) : (
-          "出生地用于按经度换算真太阳时；不选则按北京时间对应时辰起盘。"
+          "出生地用于按经度校正时间；不选则按北京时间对应时辰起盘。"
         )}
       </p>
     </div>

@@ -5,7 +5,7 @@ import type { FormEvent, ReactNode } from "react";
 import type { BirthInfo } from "@/lib/ziwei/types";
 import { SHICHEN } from "@/lib/ziwei/constants";
 import { PROVINCES } from "@/lib/ziwei/cities";
-import { formSolarDate, validateBirthForm } from '@/lib/birth-form';
+import { changeBirthDate, formSolarDate, validateBirthForm } from '@/lib/birth-form';
 import { solarToLunar, leapMonthOfLunarYear } from '@/lib/ziwei/lunar-solar';
 import { isChinaDST } from '@/lib/ziwei/dst-cn';
 import { shiftClock } from '@/lib/ziwei/clock-adjust';
@@ -44,6 +44,7 @@ export interface BirthFormProps {
   onSubmit: (info: BirthInfo) => void;
   loading?: boolean;
   initialData?: Partial<BirthFormState>;
+  initialDateNotice?: string;
   onFormSave?: (data: BirthFormState) => void;
   /** 隐藏内部「排盘」按钮（合盘等场景由父级统一触发） */
   hideSubmit?: boolean;
@@ -104,6 +105,7 @@ export default function BirthForm({
   onSubmit,
   loading = false,
   initialData,
+  initialDateNotice,
   onFormSave,
   hideSubmit = false,
   variant = "full",
@@ -133,6 +135,8 @@ export default function BirthForm({
   const formRef = useRef<HTMLFormElement>(null);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState('');
+  const [dateNotice, setDateNotice] = useState(initialDateNotice ?? '');
+  const [leapNotice, setLeapNotice] = useState('');
   const [dstOriginal, setDstOriginal] = useState<{ clockHour: string; clockMinute: string } | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
@@ -223,18 +227,15 @@ export default function BirthForm({
     month?: string;
     day?: string;
   }) => {
-    updateForm({ ...patch, ...(('month' in patch || 'year' in patch) ? { leapMonth: false } : {}) });
+    const next = changeBirthDate(form, patch);
+    updateForm(next.form);
+    setDateNotice(next.dateNotice);
+    setLeapNotice(next.leapNotice);
     markTouched(Object.keys(patch));
   };
 
   const handleProvince = (province: string) => {
-    const provinceData = PROVINCES.find((item) => item.name === province);
-    const firstCity = provinceData?.cities[0];
-    updateForm({
-      province,
-      city: firstCity?.name || "",
-      longitude: firstCity?.longitude ?? 120,
-    });
+    updateForm({ province, city: "", longitude: 120 });
   };
 
   const handleCity = (city: string) => {
@@ -292,9 +293,12 @@ export default function BirthForm({
             {submitAttempted && errors.gender && <p role="alert" className="text-xs text-cinnabar">{errors.gender}</p>}
           </div>
 
-          <Field id={nameId} label="姓名" hint="选填">
+          <Field id={nameId} label="姓名" hint="选填，最多20个字" error={errors.name}>
             <Input
               id={nameId}
+              maxLength={20}
+              invalid={!!errors.name}
+              aria-describedby={errors.name ? `${nameId}-error` : undefined}
               value={form.name}
               onChange={(event) => updateForm({ name: event.target.value })}
               placeholder="如：张三"
@@ -316,6 +320,8 @@ export default function BirthForm({
           compact={compact}
           lunar={form.calendar === 'lunar'}
         />
+        {dateNotice && <p role="status" className="text-xs text-cinnabar">{dateNotice}</p>}
+        {leapNotice && <p role="status" className="text-xs text-cinnabar">{leapNotice}</p>}
         {form.calendar === 'lunar' && <label className="block text-sm text-ink-2"><input type="checkbox" checked={!!form.leapMonth} disabled={!leap || m !== leap} onChange={e => updateForm({ leapMonth: e.target.checked })} /> 闰月 · {leap ? `该年闰${leap}月，仅选该月可勾选` : '该年没有闰月'}</label>}
         {solar && lunar && <p role="status" className="text-sm text-ink-2">公历 {solar.year}-{String(solar.month).padStart(2, '0')}-{String(solar.day).padStart(2, '0')} ＝ {lunar.label}</p>}
       </FormSection>
@@ -338,13 +344,15 @@ export default function BirthForm({
           compact={compact}
           errors={submitAttempted ? errors : {}}
           useTrueSolar={form.useTrueSolar !== false}
+          city={form.city}
+          longitude={form.longitude}
         />
         {!form.unknownTime && form.clockHour === '23' && <p className="ux-notice">23 点至 24 点属晚子时，本页按{lateZishiRule === 'next-day' ? '次日' : '本日'}排盘；0 点至 1 点按本日处理。</p>}
-        {solar && isChinaDST(solar.year, solar.month, solar.day) && <div className="ux-notice">该时段中国实行过夏令时。默认不自动调整；已换算为标准时间则无需操作。
+        {solar && isChinaDST(solar.year, solar.month, solar.day) && <div className="ux-notice">你填写的出生日期处在夏令时期间。如果填的是当时钟表上拨快后的时间，可以减1小时；如果已经减过，就不要再减。不确定时，请先核对出生记录。
           <Button variant="secondary" size="sm" disabled={form.unknownTime || (!dstOriginal && !shiftClock(form, -60))} onClick={() => {
             if (dstOriginal) { setForm(f => ({ ...f, ...dstOriginal })); setDstOriginal(null); }
             else { const shifted = shiftClock(form, -60); if (shifted) { setDstOriginal({ clockHour: form.clockHour, clockMinute: form.clockMinute }); setForm(f => ({ ...f, ...shifted })); } }
-          }}>{dstOriginal ? '撤销减 1 小时' : '这是夏令时读数，减 1 小时'}</Button><p>若调整会跨日，请自行核对日期后手动修改。</p>
+          }}>{dstOriginal ? '恢复原来填写的时间' : '按夏令时减1小时'}</Button>{!form.unknownTime && form.clockHour === '0' && <p>如果减1小时会变成前一天，请先核对出生日期，再手动修改日期和时间。</p>}
         </div>}
       </FormSection>
 
@@ -354,9 +362,9 @@ export default function BirthForm({
         hint="经度校正"
         compact={compact}
       >
-        <SegmentedControl<'solar' | 'clock'> ariaLabel="校时方式" options={[{ value: 'solar', label: '按真太阳时' }, { value: 'clock', label: '按钟表时间' }]} value={form.useTrueSolar === false ? 'clock' : 'solar'} onChange={v => updateForm({ useTrueSolar: v === 'solar' })} />
-        <p className="text-xs text-ink-3">真太阳时是按出生地经度校正的当地太阳时间；经度每差 1° 约差 4 分钟，可能改变时辰，所以需要出生城市。不选地点不作偏移。</p>
-        {!form.unknownTime && form.clockHour !== '' && form.clockMinute !== '' && branch !== calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120) && <p className="ux-notice">按真太阳时校正后，时辰由{SHICHEN[calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120)].name}变为{SHICHEN[branch].name}。<Button variant="quiet" onClick={() => updateForm({ useTrueSolar: false })}>改按钟表时间</Button></p>}
+        <SegmentedControl<'solar' | 'clock'> ariaLabel="校时方式" options={[{ value: 'solar', label: '按出生地校正' }, { value: 'clock', label: '按钟表时间' }]} value={form.useTrueSolar === false ? 'clock' : 'solar'} onChange={v => updateForm({ useTrueSolar: v === 'solar' })} />
+        <p className="text-xs text-ink-3">目前只按出生地经度校正；经度每差 1° 约差 4 分钟，可能改变时辰，所以需要出生城市。不选地点不作偏移。</p>
+        {!form.unknownTime && form.clockHour !== '' && form.clockMinute !== '' && branch !== calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120) && <p className="ux-notice">按出生地经度校正后，时辰由{SHICHEN[calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120)].name}变为{SHICHEN[branch].name}。<Button variant="quiet" onClick={() => updateForm({ useTrueSolar: false })}>改按钟表时间</Button></p>}
         <BirthLocationFields
           idPrefix={uid}
           province={form.province}
@@ -365,6 +373,8 @@ export default function BirthForm({
           onProvinceChange={handleProvince}
           onCityChange={handleCity}
           compact={compact}
+          error={errors.city}
+          useTrueSolar={form.useTrueSolar !== false && !form.unknownTime}
         />
       </FormSection>
 
@@ -391,7 +401,7 @@ export default function BirthForm({
               type="submit"
               size={compact ? "md" : "lg"}
               className="w-full"
-              disabled={loading || busy}
+              disabled={loading || busy || !!errors.city}
               aria-busy={loading || busy || undefined}
             >
               {loading || busy ? (

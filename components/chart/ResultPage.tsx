@@ -14,6 +14,7 @@ import ChartMetaBar from "./ChartMetaBar";
 export interface ResultPageProps {
   chart: ZiweiChart;
   onReset: () => void;
+  useTrueSolar?: boolean;
 }
 
 /**
@@ -21,7 +22,7 @@ export interface ResultPageProps {
  * 顶部命盘信息条；桌面两栏（左：运限 + 4×4 命盘 + 图例，右：AI 解读）；
  * 移动端单列（命盘在上、AI 在下），说明文字与操作均为 ≥36px 触控目标。
  */
-export default function ResultPage({ chart, onReset }: ResultPageProps) {
+export default function ResultPage({ chart, onReset, useTrueSolar }: ResultPageProps) {
   const [selectedPalace, setSelectedPalace] = useState<Palace | null>(null);
 
   const [selectedStar, setSelectedStar] = useState<Star | null>(null);
@@ -34,9 +35,9 @@ export default function ResultPage({ chart, onReset }: ResultPageProps) {
 
   return (
     <div className="container-wide py-6 md:py-8">
-      <ChartMetaBar chart={chart} onReset={onReset} />
+      <ChartMetaBar chart={chart} onReset={onReset} useTrueSolar={useTrueSolar} />
       {chart.birthInfo.birthTimeKnown === false && <p role="note" className="ux-notice my-3">出生时辰未知，命宫、身宫和各宫排布不可靠，当前以子时占位，解读只讲生年四化与流年的大方向。</p>}
-      {chart.birthInfo.timeCorrectionNotice && <p className="ux-notice my-3">{chart.birthInfo.timeCorrectionNotice}。可重新起盘改按钟表时间。</p>}
+      {chart.birthInfo.timeCorrectionNotice && <p className="ux-notice my-3">{chart.birthInfo.timeCorrectionNotice.replace(/真太阳时/g, '出生地经度')}。可重新起盘改按钟表时间。</p>}
       {chart.birthInfo.origInput?.clockHour === 23 && <p className="ux-notice my-3">原始输入为晚子时，本页沿用本日排盘口径。</p>}
       <ResultGuide />
 
