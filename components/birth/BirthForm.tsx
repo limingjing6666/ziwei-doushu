@@ -293,9 +293,12 @@ export default function BirthForm({
             {submitAttempted && errors.gender && <p role="alert" className="text-xs text-cinnabar">{errors.gender}</p>}
           </div>
 
-          <Field id={nameId} label="姓名" hint="选填">
+          <Field id={nameId} label="姓名" hint="选填，最多20个字" error={errors.name}>
             <Input
               id={nameId}
+              maxLength={20}
+              invalid={!!errors.name}
+              aria-describedby={errors.name ? `${nameId}-error` : undefined}
               value={form.name}
               onChange={(event) => updateForm({ name: event.target.value })}
               placeholder="如：张三"
@@ -345,11 +348,11 @@ export default function BirthForm({
           longitude={form.longitude}
         />
         {!form.unknownTime && form.clockHour === '23' && <p className="ux-notice">23 点至 24 点属晚子时，本页按{lateZishiRule === 'next-day' ? '次日' : '本日'}排盘；0 点至 1 点按本日处理。</p>}
-        {solar && isChinaDST(solar.year, solar.month, solar.day) && <div className="ux-notice">该时段中国实行过夏令时。默认不自动调整；已换算为标准时间则无需操作。
+        {solar && isChinaDST(solar.year, solar.month, solar.day) && <div className="ux-notice">你填写的出生日期处在夏令时期间。如果填的是当时钟表上拨快后的时间，可以减1小时；如果已经减过，就不要再减。不确定时，请先核对出生记录。
           <Button variant="secondary" size="sm" disabled={form.unknownTime || (!dstOriginal && !shiftClock(form, -60))} onClick={() => {
             if (dstOriginal) { setForm(f => ({ ...f, ...dstOriginal })); setDstOriginal(null); }
             else { const shifted = shiftClock(form, -60); if (shifted) { setDstOriginal({ clockHour: form.clockHour, clockMinute: form.clockMinute }); setForm(f => ({ ...f, ...shifted })); } }
-          }}>{dstOriginal ? '撤销减 1 小时' : '这是夏令时读数，减 1 小时'}</Button><p>若调整会跨日，请自行核对日期后手动修改。</p>
+          }}>{dstOriginal ? '恢复原来填写的时间' : '按夏令时减1小时'}</Button>{!form.unknownTime && form.clockHour === '0' && <p>如果减1小时会变成前一天，请先核对出生日期，再手动修改日期和时间。</p>}
         </div>}
       </FormSection>
 

@@ -1,20 +1,24 @@
 import React, { type ReactNode } from 'react';
 
 /** No HTML parser, no clickable links. Unclosed inline markers remain text. */
-function inline(text: string, renderText: (text: string) => ReactNode): ReactNode[] {
+function inline(text: string, renderText: (text: string) => ReactNode, highlightUntil = 0): ReactNode[] {
+  const renderPart = (value: string, start: number, render = renderText) => {
+    const count = Math.max(0, Math.min(value.length, highlightUntil - start));
+    return count ? <><strong className="text-[17px] font-semibold leading-relaxed">{render(value.slice(0, count))}</strong>{render(value.slice(count))}</> : render(value);
+  };
   const tokens = /(\*\*([^*\n]+)\*\*|(?<!\*)\*([^*\n]+)\*(?!\*)|`([^`\n]+)`)/g;
   const result: ReactNode[] = [];
   let last = 0;
   for (const m of text.matchAll(tokens)) {
     const index = m.index!;
-    result.push(<React.Fragment key={`text-${index}`}>{renderText(text.slice(last, index))}</React.Fragment>);
-    result.push(m[2] !== undefined ? <strong key={index}>{renderText(m[2])}</strong> : m[3] !== undefined ? <em key={index}>{renderText(m[3])}</em> : <code key={index}>{m[4]}</code>);
+    result.push(<React.Fragment key={`text-${index}`}>{renderPart(text.slice(last, index), last)}</React.Fragment>);
+    result.push(m[2] !== undefined ? <strong key={index}>{renderPart(m[2], index + 2)}</strong> : m[3] !== undefined ? <em key={index}>{renderPart(m[3], index + 1)}</em> : <code key={index}>{renderPart(m[4], index + 1, value => value)}</code>);
     last = index + m[0].length;
   }
-  result.push(<React.Fragment key="tail">{renderText(text.slice(last))}</React.Fragment>);
+  result.push(<React.Fragment key="tail">{renderPart(text.slice(last), last)}</React.Fragment>);
   return result;
 }
-export default function Markdown({ text, streaming, renderText = value => value }: { text: string; streaming?: boolean; renderText?: (text: string) => ReactNode }) {
+export default function Markdown({ text, streaming, renderText = value => value, highlightFirstSentence = false }: { text: string; streaming?: boolean; renderText?: (text: string) => ReactNode; highlightFirstSentence?: boolean }) {
   // Rendering-only recovery: explicit bold boundaries are unambiguous; for
   // hash headings use a separator or a short title followed by a prose opener.
   const lines = text.replace(/\r\n?/g, '\n').split('\n').flatMap(line => {
@@ -44,9 +48,18 @@ export default function Markdown({ text, streaming, renderText = value => value 
     }
     if (!lines[i].trim()) { i++; continue; }
     const start = i; const paragraph: ReactNode[] = [];
+    let highlightUntil = 0;
+    if (highlightFirstSentence && nodes.length === 0) {
+      let end = start;
+      while (end < lines.length && lines[end].trim() && !/^\s*(?:#{1,6}\s|(?:[-*+]|\d+[.)])\s)/.test(lines[end])) end++;
+      const opening = lines.slice(start, end).join('\n');
+      const sentenceEnd = opening.indexOf('。') + 1;
+      if (sentenceEnd && !/^(?:\*\*|\*|`)*[”’」』"']/.test(opening.slice(sentenceEnd))) highlightUntil = sentenceEnd;
+    }
     while (i < lines.length && lines[i].trim() && (i === start || !/^(#{1,3}\s|\s*(?:[-*]|\d+\.)\s)/.test(lines[i]))) {
       if (i > start) paragraph.push(<br key={`br-${i}`} />);
-      paragraph.push(<React.Fragment key={`line-${i}`}>{inline(lines[i], renderText)}</React.Fragment>); i++;
+      paragraph.push(<React.Fragment key={`line-${i}`}>{inline(lines[i], renderText, highlightUntil)}</React.Fragment>);
+      highlightUntil = Math.max(0, highlightUntil - lines[i].length - 1); i++;
     }
     nodes.push(<p key={start}>{paragraph}</p>);
   }

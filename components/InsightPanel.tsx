@@ -116,7 +116,7 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
         {!messages.length && <p className="py-6 text-[13px] text-ink-3">命盘已生成。先看看宫位简介，再选一个想了解的话题。</p>}
         <div className="space-y-4" aria-live="polite">{messages.map((m, i) => {
           const interpretation = m.interpretation;
-          return m.role === 'user' && m.hidden ? null : m.role === 'user' ? <div key={i} className="flex justify-end"><p className="max-w-[85%] break-words rounded-sm border border-line/20 bg-surface-2 px-3 py-2 text-[13px] text-ink-2">{m.content}</p></div> : <div key={i}><p className="mb-1.5 text-xs text-ink-3">命理解读</p><AiProse text={m.content} streaming={loading && i === messages.length - 1} />
+          return m.role === 'user' && m.hidden ? null : m.role === 'user' ? <div key={i} className="flex justify-end"><p className="max-w-[85%] break-words rounded-sm border border-line/20 bg-surface-2 px-3 py-2 text-[13px] text-ink-2">{m.content}</p></div> : <div key={i}><p className="mb-1.5 text-xs text-ink-3">命理解读</p><AiProse text={m.content} streaming={loading && i === messages.length - 1} highlightFirstSentence />
             {m.content && interpretation && JSON.stringify(interpretation.view) !== JSON.stringify(currentView) && <div className="mt-3 space-y-2 text-xs text-ink-3"><p>以上解读针对 {viewLabel(interpretation.view)}</p><Button variant="secondary" size="sm" disabled={loading} onClick={() => send(interpretation.question, interpretation.mode, interpretation.standalone, interpretation.hidden)}>按当前运限重新解读</Button></div>}
           </div>;
         })}</div>

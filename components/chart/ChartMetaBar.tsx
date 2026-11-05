@@ -75,8 +75,8 @@ export default function ChartMetaBar({ chart, onReset, useTrueSolar, className }
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="hidden text-[12px] tracking-[0.18em] text-ink-3 sm:block">命盘结果</p>
-          <h1 className="break-words font-serif text-[20px] font-semibold leading-tight tracking-[0.02em] text-ink sm:mt-1 sm:text-[26px]">
-            {name ? `${name} · 紫微斗数命盘` : "紫微斗数命盘"}
+          <h1 className="break-all font-serif text-[20px] font-semibold leading-tight tracking-[0.02em] text-ink sm:mt-1 sm:text-[26px]">
+            {name ? `${name.slice(0, 20)}${name.length > 20 ? '…' : ''} · 紫微斗数命盘` : "紫微斗数命盘"}
           </h1>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5 sm:mt-2">
             <Badge tone="muted">{gender}</Badge>

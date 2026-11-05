@@ -35,6 +35,7 @@ export function formSolarDate(f: BirthFormState) {
 }
 export function validateBirthForm(f: BirthFormState, now = new Date()): Record<string, string> {
   const errors: Record<string, string> = {};
+  if (f.name && f.name.length > 20) errors.name = '姓名最多20个字，请缩短后再试';
   const minYear = f.calendar === 'lunar' ? 1899 : 1900;
   if (!f.year || !Number.isInteger(Number(f.year)) || Number(f.year) < minYear || Number(f.year) > now.getFullYear()) errors.year = `年份超出范围，请填写公历 1900–${now.getFullYear()} 年${f.calendar === 'lunar' ? '（农历最早 1899 年）' : ''}`;
   if (!f.month) errors.month = '请选择出生月份';
