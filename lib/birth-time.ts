@@ -1,6 +1,10 @@
 import { SHICHEN } from './ziwei/constants';
 import { calcTrueSolarBranch } from './ziwei/share';
 
+export function formatBirthDate(date: { year: number; month: number; day: number }): string {
+  return `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
+}
+
 /** 仅展示经度校时；分钟向下取整，时辰沿用原始精度，不参与排盘。 */
 export function describeBirthTime(input: {
   clockHour?: number;
@@ -23,7 +27,7 @@ export function describeBirthTime(input: {
   const minutes = Math.floor(((raw % 1440) + 1440) % 1440);
   const branch = calcTrueSolarBranch(input.clockHour, input.clockMinute, input.longitude!);
   const difference = offset === 0 ? '与北京时间相同' : `比北京时间${offset < 0 ? '慢' : '快'}约${Math.round(Math.abs(offset))}分钟`;
-  const midnight = raw < 0 ? '校正后落在前一天；本次仍按你填写的日期排盘。' : raw >= 1440 ? '校正后落在后一天；本次仍按你填写的日期排盘。' : '';
+  const midnight = raw < 0 ? '校正后落在前一个民用日；排盘日请看实际日期说明。' : raw >= 1440 ? '校正后落在后一个民用日；排盘日请看实际日期说明。' : '';
   return {
     summary: `${clock} → 校正后 ${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)} → ${SHICHEN[branch].name}`,
     detail: `仅按出生城市经度校正，${difference}。${midnight}`,

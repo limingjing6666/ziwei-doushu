@@ -10,6 +10,7 @@ import StarDetailPanel from '@/components/StarDetailPanel';
 import ResultGuide from '@/components/ResultGuide';
 import { buildAiView, type TimeView } from '@/components/TimeNav';
 import ChartMetaBar from "./ChartMetaBar";
+import { formatBirthDate } from '@/lib/birth-time';
 
 export interface ResultPageProps {
   chart: ZiweiChart;
@@ -38,7 +39,7 @@ export default function ResultPage({ chart, onReset, useTrueSolar }: ResultPageP
       <ChartMetaBar chart={chart} onReset={onReset} useTrueSolar={useTrueSolar} />
       {chart.birthInfo.birthTimeKnown === false && <p role="note" className="ux-notice my-3">出生时辰未知，命宫、身宫和各宫排布不可靠，当前以子时占位，解读只讲生年四化与流年的大方向。</p>}
       {chart.birthInfo.timeCorrectionNotice && <p className="ux-notice my-3">{chart.birthInfo.timeCorrectionNotice.replace(/真太阳时/g, '出生地经度')}。可重新起盘改按钟表时间。</p>}
-      {chart.birthInfo.origInput?.clockHour === 23 && <p className="ux-notice my-3">原始输入为晚子时，本页沿用本日排盘口径。</p>}
+      {chart.birthInfo.birthTimeKnown !== false && <p role="note" className="ux-notice my-3">{chart.birthInfo.origInput?.year && chart.birthInfo.origInput.month && chart.birthInfo.origInput.day ? <>原填写公历日：{formatBirthDate(chart.birthInfo.origInput)}；本张排盘日：{formatBirthDate(chart.birthInfo)}。本站现统一按所选校时方式处理后的 23:00 换排盘日。历史会话中保存的命盘不会自动重算；按新口径查看请重新起盘。</> : '旧记录信息不完整，请重新起盘。'}</p>}
       <ResultGuide />
 
       <div className="mt-5 grid gap-5 md:mt-6 lg:grid-cols-[minmax(0,1fr)_minmax(350px,400px)] lg:items-start lg:gap-8">

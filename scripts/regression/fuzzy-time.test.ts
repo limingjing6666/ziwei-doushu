@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { mock } from 'node:test';
 import { PROVINCES } from '../../lib/ziwei/cities';
-import { calcTrueSolarBranch } from '../../lib/ziwei/share';
+import { calcTrueSolarBranch, formToBirthInfo } from '../../lib/ziwei/share';
 import { solarToLunar } from '../../lib/ziwei/lunar-solar';
 import type { CandidateBranch, ChartResult, FuzzyBirthInput, FuzzyCity, Segment } from '../../lib/ziwei/fuzzy-time';
-import type { GregorianDate } from '../../lib/ziwei/true-solar-time';
+import { shiftGregorianDate, type GregorianDate } from '../../lib/ziwei/true-solar-time';
 
 // 冷进程先包装入口再加载批算模块，不给生产代码增加测试注入参数。
 const algorithm: typeof import('../../lib/ziwei/algorithm') = require('../../lib/ziwei/algorithm');
@@ -32,6 +32,7 @@ function city(province: string, name: string): FuzzyCity {
 const beijing = city('北京市', '北京');
 const zhengzhou = city('河南省', '郑州');
 const urumqi = city('新疆维吾尔自治区', '乌鲁木齐');
+const shanghai = city('上海市', '上海');
 const dateInfo = Object.freeze({ year: 1990, month: 5, day: 15 });
 const evaluatedAt = new Date('2026-11-05T00:00:00+08:00');
 const near = (actual: number, expected: number) => assert.ok(Math.abs(actual - expected) < 1e-8, `${actual} != ${expected}`);
@@ -56,12 +57,30 @@ function at(items: readonly CandidateBranch[], minute: number) {
   return items.filter(c => c.clockRanges.some(([lo, hi]) => minute >= lo && minute < hi));
 }
 
+function exactAt(date: GregorianDate, place: FuzzyCity, minute: number, dstApplied: boolean) {
+  // 精确按钮已改时分；若跨日，用户核对后手动改日期。转换器不能再减 DST。
+  const standard = minute - (dstApplied ? 60 : 0);
+  const adjusted = shiftGregorianDate(date, Math.floor(standard / 1440));
+  const clock = ((standard % 1440) + 1440) % 1440;
+  return formToBirthInfo({
+    name: '', year: String(adjusted.year), month: String(adjusted.month), day: String(adjusted.day),
+    clockHour: String(Math.floor(clock / 60)), clockMinute: String(clock % 60),
+    unknownTime: false, timeMode: 'exact', dstApplied, gender: 'male', useTrueSolar: true, ...place,
+  });
+}
+function assertExactCandidate(date: GregorianDate, place: FuzzyCity, minute: number, dst: boolean, items: readonly CandidateBranch[]) {
+  const matches = at(items, minute);
+  assert.equal(matches.length, 1);
+  const info = exactAt(date, place, minute, dst);
+  assert.deepEqual([info.year, info.month, info.day, info.hour], [matches[0].chartDate.year, matches[0].chartDate.month, matches[0].chartDate.day, matches[0].branch], '精确点与所属候选的日期+地支一致');
+}
+
 assert.deepEqual(SEGMENTS.map(s => s.label), [
   '凌晨（0 点–6 点）', '上午（6 点–12 点）', '下午（12 点–18 点）', '晚上（18 点–24 点）',
 ]);
 let seed = 16;
 const random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
-for (const place of [beijing, zhengzhou, urumqi]) {
+for (const place of [beijing, zhengzhou, urumqi, shanghai]) {
   for (const segment of SEGMENTS) for (const dst of [false, true]) {
     const items = enumerateCandidateBranches(dateInfo, place, segment.value, dst);
     partition(items, segment.start, segment.end);
@@ -72,8 +91,16 @@ for (const place of [beijing, zhengzhou, urumqi]) {
       const standard = point - (dst ? 60 : 0);
       const hour = Math.floor(standard / 60);
       assert.equal(matches[0].branch, calcTrueSolarBranch(hour, standard - hour * 60, place.longitude));
+      assertExactCandidate(dateInfo, place, Math.floor(point), dst, items);
     }
   }
+}
+for (const [place, minute] of [
+  [beijing, 23 * 60 + 5], [beijing, 23 * 60 + 30], [beijing, 5],
+  [urumqi, 23 * 60 + 30], [urumqi, 30], [shanghai, 22 * 60 + 58],
+] as const) {
+  const segment = SEGMENTS.find(item => minute >= item.start && minute < item.end)!;
+  assertExactCandidate(dateInfo, place, minute, false, enumerateCandidateBranches(dateInfo, place, segment.value, false));
 }
 assert.deepEqual(branches(enumerateCandidateBranches(dateInfo, beijing, '06-12', false)), [3, 4, 5, 6]);
 assert.deepEqual(branches(enumerateCandidateBranches(dateInfo, zhengzhou, '06-12', false)), [3, 4, 5, 6]);
@@ -106,6 +133,7 @@ for (const [date, next] of [
   assert.deepEqual(evening.slice(0, 3).map(c => c.chartDate), [date, date, date]);
   assert.deepEqual(evening[3].chartDate, next, '校正后 23:00 换排盘日，含跨月/跨年/春节');
   partition(evening, 1080, 1440);
+  assertExactCandidate(date, beijing, 23 * 60 + 30, false, evening);
 }
 for (const [date, previous] of [
   [{ year: 1990, month: 5, day: 1 }, { year: 1990, month: 4, day: 30 }],
@@ -117,6 +145,7 @@ for (const [date, previous] of [
   assert.deepEqual(early[0].chartDate, previous, '乌鲁木齐凌晨保留前一排盘日亥时');
   assert.deepEqual(early.slice(1).map(c => c.chartDate), [date, date, date]);
   partition(early, 0, 360);
+  assertExactCandidate(date, urumqi, 30, false, early);
 }
 const spring = enumerateCandidateBranches({ year: 2026, month: 2, day: 16 }, beijing, '18-24', false);
 assert.deepEqual(spring.map(c => solarToLunar(c.chartDate.year, c.chartDate.month, c.chartDate.day)!.year), [2025, 2025, 2025, 2026]);

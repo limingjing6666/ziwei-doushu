@@ -17,6 +17,7 @@ import { isFormReady } from '@/lib/birth-form';
 import { buildAiView } from '@/components/TimeNav';
 import { generateChart as buildChart } from '@/lib/ziwei/algorithm';
 import { formToBirthInfo } from '@/lib/ziwei/share';
+import { formatBirthDate } from '@/lib/birth-time';
 import type { ZiweiChart } from '@/lib/ziwei/types';
 
 /** 分析完成后的快捷追问（沿用原有 5 个问题，只改视觉） */
@@ -61,7 +62,6 @@ function BirthSideCard({
       <div className="flex-1 p-4 sm:p-5">
         <BirthForm
           variant="compact"
-          lateZishiRule="next-day"
           hideSubmit
           onSubmit={() => {}}
           onFormSave={onFormSave}
@@ -253,7 +253,7 @@ export default function HemingPage() {
               </div>
             ) : null}
 
-            {charts && [charts.chartA, charts.chartB].map((c, i) => <div key={i}>{c.birthInfo.birthTimeKnown === false && <p className="ux-notice my-3">{i === 0 ? '甲方' : '乙方'}出生时辰未知，命宫、身宫与各宫排布不可靠，仅解读生年四化与流年的大方向。</p>}{c.birthInfo.timeCorrectionNotice && <p className="ux-notice my-3">{i === 0 ? '甲方' : '乙方'}：{c.birthInfo.timeCorrectionNotice.replace(/真太阳时/g, '出生地经度')}。可在表单改按钟表时间后重新合盘。</p>}</div>)}
+            {charts && [charts.chartA, charts.chartB].map((c, i) => <div key={i}>{c.birthInfo.birthTimeKnown === false && <p className="ux-notice my-3">{i === 0 ? '甲方' : '乙方'}出生时辰未知，命宫、身宫与各宫排布不可靠，仅解读生年四化与流年的大方向。</p>}{c.birthInfo.birthTimeKnown !== false && c.birthInfo.origInput && <p className="ux-notice my-3">{i === 0 ? '甲方' : '乙方'}原填写公历日：{formatBirthDate(c.birthInfo.origInput)}；本张排盘日：{formatBirthDate(c.birthInfo)}。按所选校时方式处理后的 23:00 换排盘日，填写的出生日期不会被修改。</p>}{c.birthInfo.timeCorrectionNotice && <p className="ux-notice my-3">{i === 0 ? '甲方' : '乙方'}：{c.birthInfo.timeCorrectionNotice.replace(/真太阳时/g, '出生地经度')}。可在表单改按钟表时间后重新合盘。</p>}</div>)}
             {analysis ? <div aria-label="原始合盘报告"><AiProse text={analysis} streaming={analyzing && last.current?.index === -1} /></div> : null}
             {analyzing && (last.current?.index === -1 ? !analysis : !turns[last.current?.index ?? -1]?.answer) && <AiLoading />}
             <AiErrorNotice error={error} loading={analyzing} retry={() => { if (last.current) void execute(last.current.payload, last.current.index); }} />

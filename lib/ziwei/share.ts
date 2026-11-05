@@ -2,6 +2,8 @@ import type { BirthFormState } from '@/components/BirthForm';
 import type { BirthInfo } from './types';
 import { formSolarDate, getBirthTimeMode, normalizeBirthTimeState, validateBirthForm } from '@/lib/birth-form';
 import { BRANCHES } from './constants';
+import { shiftGregorianDate } from './true-solar-time';
+import { solarToLunar } from './lunar-solar';
 
 /** 根据北京时间 + 经度计算真太阳时时辰支 (0-11) */
 export function calcTrueSolarBranch(clockHour: number, clockMinute: number, longitude: number): number {
@@ -14,34 +16,30 @@ export function calcTrueSolarBranch(clockHour: number, clockMinute: number, long
 
 /** BirthFormState → BirthInfo
  *
- * 子时规则（当前表单的换日约定）：
- * · 23:00-23:59 = 晚子时，**按次日**排盘（日期 +1）
- * · 00:00-00:59 = 早子时，按本日排盘
- * 这与「时辰支同为子(0)」并不冲突——子时分早晚两段，需要在日期上区分。
+ * 按所选校时方式处理后的未取模分钟数求时辰与排盘日，23:00 起归下一排盘日。
+ * 精确时分已由夏令时按钮处理，不再读取 dstApplied；未知时辰保留填写日与子时占位。
  */
-export function formToBirthInfo(form: BirthFormState, lateZishiRule: 'next-day' | 'current-day' = 'next-day'): BirthInfo {
+export function formToBirthInfo(form: BirthFormState): BirthInfo {
   if (getBirthTimeMode(form) === 'fuzzy') throw new Error('大概时段不能转换为单张命盘');
   form = normalizeBirthTimeState(form);
   if (Object.keys(validateBirthForm(form)).length || !form.gender) throw new Error('请检查出生信息');
   const solar = formSolarDate(form)!;
-  let { year: y, month: m, day: d } = solar;
-
-  // 晚子时（23:00-23:59）按次日处理：用 Date 对象自动处理月末/年末进位
+  let chartDate = solar;
+  let hour = 0;
   if (!form.unknownTime) {
-    const clockHour = parseInt(form.clockHour) || 0;
-    if (lateZishiRule === 'next-day' && clockHour === 23 && y > 0 && m > 0 && d > 0) {
-      const next = new Date(y, m - 1, d + 1);
-      y = next.getFullYear();
-      m = next.getMonth() + 1;
-      d = next.getDate();
+    const r = Number(form.clockHour) * 60 + Number(form.clockMinute)
+      + (form.useTrueSolar === false ? 0 : (form.longitude - 120) * 4);
+    const k = Math.floor((r + 60) / 120);
+    if (!Number.isSafeInteger(k)) throw new RangeError('出生时间校正范围非法');
+    hour = ((k % 12) + 12) % 12;
+    chartDate = shiftGregorianDate(solar, Math.floor(k / 12));
+    if (!solarToLunar(chartDate.year, chartDate.month, chartDate.day)) {
+      throw new RangeError('排盘日期超出支持范围');
     }
   }
 
-  const hour = form.unknownTime
-    ? 0
-    : calcTrueSolarBranch(parseInt(form.clockHour) || 0, parseInt(form.clockMinute) || 0, form.useTrueSolar === false ? 120 : form.longitude);
   return {
-    year: y, month: m, day: d,
+    ...chartDate,
     hour,
     gender: form.gender,
     birthTimeKnown: !form.unknownTime,
