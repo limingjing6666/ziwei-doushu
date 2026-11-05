@@ -12,25 +12,25 @@ const props = {
   longitude: 113.6,
   onHourChange: () => {},
   onMinuteChange: () => {},
-  onUnknownTimeChange: () => {},
+  onTimeModeChange: () => {},
 };
 
 function selectedOptions(html: string) {
   return Array.from(html.matchAll(/<option\b[^>]*\bselected=""[^>]*>([^<]*)<\/option>/g), (match) => match[1]);
 }
 
-const unknown = renderToStaticMarkup(<BirthTimeFields {...props} unknownTime />);
+const unknown = renderToStaticMarkup(<BirthTimeFields {...props} timeMode="unknown" />);
 const unknownSelected = selectedOptions(unknown);
 assert.deepEqual(unknownSelected, ['—', '—']);
 assert.doesNotMatch(unknownSelected.join(' / '), /08 时|30 分/);
 assert.match(unknown, /<fieldset\b[^>]*\bdisabled=""/);
 assert.match(unknown, /出生时间不详，按子时占位；没有可校正的出生时刻。/);
 
-const known = renderToStaticMarkup(<BirthTimeFields {...props} unknownTime={false} />);
+const known = renderToStaticMarkup(<BirthTimeFields {...props} timeMode="exact" />);
 assert.deepEqual(selectedOptions(known), ['08 时', '30 分']);
 assert.doesNotMatch(known, /<option\b[^>]*>—<\/option>/);
 
-const emptyUnknown = renderToStaticMarkup(<BirthTimeFields {...props} clockHour="" clockMinute="" unknownTime />);
+const emptyUnknown = renderToStaticMarkup(<BirthTimeFields {...props} clockHour="" clockMinute="" timeMode="unknown" />);
 assert.deepEqual(selectedOptions(emptyUnknown), ['—', '—']);
 
 console.log('✓ Round16: 未知时辰显示「—」、禁用与说明保留、原时分恢复、空时间占位');

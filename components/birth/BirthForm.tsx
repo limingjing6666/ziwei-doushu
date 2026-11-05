@@ -5,7 +5,8 @@ import type { FormEvent, ReactNode } from "react";
 import type { BirthInfo } from "@/lib/ziwei/types";
 import { SHICHEN } from "@/lib/ziwei/constants";
 import { PROVINCES } from "@/lib/ziwei/cities";
-import { changeBirthDate, formSolarDate, validateBirthForm } from '@/lib/birth-form';
+import { changeBirthDate, formSolarDate, formToFuzzyBirthInput, getBirthTimeMode, normalizeBirthTimeState, updateBirthForm, validateBirthForm, type BirthTimeMode } from '@/lib/birth-form';
+import { SEGMENTS, type FuzzyBirthInput, type Segment } from '@/lib/ziwei/fuzzy-time';
 import { solarToLunar, leapMonthOfLunarYear } from '@/lib/ziwei/lunar-solar';
 import { isChinaDST } from '@/lib/ziwei/dst-cn';
 import { shiftClock } from '@/lib/ziwei/clock-adjust';
@@ -29,6 +30,9 @@ export interface BirthFormState {
   clockHour: string;
   clockMinute: string;
   unknownTime: boolean;
+  timeMode?: BirthTimeMode;
+  segment?: Segment | '';
+  dstApplied?: boolean;
   province: string;
   city: string;
   longitude: number;
@@ -42,6 +46,7 @@ export type BirthFormVariant = "full" | "compact";
 
 export interface BirthFormProps {
   onSubmit: (info: BirthInfo) => void;
+  onFuzzySubmit?: (input: FuzzyBirthInput) => void;
   loading?: boolean;
   initialData?: Partial<BirthFormState>;
   initialDateNotice?: string;
@@ -103,6 +108,7 @@ function FormSection({
  */
 export default function BirthForm({
   onSubmit,
+  onFuzzySubmit,
   loading = false,
   initialData,
   initialDateNotice,
@@ -114,7 +120,7 @@ export default function BirthForm({
   const compact = variant === "compact";
   const uid = useId();
 
-  const [form, setForm] = useState<BirthFormState>({
+  const [form, setForm] = useState<BirthFormState>(() => normalizeBirthTimeState({
     name: initialData?.name ?? "",
     year: initialData?.year ?? "",
     month: initialData?.month ?? "",
@@ -122,6 +128,9 @@ export default function BirthForm({
     clockHour: initialData?.clockHour ?? "",
     clockMinute: initialData?.clockMinute ?? "",
     unknownTime: initialData?.unknownTime ?? false,
+    timeMode: initialData?.timeMode,
+    segment: initialData?.segment,
+    dstApplied: initialData?.dstApplied,
     province: initialData?.province ?? "",
     city: initialData?.city ?? "",
     longitude: initialData?.longitude ?? 120,
@@ -129,7 +138,8 @@ export default function BirthForm({
     calendar: initialData?.calendar ?? 'solar',
     leapMonth: initialData?.leapMonth ?? false,
     useTrueSolar: initialData?.useTrueSolar ?? true,
-  });
+  }));
+  const timeMode = getBirthTimeMode(form);
 
   const submitting = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -148,13 +158,13 @@ export default function BirthForm({
   }, [form]);
 
   const branch = useMemo(() => {
-    if (form.unknownTime) return 0;
+    if (form.timeMode !== 'exact') return 0;
     return calcTrueSolarBranch(
       parseInt(form.clockHour) || 0,
       parseInt(form.clockMinute) || 0,
       form.useTrueSolar === false ? 120 : form.longitude,
     );
-  }, [form.clockHour, form.clockMinute, form.longitude, form.unknownTime, form.useTrueSolar]);
+  }, [form.clockHour, form.clockMinute, form.longitude, form.timeMode, form.useTrueSolar]);
 
   // ─── 校验逻辑（与旧实现一致）────────────────────────────
   const y = parseInt(form.year) || 0;
@@ -162,6 +172,7 @@ export default function BirthForm({
   const d = parseInt(form.day) || 0;
 
   const errors = validateBirthForm(form);
+  if (timeMode === 'fuzzy' && !onFuzzySubmit) errors.timeMode = '此处暂不支持大概时段，请选择精确到分钟或完全不知道';
   // 保留 #9 的实际日数校验，并加入未来日期、时间和性别校验。
   if (form.calendar !== 'lunar' && y && m && d && !isValidDate(y, m, d)) errors.day = `${m}月没有${d}日`;
   const solar = formSolarDate(form);
@@ -183,7 +194,7 @@ export default function BirthForm({
       !errors.month &&
       !errors.day,
     !!form.province && !!form.city,
-    form.unknownTime || (!!form.clockHour && !!form.clockMinute),
+    timeMode === 'unknown' || (timeMode === 'fuzzy' ? !!form.segment : (!!form.clockHour && !!form.clockMinute)),
     !!form.gender,
   ];
 
@@ -193,7 +204,7 @@ export default function BirthForm({
     ? [
         `${form.calendar === 'lunar' ? '农历' : '公历'} ${y}年${m}月${d}日`,
         form.city || (form.province ? form.province : ""),
-        form.unknownTime ? "时辰不详" : SHICHEN[branch].name,
+        timeMode === 'fuzzy' ? SEGMENTS.find(item => item.value === form.segment)?.label : form.unknownTime ? "时辰不详" : SHICHEN[branch].name,
         form.gender === "male" ? "男" : "女",
       ]
         .filter(Boolean)
@@ -209,7 +220,7 @@ export default function BirthForm({
 
   // ─── 字段更新 ────────────────────────────────────────────
   const updateForm = (patch: Partial<BirthFormState>) => {
-    setForm((prev) => ({ ...prev, ...patch }));
+    setForm((prev) => updateBirthForm(prev, patch));
     setFailure('');
     if (['year', 'month', 'day', 'calendar', 'clockHour', 'clockMinute'].some(key => key in patch)) setDstOriginal(null);
   };
@@ -258,7 +269,10 @@ export default function BirthForm({
     await new Promise(resolve => setTimeout(resolve, 32));
     try {
       onFormSave?.({ ...form });
-      onSubmit(formToBirthInfo(form, lateZishiRule));
+      if (timeMode === 'fuzzy') {
+        if (!onFuzzySubmit) throw new Error('此处不支持大概时段');
+        onFuzzySubmit(formToFuzzyBirthInput(form));
+      } else onSubmit(formToBirthInfo(form, lateZishiRule));
     } catch { setFailure('排盘未完成，请检查出生信息后重试'); }
     finally { submitting.current = false; setBusy(false); }
   };
@@ -336,19 +350,26 @@ export default function BirthForm({
           idPrefix={uid}
           clockHour={form.clockHour}
           clockMinute={form.clockMinute}
-          unknownTime={form.unknownTime}
+          timeMode={timeMode}
+          segment={form.segment}
+          onSegmentChange={onFuzzySubmit ? (segment) => updateForm({ segment }) : undefined}
           branch={branch}
           onHourChange={(clockHour) => updateForm({ clockHour })}
           onMinuteChange={(clockMinute) => updateForm({ clockMinute })}
-          onUnknownTimeChange={(unknownTime) => updateForm({ unknownTime })}
+          onTimeModeChange={(timeMode) => updateForm({ timeMode })}
           compact={compact}
           errors={submitAttempted ? errors : {}}
           useTrueSolar={form.useTrueSolar !== false}
           city={form.city}
           longitude={form.longitude}
         />
-        {!form.unknownTime && form.clockHour === '23' && <p className="ux-notice">23 点至 24 点属晚子时，本页按{lateZishiRule === 'next-day' ? '次日' : '本日'}排盘；0 点至 1 点按本日处理。</p>}
-        {solar && isChinaDST(solar.year, solar.month, solar.day) && <div className="ux-notice">你填写的出生日期处在夏令时期间。如果填的是当时钟表上拨快后的时间，可以减1小时；如果已经减过，就不要再减。不确定时，请先核对出生记录。
+        {timeMode === 'exact' && form.clockHour === '23' && <p className="ux-notice">23 点至 24 点属晚子时，本页按{lateZishiRule === 'next-day' ? '次日' : '本日'}排盘；0 点至 1 点按本日处理。</p>}
+        {timeMode === 'fuzzy' && solar && isChinaDST(solar.year, solar.month, solar.day) && <label className="flex min-h-10 items-center gap-2 text-sm text-ink-2">
+          <input type="checkbox" checked={form.dstApplied === true} onChange={event => updateForm({ dstApplied: event.target.checked })} className="accent-cinnabar" />
+          按夏令时减一小时
+        </label>}
+        {timeMode === 'fuzzy' && errors.dstApplied && <p role="alert" className="text-xs text-cinnabar">{errors.dstApplied}</p>}
+        {timeMode !== 'fuzzy' && solar && isChinaDST(solar.year, solar.month, solar.day) && <div className="ux-notice">你填写的出生日期处在夏令时期间。如果填的是当时钟表上拨快后的时间，可以减1小时；如果已经减过，就不要再减。不确定时，请先核对出生记录。
           <Button variant="secondary" size="sm" disabled={form.unknownTime || (!dstOriginal && !shiftClock(form, -60))} onClick={() => {
             if (dstOriginal) { setForm(f => ({ ...f, ...dstOriginal })); setDstOriginal(null); }
             else { const shifted = shiftClock(form, -60); if (shifted) { setDstOriginal({ clockHour: form.clockHour, clockMinute: form.clockMinute }); setForm(f => ({ ...f, ...shifted })); } }
@@ -362,9 +383,9 @@ export default function BirthForm({
         hint="经度校正"
         compact={compact}
       >
-        <SegmentedControl<'solar' | 'clock'> ariaLabel="校时方式" options={[{ value: 'solar', label: '按出生地校正' }, { value: 'clock', label: '按钟表时间' }]} value={form.useTrueSolar === false ? 'clock' : 'solar'} onChange={v => updateForm({ useTrueSolar: v === 'solar' })} />
-        <p className="text-xs text-ink-3">目前只按出生地经度校正；经度每差 1° 约差 4 分钟，可能改变时辰，所以需要出生城市。不选地点不作偏移。</p>
-        {!form.unknownTime && form.clockHour !== '' && form.clockMinute !== '' && branch !== calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120) && <p className="ux-notice">按出生地经度校正后，时辰由{SHICHEN[calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120)].name}变为{SHICHEN[branch].name}。<Button variant="quiet" onClick={() => updateForm({ useTrueSolar: false })}>改按钟表时间</Button></p>}
+        {timeMode !== 'fuzzy' && <SegmentedControl<'solar' | 'clock'> ariaLabel="校时方式" options={[{ value: 'solar', label: '按出生地校正' }, { value: 'clock', label: '按钟表时间' }]} value={form.useTrueSolar === false ? 'clock' : 'solar'} onChange={v => updateForm({ useTrueSolar: v === 'solar' })} />}
+        <p className="text-xs text-ink-3">{timeMode === 'fuzzy' ? '大概时段必须选择出生省份和城市，固定按出生地经度校正；经度每差 1° 约差 4 分钟。' : '目前只按出生地经度校正；经度每差 1° 约差 4 分钟，可能改变时辰，所以需要出生城市。不选地点不作偏移。'}</p>
+        {timeMode === 'exact' && form.clockHour !== '' && form.clockMinute !== '' && branch !== calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120) && <p className="ux-notice">按出生地经度校正后，时辰由{SHICHEN[calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120)].name}变为{SHICHEN[branch].name}。<Button variant="quiet" onClick={() => updateForm({ useTrueSolar: false })}>改按钟表时间</Button></p>}
         <BirthLocationFields
           idPrefix={uid}
           province={form.province}
@@ -374,7 +395,7 @@ export default function BirthForm({
           onCityChange={handleCity}
           compact={compact}
           error={errors.city}
-          useTrueSolar={form.useTrueSolar !== false && !form.unknownTime}
+          useTrueSolar={timeMode === 'fuzzy' || (form.useTrueSolar !== false && !form.unknownTime)}
         />
       </FormSection>
 
@@ -391,7 +412,7 @@ export default function BirthForm({
             <p className="text-[12.5px] leading-relaxed text-ink-3">
               {compact
                 ? "补齐后显示摘要。"
-                : "请补齐出生日期、时间与性别；不确定时辰可勾选未知。"}
+                : "请补齐出生日期、时间与性别；不确定时辰可选择完全不知道。"}
             </p>
           )}
 

@@ -3,17 +3,21 @@
 import { Field, Select } from "@/components/ui/Field";
 import { describeBirthTime } from "@/lib/birth-time";
 import { cn } from "@/lib/ui/cn";
+import type { BirthTimeMode } from '@/lib/birth-form';
+import { SEGMENTS, type Segment } from '@/lib/ziwei/fuzzy-time';
 
-/** 出生时间：北京时间 → 按出生地校时预览；未知时辰时整块禁用。 */
+/** 三档出生时间；大概档仅在提供选段能力时出现。 */
 export default function BirthTimeFields({
   idPrefix,
   clockHour,
   clockMinute,
-  unknownTime,
+  timeMode,
+  segment = '',
+  onSegmentChange,
   branch,
   onHourChange,
   onMinuteChange,
-  onUnknownTimeChange,
+  onTimeModeChange,
   compact = false,
   errors = {},
   useTrueSolar = true,
@@ -23,24 +27,54 @@ export default function BirthTimeFields({
   idPrefix: string;
   clockHour: string;
   clockMinute: string;
-  unknownTime: boolean;
+  timeMode: BirthTimeMode;
+  segment?: Segment | '';
+  onSegmentChange?: (segment: Segment) => void;
   /** 经度校正对应的时辰支（0–11），由表单统一计算 */
   branch: number;
   onHourChange: (hour: string) => void;
   onMinuteChange: (minute: string) => void;
-  onUnknownTimeChange: (unknown: boolean) => void;
+  onTimeModeChange: (mode: BirthTimeMode) => void;
   compact?: boolean;
   errors?: Record<string, string>;
   useTrueSolar?: boolean;
   city: string;
   longitude: number;
 }) {
+  const unknownTime = timeMode === 'unknown';
   const hourId = `${idPrefix}-clock-hour`;
   const minuteId = `${idPrefix}-clock-minute`;
   const description = describeBirthTime({ clockHour: Number(clockHour), clockMinute: Number(clockMinute), unknownTime, city, longitude, useTrueSolar, branch });
 
   return (
     <div className={cn("space-y-3", compact && "space-y-2.5")}>
+      <fieldset className="m-0 min-w-0 border-0 p-0">
+        <legend className="sr-only">出生时间确定程度</legend>
+        <div className="flex flex-wrap gap-x-4 gap-y-2">
+          {([
+            { value: 'exact', label: '精确到分钟' },
+            ...(onSegmentChange ? [{ value: 'fuzzy', label: '大概时段' }] : []),
+            { value: 'unknown', label: '完全不知道' },
+          ] as const).map(mode => (
+            <label key={mode.value} className="flex min-h-10 cursor-pointer items-center gap-2 text-[13px] text-ink-2">
+              <input type="radio" name={`${idPrefix}-time-mode`} value={mode.value} checked={timeMode === mode.value} onChange={() => onTimeModeChange(mode.value as BirthTimeMode)} className="accent-cinnabar" />
+              {mode.label}
+            </label>
+          ))}
+        </div>
+        {errors.timeMode && <p role="alert" className="text-xs text-cinnabar">{errors.timeMode}</p>}
+      </fieldset>
+      {timeMode === 'fuzzy' ? <>
+        {onSegmentChange && <fieldset className="m-0 min-w-0 space-y-2 rounded-sm border border-line/12 p-3" aria-describedby={`${idPrefix}-segment-note`}>
+          <legend className="text-[13px] text-ink-2">选择大概时段</legend>
+          {SEGMENTS.map(item => <label key={item.value} className="flex min-h-10 cursor-pointer items-center gap-2 text-sm text-ink-2">
+            <input type="radio" name={`${idPrefix}-segment`} value={item.value} checked={segment === item.value} aria-invalid={!!errors.segment} onChange={() => onSegmentChange(item.value)} className="accent-cinnabar" />
+            {item.label}
+          </label>)}
+          {errors.segment && <p role="alert" className="text-xs text-cinnabar">{errors.segment}</p>}
+        </fieldset>}
+        <p id={`${idPrefix}-segment-note`} className="text-xs leading-relaxed text-ink-3">按北京时间钟表读数选择，含起点、不含终点。所选时段内这些候选的一致与分歧，不是在猜你的真时辰。</p>
+      </> : <>
       <fieldset
         disabled={unknownTime}
         className={cn(
@@ -104,17 +138,8 @@ export default function BirthTimeFields({
         </div>
       </fieldset>
 
-      <label className="flex min-h-10 cursor-pointer items-center gap-2.5">
-        <input
-          type="checkbox"
-          checked={unknownTime}
-          onChange={(event) => onUnknownTimeChange(event.target.checked)}
-          className="h-4 w-4 shrink-0 accent-cinnabar"
-        />
-        <span className="text-[13px] leading-relaxed text-ink-2">
-          不知道出生时间，以子时（23:00–01:00）起盘
-        </span>
-      </label>
+      {unknownTime && <p className="text-[13px] leading-relaxed text-ink-2">不知道出生时间，以子时（23:00–01:00）起盘</p>}
+      </>}
     </div>
   );
 }

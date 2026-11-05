@@ -13,7 +13,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Spinner } from '@/components/ui/Skeleton';
 import { requestAi, classifyAiError, type AiClientError } from '@/lib/ai/client';
 import { AiErrorNotice, AiLoading } from '@/components/AiStatus';
-import { validateBirthForm } from '@/lib/birth-form';
+import { isFormReady } from '@/lib/birth-form';
 import { buildAiView } from '@/components/TimeNav';
 import { generateChart as buildChart } from '@/lib/ziwei/algorithm';
 import { formToBirthInfo } from '@/lib/ziwei/share';
@@ -27,11 +27,6 @@ const FOLLOW_UP_QUESTIONS = [
   '哪方面最容易产生矛盾？',
   '财运是否互补？',
 ] as const;
-
-/** 表单是否填齐：性别 + 年月日 + 出生时间（或勾选「时辰不详」） */
-function isFormReady(form: BirthFormState | null): boolean {
-  return !!form && Object.keys(validateBirthForm(form)).length === 0;
-}
 
 /** 甲 / 乙 单方出生信息卡：只负责外框、标签与完成度提示，表单本体由 BirthForm compact 变体提供。 */
 function BirthSideCard({
@@ -110,6 +105,10 @@ export default function HemingPage() {
   };
   const runAnalysis = async (q?: string) => {
     if (requestRef.current || analyzing || startingRef.current) return;
+    if ([formA, formB].some(form => form?.timeMode === 'fuzzy')) {
+      setFormError('合盘不支持大概时段，请选择精确到分钟或完全不知道');
+      return;
+    }
     if (q?.trim() && charts) {
       const index = turns.length;
       setTurns(prev => [...prev, { question: q, answer: '' }]); setQuestion('');

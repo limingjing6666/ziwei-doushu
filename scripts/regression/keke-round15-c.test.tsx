@@ -35,7 +35,7 @@ for (const patch of [{ year: '2021' }, { month: '5' }, { year: '2021', month: ''
 const chart = { birthInfo: { name: 'preserve saved chart' } };
 const saved = { form: { ...form, year: '2021' }, chart, useTrueSolar: false };
 const restored = restoreBirthSession(JSON.stringify(saved));
-assert.deepEqual(restored.form, { ...saved.form, day: '' });
+assert.deepEqual(restored.form, { ...saved.form, day: '', timeMode: 'exact', segment: '', dstApplied: false });
 assert.deepEqual(restored.chart, chart);
 assert.equal(restored.useTrueSolar, false);
 assert.equal(restored.dateNotice, '上次填写的日期无效，已清空“日”，请重新选择。');
@@ -43,6 +43,6 @@ assert.match(renderToStaticMarkup(<BirthForm initialData={restored.form} initial
 assert.deepEqual(restoreBirthSession('{broken'), { chart: null });
 for (const date of [form, { ...form, calendar: 'lunar', day: '30' }, { ...form, month: '4', day: '31' }]) {
   const session = { form: date, chart: null };
-  assert.deepEqual(restoreBirthSession(JSON.stringify(session)), session);
+  assert.deepEqual(restoreBirthSession(JSON.stringify(session)), { ...session, form: { ...date, timeMode: 'exact', segment: '', dstApplied: false } });
 }
 console.log('✓ Round15 C/C+: 二月闰年/输入中联动、清日提示、坏JSON恢复、保留旧盘、闰月保留与取消提示');
