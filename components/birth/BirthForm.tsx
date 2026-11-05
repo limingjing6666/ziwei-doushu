@@ -199,7 +199,15 @@ export default function BirthForm({
 
   // ─── 复核摘要：全部必填完成后显示 ────────────────────────
   const showSummary = steps[0] && steps[2] && steps[3] && !hasError;
-  const chartDate = showSummary && timeMode === 'exact' ? formToBirthInfo(form) : null;
+  let chartDate: BirthInfo | null = null;
+  let chartDateError = '';
+  if (showSummary && timeMode === 'exact') {
+    try { chartDate = formToBirthInfo(form); }
+    catch (error) {
+      if (!(error instanceof RangeError) || error.message !== '排盘日期超出支持范围') throw error;
+      chartDateError = '校正后的排盘日期超出支持范围，无法排盘。请核对出生日期、时间及校时方式。';
+    }
+  }
   const summaryText = showSummary
     ? [
         `${form.calendar === 'lunar' ? '农历' : '公历'} ${y}年${m}月${d}日`,
@@ -364,6 +372,7 @@ export default function BirthForm({
           longitude={form.longitude}
         />
         {timeMode === 'exact' && <p className="ux-notice">排盘日界现已统一：按所选校时方式处理后，23:00 起归下一排盘日。旧版精确页按填写日排盘，重新起盘时结果可能变化；填写的出生日期不会被修改。</p>}
+        {chartDateError && <p role="alert" className="text-sm text-cinnabar">{chartDateError}</p>}
         {chartDate && solar && <p className="ux-notice">原填写公历日：{formatBirthDate(solar)}；本次排盘日：{formatBirthDate(chartDate)}（{formatBirthDate(chartDate) === formatBirthDate(solar) ? '本日' : formatBirthDate(chartDate) > formatBirthDate(solar) ? '次日' : '前一日'}{SHICHEN[chartDate.hour].name}）。</p>}
         {timeMode === 'fuzzy' && solar && isChinaDST(solar.year, solar.month, solar.day) && <label className="flex min-h-10 items-center gap-2 text-sm text-ink-2">
           <input type="checkbox" checked={form.dstApplied === true} onChange={event => updateForm({ dstApplied: event.target.checked })} className="accent-cinnabar" />
