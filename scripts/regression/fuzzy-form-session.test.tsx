@@ -144,7 +144,7 @@ assert.match(restoreBirthSession(JSON.stringify({ form: { ...fuzzy, dstApplied: 
 assert.throws(() => restoreBirthSession(JSON.stringify({ form: { ...form, timeMode: 'bad' }, chart })), /出生时间模式无效/);
 assert.deepEqual(restoreBirthSession('{broken'), { chart: null });
 
-// 合盘与本步 /chart 均不提供大概能力；校验、转换、分析入口三重挡板。
+// 合盘不提供大概能力，/chart 接通；校验、转换、分析入口三重挡板。
 assert.doesNotMatch(renderToStaticMarkup(<HemingPage />), /大概时段/);
 assert.doesNotMatch(renderToStaticMarkup(<BirthPage onStart={noop} />), /大概时段/);
 assert.equal(isFormReady(fuzzy), false);
@@ -155,7 +155,7 @@ const hemingSource = readFileSync('app/heming/page.tsx', 'utf8');
 const analysisSource = hemingSource.slice(hemingSource.indexOf('const runAnalysis ='));
 assert.ok(analysisSource.indexOf("form?.timeMode === 'fuzzy'") < analysisSource.indexOf('if (q?.trim() && charts)'));
 assert.doesNotMatch(hemingSource, /onFuzzySubmit=/);
-assert.doesNotMatch(readFileSync('app/chart/page.tsx', 'utf8'), /onFuzzySubmit=/);
+assert.match(readFileSync('app/chart/page.tsx', 'utf8'), /onFuzzySubmit=/);
 const formSource = readFileSync('components/birth/BirthForm.tsx', 'utf8');
 assert.match(formSource, /setForm\(\(prev\) => updateBirthForm\(prev, patch\)\)/);
 assert.match(formSource, /onChange=\{switchCalendar\}/);
