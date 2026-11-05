@@ -6,11 +6,12 @@ import BirthForm, { type BirthFormState } from '../../components/birth/BirthForm
 import BirthPage from '../../components/birth/BirthPage';
 import BirthTimeFields from '../../components/birth/BirthTimeFields';
 import HemingPage from '../../app/heming/page';
-import { changeBirthDate, formSolarDate, formToFuzzyBirthInput, isFormReady, normalizeBirthTimeState, updateBirthForm, validateBirthForm } from '../../lib/birth-form';
+import { changeBirthDate, formSolarDate, isFormReady, normalizeBirthTimeState, updateBirthForm, validateBirthForm } from '../../lib/birth-form';
 import { restoreBirthSession, serializeBirthSession } from '../../lib/birth-session';
 import { formToBirthInfo } from '../../lib/ziwei/share';
 import { SEGMENTS } from '../../lib/ziwei/fuzzy-time';
 import { solarToLunar } from '../../lib/ziwei/lunar-solar';
+import { generateChart } from '../../lib/ziwei/algorithm';
 import type { ZiweiChart } from '../../lib/ziwei/types';
 
 const form: BirthFormState = {
@@ -23,7 +24,7 @@ const noop = () => {};
 const fields = {
   idPrefix: 'test', clockHour: '8', clockMinute: '30', branch: 4,
   city: '北京', longitude: 116.4, onHourChange: noop, onMinuteChange: noop,
-  onTimeModeChange: noop, onSegmentChange: noop,
+  onTimeModeChange: noop, onSegmentChange: noop, allowSegment: true,
 };
 function radios(html: string, suffix: string) {
   return Array.from(html.matchAll(/<input\b[^>]*type="radio"[^>]*>/g), match => match[0])
@@ -45,7 +46,7 @@ for (const timeMode of ['exact', 'fuzzy', 'unknown'] as const) {
     assert.deepEqual(checkedValues(radios(html, 'segment')), []);
     for (const item of SEGMENTS) assert.ok(html.includes(item.label));
     assert.doesNotMatch(html, /<select|clock-hour|clock-minute|子时占位/);
-    assert.match(html, /不是在猜你的真时辰/);
+    assert.match(html, /按北京时间选；系统取时段中间时刻，再按出生地校正后排盘。/);
   } else {
     assert.equal(radios(html, 'segment').length, 0);
     assert.equal((html.match(/<select/g) ?? []).length, 2);
@@ -55,7 +56,7 @@ for (const timeMode of ['exact', 'fuzzy', 'unknown'] as const) {
 const firstFuzzy = updateBirthForm(form, { timeMode: 'fuzzy' });
 assert.equal(firstFuzzy.segment, '');
 assert.equal(validateBirthForm(firstFuzzy).segment, '请选择一个大概时段');
-assert.throws(() => formToFuzzyBirthInput(firstFuzzy), /请检查大概时段/);
+assert.throws(() => formToBirthInfo(firstFuzzy), /请检查出生信息/);
 const segmentError = renderToStaticMarkup(<BirthTimeFields {...fields} timeMode="fuzzy" errors={validateBirthForm(firstFuzzy)} />);
 assert.match(segmentError, /role="alert"[^>]*>请选择一个大概时段/);
 assert.deepEqual(validateBirthForm({ ...fuzzy, clockHour: '', clockMinute: '' }), {});
@@ -64,8 +65,8 @@ assert.deepEqual(validateBirthForm({ ...fuzzy, clockHour: '', clockMinute: '' })
 for (const location of [{ province: '', city: '' }, { province: '', city: '北京' }, { province: '北京市', city: '' }]) {
   const invalid = { ...fuzzy, ...location };
   assert.match(validateBirthForm(invalid).city, /必须选择出生省份和城市/);
-  assert.throws(() => formToFuzzyBirthInput(invalid));
-  const html = renderToStaticMarkup(<BirthForm initialData={invalid} onSubmit={noop} onFuzzySubmit={noop} />);
+  assert.throws(() => formToBirthInfo(invalid));
+  const html = renderToStaticMarkup(<BirthForm initialData={invalid} onSubmit={noop} allowSegment />);
   assert.match(html, /role="alert"[^>]*>大概时段必须选择出生省份和城市/);
   assert.match(html, /type="submit"[^>]*disabled=""/);
 }
@@ -77,12 +78,11 @@ for (const timeMode of ['exact', 'unknown'] as const) {
   assert.ok(validateBirthForm({ ...emptyLocation, province: '北京市' }).city);
 }
 assert.ok(validateBirthForm({ ...fuzzy, longitude: NaN }).city);
-const fuzzyHtml = renderToStaticMarkup(<BirthForm initialData={fuzzy} onSubmit={noop} onFuzzySubmit={noop} />);
+const fuzzyHtml = renderToStaticMarkup(<BirthForm initialData={fuzzy} onSubmit={noop} allowSegment />);
 assert.doesNotMatch(fuzzyHtml, /clock-hour|clock-minute|校时方式|改按钟表时间|shiftClock/);
-assert.match(fuzzyHtml, /固定按出生地经度校正/);
+assert.match(fuzzyHtml, /按北京时间选；系统取时段中间时刻，再按出生地校正后排盘。/);
 assert.match(fuzzyHtml, /type="checkbox"[^>]*checked=""[^>]*\/?>按夏令时减一小时/);
-assert.doesNotMatch(renderToStaticMarkup(<BirthForm initialData={{ ...fuzzy, month: '1', dstApplied: false }} onSubmit={noop} onFuzzySubmit={noop} />), /按夏令时减一小时/);
-assert.match(renderToStaticMarkup(<BirthPage initialData={fuzzy} onStart={noop} onFuzzySubmit={noop} />), /大概时段必须选择出生省份和城市/);
+assert.doesNotMatch(renderToStaticMarkup(<BirthForm initialData={{ ...fuzzy, month: '1', dstApplied: false }} onSubmit={noop} allowSegment />), /按夏令时减一小时/);
 
 // DST 三入口失效；切档/改城市保留草稿，不改原时分或原始 segment。
 for (const patch of [{ year: '1989' }, { month: '8' }, { day: '2' }]) {
@@ -111,19 +111,17 @@ assert.equal(updateBirthForm(fuzzy, { city: '郑州', longitude: 113.6 }).dstApp
 assert.equal(updateBirthForm(fuzzy, { dstApplied: false }).segment, '06-12');
 assert.equal(normalizeBirthTimeState({ ...fuzzy, unknownTime: true }).unknownTime, false);
 assert.ok(validateBirthForm({ ...fuzzy, month: '1' }).dstApplied);
-assert.throws(() => formToFuzzyBirthInput({ ...fuzzy, month: '1' }));
-const input = formToFuzzyBirthInput(fuzzy);
-assert.deepEqual(input.dateInfo, { year: 1988, month: 7, day: 1 });
-assert.equal(input.segment, '06-12');
-assert.equal(input.dstApplied, true);
-assert.equal(input.city.longitude, 116.4, '不受精确档 useTrueSolar=false 影响');
-for (const key of ['clockHour', 'clockMinute', 'hour', 'origInput', 'useTrueSolar']) assert.equal(Object.hasOwn(input, key), false);
+assert.throws(() => formToBirthInfo({ ...fuzzy, month: '1' }));
+const input = formToBirthInfo(fuzzy);
+assert.deepEqual(input.origInput, { year: 1988, month: 7, day: 1, clockHour: 8, clockMinute: 0 });
+assert.deepEqual(input.timeBasis, { segmentLabel: '上午', clock: '08:00' });
+assert.equal(input.hour, 4, '不受精确档 useTrueSolar=false 影响');
 const lunar = solarToLunar(1988, 7, 1)!;
 const lunarForm = { ...fuzzy, calendar: 'lunar' as const, year: String(lunar.year), month: String(lunar.month), day: String(lunar.day), leapMonth: lunar.leapMonth };
-assert.deepEqual(formSolarDate(lunarForm), input.dateInfo);
-assert.deepEqual(formToFuzzyBirthInput(lunarForm), input);
+assert.deepEqual(formSolarDate(lunarForm), { year: 1988, month: 7, day: 1 });
+assert.deepEqual(formToBirthInfo(lunarForm), input);
 
-// 旧会话迁移但保留单盘；大概只写/恢复表单，不恢复残留单盘。
+// 旧精确/未知单盘保留；新大概单盘可刷新恢复，旧大概输入退回表单。
 const chart = { birthInfo: { name: '保留旧单盘' } } as ZiweiChart;
 for (const unknownTime of [false, true]) {
   const restored = restoreBirthSession(JSON.stringify({ form: { ...form, unknownTime }, chart, useTrueSolar: false }));
@@ -134,40 +132,54 @@ for (const unknownTime of [false, true]) {
   assert.equal(restored.form?.dstApplied, false);
   assert.equal(restored.useTrueSolar, false);
 }
-const saved = JSON.parse(serializeBirthSession({ form: fuzzy, chart, useTrueSolar: false }));
-assert.equal(saved.chart, null);
+const single = generateChart(input);
+const saved = JSON.parse(serializeBirthSession({ form: fuzzy, chart: single, useTrueSolar: true }));
+assert.deepEqual(saved.chart, JSON.parse(JSON.stringify(single)));
 assert.deepEqual(Object.keys(saved).sort(), ['chart', 'form', 'useTrueSolar']);
 assert.deepEqual(saved.form, fuzzy);
-const restored = restoreBirthSession(JSON.stringify({ ...saved, chart }));
-assert.equal(restored.chart, null);
-assert.deepEqual(restored.form, fuzzy);
-assert.equal(restored.dateNotice, '大概时段输入已恢复，请重新生成候选');
-assert.match(renderToStaticMarkup(<BirthPage initialData={restored.form} initialDateNotice={restored.dateNotice} onStart={noop} onFuzzySubmit={noop} />), /大概时段输入已恢复，请重新生成候选/);
-assert.match(restoreBirthSession(JSON.stringify({ form: { ...fuzzy, month: '1' }, chart })).dateNotice!, /该日期不在夏令时表内/);
-assert.match(restoreBirthSession(JSON.stringify({ form: { ...fuzzy, segment: 'bad' }, chart })).dateNotice!, /请选择一个大概时段/);
-assert.match(restoreBirthSession(JSON.stringify({ form: { ...fuzzy, dstApplied: 'true' }, chart })).dateNotice!, /夏令时选择无效/);
+assert.deepEqual(restoreBirthSession(JSON.stringify(saved)).chart, saved.chart);
+for (const oldChart of [null, chart]) {
+  const restored = restoreBirthSession(JSON.stringify({ form: fuzzy, chart: oldChart, candidates: [], context: {} }));
+  assert.equal(restored.chart, null);
+  assert.deepEqual(restored.form, fuzzy);
+  assert.equal(restored.dateNotice, undefined);
+  const html = renderToStaticMarkup(<BirthPage initialData={restored.form} initialDateNotice={restored.dateNotice} onStart={noop} allowSegment />);
+  assert.match(html, /排盘/);
+  assert.doesNotMatch(html, /仅供|候选|不是在猜|历史会话/);
+  assert.deepEqual(Object.keys(JSON.parse(serializeBirthSession(restored))).sort(), ['chart', 'form']);
+}
+for (const patch of [{ month: '1' }, { segment: 'bad' }, { dstApplied: 'true' }]) {
+  const restored = restoreBirthSession(JSON.stringify({ form: { ...fuzzy, ...patch }, chart: null }));
+  assert.equal(restored.chart, null);
+  assert.ok(Object.keys(validateBirthForm(restored.form!)).length);
+}
 assert.throws(() => restoreBirthSession(JSON.stringify({ form: { ...form, timeMode: 'bad' }, chart })), /出生时间模式无效/);
 assert.deepEqual(restoreBirthSession('{broken'), { chart: null });
 
-// 合盘不提供大概能力，/chart 接通；校验、转换、分析入口三重挡板。
+// 合盘不提供大概选项且就绪/分析入口仍拦截；起盘页同一提交入口。
 assert.doesNotMatch(renderToStaticMarkup(<HemingPage />), /大概时段/);
 assert.doesNotMatch(renderToStaticMarkup(<BirthPage onStart={noop} />), /大概时段/);
 assert.equal(isFormReady(fuzzy), false);
 assert.equal(isFormReady(null), false);
-assert.throws(() => formToBirthInfo(fuzzy), /大概时段不能转换为单张命盘/);
-assert.throws(() => formToFuzzyBirthInput(form), /请检查大概时段/);
+assert.ok(formToBirthInfo(fuzzy).timeBasis);
 const hemingSource = readFileSync('app/heming/page.tsx', 'utf8');
 const analysisSource = hemingSource.slice(hemingSource.indexOf('const runAnalysis ='));
 assert.ok(analysisSource.indexOf("form?.timeMode === 'fuzzy'") < analysisSource.indexOf('if (q?.trim() && charts)'));
-assert.doesNotMatch(hemingSource, /onFuzzySubmit=|lateZishiRule/);
+assert.doesNotMatch(hemingSource, /allowSegment|lateZishiRule/);
 assert.match(hemingSource, /chartA: buildChart\(formToBirthInfo\(formA!\)\), chartB: buildChart\(formToBirthInfo\(formB!\)\)/);
 assert.match(hemingSource, /原填写公历日：\{formatBirthDate\(c.birthInfo.origInput\)\}；本张排盘日：\{formatBirthDate\(c.birthInfo\)\}/);
-assert.match(readFileSync('app/chart/page.tsx', 'utf8'), /onFuzzySubmit=/);
+assert.match(readFileSync('app/chart/page.tsx', 'utf8'), /allowSegment/);
 const formSource = readFileSync('components/birth/BirthForm.tsx', 'utf8');
 assert.match(formSource, /setForm\(\(prev\) => updateBirthForm\(prev, patch\)\)/);
 assert.match(formSource, /onChange=\{switchCalendar\}/);
 assert.match(formSource, /onChange=\{e => updateForm\(\{ leapMonth: e.target.checked \}\)\}/);
-assert.match(formSource, /onFuzzySubmit\(formToFuzzyBirthInput\(form\)\)/);
-assert.match(formSource, /else onSubmit\(formToBirthInfo\(form\)\)/);
+assert.match(formSource, /onSubmit\(formToBirthInfo\(form\)\)/);
 assert.doesNotMatch(formSource, /lateZishiRule/);
-console.log('✓ Fuzzy form/session: 三档与四段互斥、城市分档校验、DST 三入口失效、草稿/旧会话兼容、合盘挡板');
+for (const initialData of [form, fuzzy, unknown]) {
+  for (const element of [<BirthForm initialData={initialData} onSubmit={noop} allowSegment />, <BirthPage initialData={initialData} onStart={noop} allowSegment />]) {
+    assert.doesNotMatch(renderToStaticMarkup(element), /仅供|候选|不是在猜|历史会话/);
+  }
+}
+assert.ok(validateBirthForm({ ...form, name: '字'.repeat(21) }).name);
+assert.equal(validateBirthForm({ ...form, name: '字'.repeat(20) }).name, undefined);
+console.log('✓ Fuzzy form/session: 三档四段、必选城市、DST 失效、双历、单盘刷新与旧输入恢复、合盘挡板、表单精简文案');

@@ -13,6 +13,7 @@ export default function BirthTimeFields({
   clockMinute,
   timeMode,
   segment = '',
+  allowSegment = false,
   onSegmentChange,
   branch,
   onHourChange,
@@ -29,6 +30,7 @@ export default function BirthTimeFields({
   clockMinute: string;
   timeMode: BirthTimeMode;
   segment?: Segment | '';
+  allowSegment?: boolean;
   onSegmentChange?: (segment: Segment) => void;
   /** 经度校正对应的时辰支（0–11），由表单统一计算 */
   branch: number;
@@ -53,7 +55,7 @@ export default function BirthTimeFields({
         <div className="flex flex-wrap gap-x-4 gap-y-2">
           {([
             { value: 'exact', label: '精确到分钟' },
-            ...(onSegmentChange ? [{ value: 'fuzzy', label: '大概时段' }] : []),
+            ...(allowSegment ? [{ value: 'fuzzy', label: '大概时段' }] : []),
             { value: 'unknown', label: '完全不知道' },
           ] as const).map(mode => (
             <label key={mode.value} className="flex min-h-10 cursor-pointer items-center gap-2 text-[13px] text-ink-2">
@@ -73,7 +75,7 @@ export default function BirthTimeFields({
           </label>)}
           {errors.segment && <p role="alert" className="text-xs text-cinnabar">{errors.segment}</p>}
         </fieldset>}
-        <p id={`${idPrefix}-segment-note`} className="text-xs leading-relaxed text-ink-3">按北京时间钟表读数选择，含起点、不含终点。所选时段内这些候选的一致与分歧，不是在猜你的真时辰。</p>
+        <p id={`${idPrefix}-segment-note`} className="text-xs leading-relaxed text-ink-3">按北京时间选；系统取时段中间时刻，再按出生地校正后排盘。</p>
       </> : <>
       <fieldset
         disabled={unknownTime}

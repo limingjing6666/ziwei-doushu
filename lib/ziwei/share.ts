@@ -4,6 +4,7 @@ import { formSolarDate, getBirthTimeMode, normalizeBirthTimeState, validateBirth
 import { BRANCHES } from './constants';
 import { shiftGregorianDate } from './true-solar-time';
 import { solarToLunar } from './lunar-solar';
+import { representativeClock, type Segment } from './fuzzy-time';
 
 /** 根据北京时间 + 经度计算真太阳时时辰支 (0-11) */
 export function calcTrueSolarBranch(clockHour: number, clockMinute: number, longitude: number): number {
@@ -20,9 +21,15 @@ export function calcTrueSolarBranch(clockHour: number, clockMinute: number, long
  * 精确时分已由夏令时按钮处理，不再读取 dstApplied；未知时辰保留填写日与子时占位。
  */
 export function formToBirthInfo(form: BirthFormState): BirthInfo {
-  if (getBirthTimeMode(form) === 'fuzzy') throw new Error('大概时段不能转换为单张命盘');
   form = normalizeBirthTimeState(form);
   if (Object.keys(validateBirthForm(form)).length || !form.gender) throw new Error('请检查出生信息');
+  const gender = form.gender;
+  let timeBasis: BirthInfo['timeBasis'];
+  if (getBirthTimeMode(form) === 'fuzzy') {
+    const clock = representativeClock(form.segment as Segment, form.dstApplied === true);
+    timeBasis = { segmentLabel: clock.label, clock: `${String(clock.clockHour).padStart(2, '0')}:${String(clock.clockMinute).padStart(2, '0')}` };
+    form = { ...form, clockHour: String(clock.clockHour), clockMinute: String(clock.clockMinute), useTrueSolar: true };
+  }
   const solar = formSolarDate(form)!;
   let chartDate = solar;
   let hour = 0;
@@ -41,8 +48,9 @@ export function formToBirthInfo(form: BirthFormState): BirthInfo {
   return {
     ...chartDate,
     hour,
-    gender: form.gender,
+    gender,
     birthTimeKnown: !form.unknownTime,
+    ...(timeBasis ? { timeBasis } : {}),
     timeCorrectionNotice: !form.unknownTime && hour !== calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120)
       ? `按真太阳时校正后，出生时辰由「${BRANCHES[calcTrueSolarBranch(Number(form.clockHour), Number(form.clockMinute), 120)]}时」变为「${BRANCHES[hour]}时」` : undefined,
     origInput: form.unknownTime ? undefined : { ...solar, clockHour: Number(form.clockHour), clockMinute: Number(form.clockMinute) },

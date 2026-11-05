@@ -8,11 +8,13 @@ export interface BirthInfo {
   /** 展示与 AI 的可靠性提示，不参与排盘计算。 */
   birthTimeKnown?: boolean;
   timeCorrectionNotice?: string;
+  /** 大概时段的代表时刻，仅用于展示。 */
+  timeBasis?: { segmentLabel: string; clock: string };
   province?: string;   // 出生省份
   city?: string;       // 出生城市
   longitude?: number;  // 出生地经度（用于真太阳时校正）
   /**
-   * 原始输入（用户在表单里实际填的时间），已知出生时间时始终保留。
+   * 排盘前的公历日与北京时间；大概时段保存代表时刻，由 timeBasis 标明来源。
    * 例：用户输入 5/9 23:55 → year/month/day 会被改成 5/10（次日子时），
    *     而这里保存原始的 { year:Y, month:5, day:9, clockHour:23, clockMinute:55 }，
    *     用于在 chart 页让用户看见"已为你按子时换日规则归到次日"。

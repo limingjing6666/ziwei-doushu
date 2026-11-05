@@ -2,7 +2,7 @@
 
 import type { ZiweiChart } from "@/lib/ziwei/types";
 import { describeBirthTime } from "@/lib/birth-time";
-import { BRANCHES, STEMS } from "@/lib/ziwei/constants";
+import { BRANCHES, SHICHEN, STEMS } from "@/lib/ziwei/constants";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -21,7 +21,9 @@ interface MetaItem {
 function buildMetaItems(chart: ZiweiChart, useTrueSolar?: boolean): MetaItem[] {
   const { birthInfo, lunarInfo } = chart;
 
-  const birthTime = describeBirthTime({ ...birthInfo.origInput, unknownTime: birthInfo.birthTimeKnown === false, city: birthInfo.city, longitude: birthInfo.longitude, useTrueSolar, branch: birthInfo.hour });
+  const birthTime = birthInfo.timeBasis
+    ? { summary: `${birthInfo.timeBasis.segmentLabel} · ${birthInfo.timeBasis.clock} → ${SHICHEN[birthInfo.hour].name}` }
+    : describeBirthTime({ ...birthInfo.origInput, unknownTime: birthInfo.birthTimeKnown === false, city: birthInfo.city, longitude: birthInfo.longitude, useTrueSolar, branch: birthInfo.hour });
 
   const longitude =
     typeof birthInfo.longitude === "number" && Number.isFinite(birthInfo.longitude)

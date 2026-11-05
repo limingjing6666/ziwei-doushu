@@ -3,24 +3,16 @@ import assert from 'node:assert/strict';
 import { mock } from 'node:test';
 import { JSDOM } from 'jsdom';
 import type { Root } from 'react-dom/client';
-import type { CandidateResultPageProps } from '../../components/chart/CandidateResultPage';
 import type { BirthFormState } from '../../components/birth/BirthForm';
-import { buildCandidateResult } from '../../lib/ziwei/fuzzy-time';
+import { formToBirthInfo } from '../../lib/ziwei/share';
+import { generateChart } from '../../lib/ziwei/algorithm';
 
-const evaluatedAt = new Date('2026-11-05T04:00:00Z');
-const result = buildCandidateResult({
-  dateInfo: { year: 1990, month: 5, day: 15 },
-  city: { province: '北京市', city: '北京', longitude: 116.4 },
-  segment: '06-12', dstApplied: false, gender: 'male',
-}, evaluatedAt);
-function typeContract(props: CandidateResultPageProps) {
-  // @ts-expect-error 候选组件不接受单张命盘。
-  const invalid: CandidateResultPageProps = { chart: result.candidates[0].chart, context: result.context, onReset() {} };
-  // @ts-expect-error 候选数组只读，不得补盘或添加代表盘。
-  props.candidates.push(result.candidates[0]);
-  return invalid;
-}
-void typeContract;
+const form: BirthFormState = {
+  name: '时段测试', year: '1990', month: '5', day: '15', calendar: 'solar',
+  gender: 'male', province: '北京市', city: '北京', longitude: 116.4,
+  clockHour: '8', clockMinute: '30', timeMode: 'fuzzy', unknownTime: false,
+  segment: '06-12', dstApplied: false, useTrueSolar: false,
+};
 
 async function main() {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'http://localhost/chart' });
@@ -35,30 +27,22 @@ async function main() {
   };
   const descriptors = new Map(Object.keys(globals).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
   for (const [key, value] of Object.entries(globals)) Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
-  dom.window.scrollTo = mock.fn();
+  const scrollTopSpy = mock.fn();
+  dom.window.scrollTo = scrollTopSpy;
+  const scrollSpy = mock.fn();
+  dom.window.HTMLElement.prototype.scrollIntoView = scrollSpy;
   Object.defineProperty(dom.window, 'matchMedia', { value: (media: string) => ({ matches: false, media }) });
   const fetchSpy = mock.method(globalThis, 'fetch', async () => new Response(
     'data: {"delta":{"text":"mock 本地测试"}}\n\ndata: [DONE]\n\n',
     { headers: { 'Content-Type': 'text/event-stream' } },
   ));
-  // 必须先替换真实 client 的缓存导出，再加载页面；包装实际请求函数，fetch 始终为 mock。
   const clientId = require.resolve('../../lib/ai/client');
   const actual = require(clientId) as typeof import('../../lib/ai/client');
   const clientModule = require.cache[clientId]!;
   const originalExports = clientModule.exports;
   const requestAiSpy = mock.fn((...args: Parameters<typeof actual.requestAi>) => actual.requestAi(...args));
   clientModule.exports = { ...actual, requestAi: requestAiSpy };
-  const CandidateResultPage = (require('../../components/chart/CandidateResultPage') as typeof import('../../components/chart/CandidateResultPage')).default;
   const ResultPage = (require('../../components/chart/ResultPage') as typeof import('../../components/chart/ResultPage')).default;
-  const fuzzyId = require.resolve('../../lib/ziwei/fuzzy-time');
-  const fuzzyModule = require.cache[fuzzyId]!;
-  const fuzzyExports = fuzzyModule.exports as typeof import('../../lib/ziwei/fuzzy-time');
-  let failBatch = false;
-  const buildSpy = mock.fn((...args: Parameters<typeof buildCandidateResult>) => {
-    if (failBatch) throw new Error('模拟整批生成失败');
-    return fuzzyExports.buildCandidateResult(...args);
-  });
-  fuzzyModule.exports = { ...fuzzyExports, buildCandidateResult: buildSpy };
   const ChartPage = (require('../../app/chart/page') as typeof import('../../app/chart/page')).default;
   const { createRoot } = require('react-dom/client') as typeof import('react-dom/client');
   const container = document.getElementById('root')!;
@@ -71,146 +55,115 @@ async function main() {
     await flush();
   };
   const button = (text: string) => [...container.querySelectorAll('button')].find(node => node.textContent === text) ?? null;
-  const noAi = () => {
-    assert.equal(requestAiSpy.mock.callCount(), 0);
-    assert.equal(fetchSpy.mock.callCount(), 0);
-    assert.doesNotMatch(container.textContent!, /AI 解读|让 AI 解读|向 AI 提问/);
-    assert.equal(container.querySelector('[aria-label="向 AI 提问"]'), null);
-  };
   const boardCount = () => container.querySelectorAll('[aria-label="十二宫命盘"]').length;
+  const cleanText = () => assert.doesNotMatch(container.textContent!, /仅供|候选|不是在猜|历史会话|一致\/分歧|逐个查看/);
   const newRoot = async () => {
     await act(async () => root.unmount());
     root = createRoot(container);
   };
+  const askAi = async () => {
+    const entry = button('AI 解读 · 点这里直接问');
+    assert.ok(entry?.classList.contains('lg:hidden'));
+    const aside = container.querySelector('#chart-ai')!;
+    assert.ok(aside.className.includes('scroll-mt-[calc(var(--header-h)_+_1rem)]'));
+    const count = scrollSpy.mock.callCount();
+    await click(entry);
+    assert.equal(scrollSpy.mock.callCount(), count + 1);
+    assert.equal(scrollSpy.mock.calls.at(-1)!.this, aside);
+    assert.deepEqual(scrollSpy.mock.calls.at(-1)!.arguments, [{ behavior: 'smooth', block: 'start' }]);
+    for (const topic of ['整盘', '感情', '事业', '财运', '健康', '性格']) assert.ok(button(topic));
+    assert.ok(aside.querySelector('[aria-label="向 AI 提问"]'));
+  };
   try {
     localStorage.clear(); sessionStorage.clear();
-    await act(async () => root.render(<CandidateResultPage candidates={result.candidates} context={result.context} onReset={() => {}} />));
-    await flush();
-    noAi();
-    assert.equal(boardCount(), 0, '初始只有摘要，没有默认整盘');
-    const disclosures = container.querySelectorAll('details');
-    assert.equal(disclosures[0].open, true);
-    assert.equal(disclosures[1].open, false);
-    assert.match(container.textContent!, /不是在猜你的真时辰/);
-    assert.match(container.textContent!, /仅在所选时段的候选里一致/);
-    assert.match(disclosures[1].textContent!, /当前大限 · 4 盘 4 个不同值/);
-    assert.match(disclosures[0].textContent!, /太阳化禄/);
-    assert.doesNotMatch(disclosures[0].textContent!, /仆役|夫妻|兄弟|财帛/);
-    for (const candidate of result.candidates) {
-      const index = result.candidates.indexOf(candidate);
-      const buttons = container.querySelectorAll('[aria-label="候选列表"] button');
-      assert.equal(buttons.length, result.candidates.length);
-      assert.match(buttons[index].textContent!, /1990-05-15/);
-      await click(buttons[index]);
-      assert.equal(boardCount(), 1);
-      assert.match(container.querySelector('h1')!.textContent!, /1990-05-15/);
-      assert.match(container.textContent!, new RegExp(`虚岁 ${candidate.chart.currentAge}`));
-      const dx = candidate.chart.daXians[candidate.chart.currentDaXianIndex];
-      assert.match(container.textContent!, new RegExp(`${dx.startAge}–${dx.endAge} 岁 · ${dx.palaceName}`));
-      noAi();
-      await click(container.querySelector('[aria-label="选择命宫"]'));
-      assert.match(container.querySelector('[aria-label="本地星宫简介"]')!.textContent!, /主星/);
-      const palace = candidate.chart.palaces.find(item => item.stars.some(star => star.type === 'major'))!;
-      const star = palace.stars.find(item => item.type === 'major')!;
-      await click([...container.querySelectorAll(`[data-palace-branch="${palace.branch}"] button`)].find(node => node.textContent === star.name) ?? null);
-      assert.match(container.querySelector('[aria-label="星曜简介"]')!.textContent!, new RegExp(star.name));
-      for (const view of ['大限', '流年', '本命']) {
-        await click([...container.querySelectorAll('[aria-label="运限视图"] button')].find(node => node.textContent!.startsWith(view)) ?? null);
-        if (view !== '本命') {
-          await click(container.querySelector('[data-palace-branch] button[aria-label*="化"]'));
-          assert.match(container.querySelector('[aria-label="本地星宫简介"]')!.textContent!, /化/);
-        }
-        noAi();
-      }
-      assert.match(container.textContent!, /2026/);
-      await click(container.querySelector('[aria-label="查看下一年流年"]'));
-      assert.match(container.textContent!, /2027/);
-      noAi();
-      await click(button('返回对照'));
-      assert.equal(boardCount(), 0);
-      noAi();
-    }
-    const crossDay = buildCandidateResult({ ...result.context,
-      city: { province: '新疆维吾尔自治区', city: '乌鲁木齐', longitude: 87.6 }, segment: '00-06',
-    }, evaluatedAt);
-    await newRoot();
-    await act(async () => root.render(<CandidateResultPage {...crossDay} onReset={() => {}} />));
-    assert.match(container.textContent!, /1990-05-14 · 前一日 亥/);
-    assert.match(container.textContent!, /1990-05-15 · 本日 子/);
-    assert.equal(boardCount(), 0);
-    noAi();
-
-    // 真正挂载 /chart：恢复只到表单、生成后不存候选、重填保留草稿、刷新不自动排盘。
-    const form: BirthFormState = {
-      name: '候选测试', year: '1990', month: '5', day: '15', calendar: 'solar',
-      gender: 'male', province: '北京市', city: '北京', longitude: 116.4,
-      clockHour: '8', clockMinute: '30', timeMode: 'fuzzy', unknownTime: false,
-      segment: '06-12', dstApplied: false, useTrueSolar: false,
-    };
-    sessionStorage.setItem('tianjipan-chart', JSON.stringify({ form, chart: result.candidates[0].chart, useTrueSolar: false }));
-    await newRoot();
+    // 旧版空盘会话恢复至原表单，直接提交即可出单盘。
+    sessionStorage.setItem('tianjipan-chart', JSON.stringify({ form, chart: null, candidates: [], context: {} }));
     await act(async () => root.render(<ChartPage />));
     await flush();
-    assert.match(container.textContent!, /大概时段输入已恢复，请重新生成候选/);
     assert.equal(boardCount(), 0);
-    assert.equal(buildSpy.mock.callCount(), 0);
+    assert.equal(requestAiSpy.mock.callCount(), 0);
     assert.equal((container.querySelector('input[value="06-12"]') as HTMLInputElement).checked, true);
     assert.equal(container.querySelector('[id$="clock-hour"]'), null);
-    noAi();
-    const submit = async () => {
-      await act(async () => {
-        container.querySelector('form')!.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
-        await wait(45);
-      });
-      await flush();
-    };
-    await submit();
-    assert.match(container.querySelector('h1')!.textContent!, /候选对照/);
-    assert.equal(buildSpy.mock.callCount(), 1);
-    assert.ok(buildSpy.mock.calls[0].arguments[1] instanceof Date);
-    assert.equal(boardCount(), 0);
-    let saved = JSON.parse(sessionStorage.getItem('tianjipan-chart')!);
-    assert.equal(saved.chart, null);
-    assert.equal(saved.form.segment, '06-12');
-    assert.deepEqual(Object.keys(saved).sort(), ['chart', 'form', 'useTrueSolar']);
-    noAi();
-    await click(button('重新填表'));
-    assert.equal((container.querySelector('input[value="06-12"]') as HTMLInputElement).checked, true);
-    assert.equal((container.querySelector('[id$="city"]') as HTMLSelectElement).value, '北京');
-    assert.equal((container.querySelector('[id$="name"]') as HTMLInputElement).value, '候选测试');
-    failBatch = true;
-    await submit();
-    assert.match(container.querySelector('[role="alert"]')!.textContent!, /未能完整生成候选，请检查日期、城市和时段/);
-    assert.ok(container.querySelector('form'), '错误时保留原表单');
-    assert.equal(boardCount(), 0);
-    noAi();
-    failBatch = false;
-    await submit();
-    saved = JSON.parse(sessionStorage.getItem('tianjipan-chart')!);
-    assert.equal(saved.chart, null);
-    const count = buildSpy.mock.callCount();
-    await newRoot();
-    await act(async () => root.render(<ChartPage />));
-    await flush();
-    assert.match(container.textContent!, /大概时段输入已恢复，请重新生成候选/);
-    assert.equal(buildSpy.mock.callCount(), count);
-    assert.equal(boardCount(), 0);
-    noAi();
-
-    // 阳性对照必须挂原始单盘 ResultPage，证明 effect/timer 及两层 spy 确实抓得到请求。
-    await newRoot();
-    localStorage.clear(); sessionStorage.clear();
-    await act(async () => root.render(<ResultPage chart={result.candidates[0].chart} onReset={() => {}} />));
+    cleanText();
+    await act(async () => {
+      container.querySelector('form')!.dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+      await wait(45);
+    });
     await flush();
     assert.equal(boardCount(), 1);
-    assert.ok(requestAiSpy.mock.callCount() > 0, '原单盘自动调用 requestAi');
-    assert.ok(fetchSpy.mock.callCount() > 0, '实际 requestAi 已调用 mock fetch');
+    assert.equal(requestAiSpy.mock.callCount(), 1, '大概盘自动解读整盘');
+    assert.equal(fetchSpy.mock.callCount(), 1);
     assert.match(container.textContent!, /mock 本地测试/);
-    console.log('✓ Fuzzy UI: 真挂载摘要/逐候选星宫与运限/返回/会话/错误态均零 AI；原单盘阳性对照捕获请求（全 mock）');
+    assert.match(container.textContent!, /上午 · 09:00 → 辰时/);
+    const notes = container.querySelectorAll('[role="note"]');
+    assert.equal(notes.length, 1);
+    assert.equal(notes[0].textContent, '你选了「上午」，按中间 09:00 排盘，出生地校正后为辰时。想更准，重新起盘填具体时间。');
+    assert.equal(scrollSpy.mock.callCount(), 0, '出盘不自动滚到 AI');
+    assert.deepEqual(scrollTopSpy.mock.calls[0].arguments, [{ top: 0, behavior: 'instant' }]);
+    cleanText();
+    await askAi();
+    await click(container.querySelector('[aria-label="选择命宫"]'));
+    const intro = container.querySelector('[aria-label="手机简介"]')!;
+    assert.ok(intro);
+    await click([...intro.querySelectorAll('button')].find(node => node.textContent === '问 AI')!);
+    assert.equal(scrollSpy.mock.callCount(), 2);
+    await click(button('感情'));
+    assert.equal(requestAiSpy.mock.callCount(), 2);
+    await act(async () => {
+      const input = container.querySelector<HTMLInputElement>('[aria-label="向 AI 提问"]')!;
+      const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value')!.set!;
+      setter.call(input, '接下来怎样沟通？');
+      input.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+    });
+    await click(button('追问'));
+    assert.equal(requestAiSpy.mock.callCount(), 3, '大概盘可追问');
+    const single = generateChart(formToBirthInfo(form));
+    const { timeBasis, ...birthInfo } = single.birthInfo;
+    for (const call of requestAiSpy.mock.calls) {
+      const payload = call.arguments[1];
+      assert.deepEqual(Object.keys(payload).sort(), ['birthTimeKnown', 'chart', 'messages', 'mode', 'view']);
+      assert.deepEqual(JSON.parse(JSON.stringify(payload.chart)), JSON.parse(JSON.stringify({ ...single, birthInfo })));
+      assert.equal(JSON.stringify(payload).includes('timeBasis'), false);
+    }
+    assert.ok(timeBasis);
+    for (const call of fetchSpy.mock.calls) assert.equal(String(call.arguments[1]?.body).includes('timeBasis'), false);
+    const saved = sessionStorage.getItem('tianjipan-chart')!;
+    assert.deepEqual(JSON.parse(saved).chart, JSON.parse(JSON.stringify(single)));
+    assert.equal(JSON.parse(saved).useTrueSolar, true);
+    assert.deepEqual(Object.keys(JSON.parse(saved)).sort(), ['chart', 'form', 'useTrueSolar']);
+
+    await newRoot();
+    const scrollCount = scrollSpy.mock.callCount();
+    await act(async () => root.render(<ChartPage />));
+    await flush();
+    assert.equal(boardCount(), 1, '刷新后保留大概单盘');
+    assert.equal(scrollSpy.mock.callCount(), scrollCount);
+    cleanText();
+    await click(button('重新起盘'));
+    assert.equal((container.querySelector('input[value="06-12"]') as HTMLInputElement).checked, true);
+    assert.equal(container.querySelector<HTMLInputElement>('[id$="name"]')!.value, '时段测试');
+    assert.equal(container.querySelector<HTMLSelectElement>('[id$="city"]')!.value, '北京');
+
+    for (const timeMode of ['exact', 'unknown'] as const) {
+      await newRoot();
+      localStorage.clear();
+      const chart = generateChart(formToBirthInfo({ ...form, timeMode }));
+      const count = scrollSpy.mock.callCount();
+      const requests = requestAiSpy.mock.callCount();
+      await act(async () => root.render(<ResultPage chart={chart} useTrueSolar={false} onReset={() => {}} />));
+      await flush();
+      assert.equal(boardCount(), 1);
+      assert.ok(requestAiSpy.mock.callCount() > requests);
+      assert.equal(scrollSpy.mock.callCount(), count);
+      assert.equal(container.querySelectorAll('[role="note"]').length, timeMode === 'exact' ? 0 : 1);
+      if (timeMode === 'unknown') assert.match(container.textContent!, /出生时辰未知，以子时占位，只看生年四化和流年大方向。/);
+      cleanText();
+      await askAi();
+    }
+    console.log('✓ Fuzzy UI: 旧空盘会话→同入口单盘→自动整盘/话题/追问、AI请求无新增字段、刷新保盘、三模式按钮与仅点击滚动（全 mock）');
   } finally {
     await act(async () => root.unmount());
     clientModule.exports = originalExports;
-    fuzzyModule.exports = fuzzyExports;
     fetchSpy.mock.restore();
     dom.window.close();
     for (const [key, descriptor] of descriptors) {

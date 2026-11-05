@@ -72,7 +72,7 @@ async function main() {
       });
       retained('3');
       assert.equal(container.querySelector('[role="alert"]'), null);
-      assert.match(container.textContent!, /原填写公历日：1900-01-01；本次排盘日：1900-01-01/);
+      assert.doesNotMatch(container.textContent!, /排盘日是/);
       await submit();
       assert.equal(submitted.length, 1);
       assert.deepEqual([submitted[0].year, submitted[0].month, submitted[0].day, submitted[0].hour], [1900, 1, 1, 1]);
