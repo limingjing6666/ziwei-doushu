@@ -1,4 +1,12 @@
-# 运维：访问统计与系统日志
+# 运维：访问统计、系统日志与模型管理
+
+## 模型管理后台
+
+将 `admin/` 作为单独的 Vercel 项目部署，Root Directory 设为 `admin`。访问该项目域名，用仅配置在后台项目的 `MODEL_ADMIN_PASSWORD` 登录。两个项目使用同一个 Neon 数据库，可指定 `MODEL_SETTINGS_DATABASE_URL`，也可沿用 `DATABASE_URL` 或 `POSTGRES_URL`。生产、预览和本地设置按 `VERCEL_ENV` 隔离。
+
+后台保存供应商、模型和思考程度后，主站下一次发到解读接口的请求会读取新设置，已生成的内容继续以原答案展示。首次保存会建立 `tianjipan_model_settings` 表，默认设置来自主站的 `DEEPSEEK_MODEL`（默认 `deepseek-flash`）。如果覆盖了该默认值，后台初次部署也应使用相同的值。
+
+OpenCode Go 的 `OPENCODE_GO_API_KEY` 仅配置在主站服务端。确认该账号获准处理此公开站点的请求后，在后台项目设置 `OPENCODE_GO_CONFIGURED=1`，使模型下拉框可用于保存。后台从 Go 的官方目录读取原生 Chat Completions 文本模型，并按模型提供思考档位。普通 Go 订阅面向内部使用，具体见 [OpenCode Go 使用范围](https://opencode.ai/docs/console/go/#where-can-i-use-it)和 [OpenCode 服务条款](https://opencode.ai/legal/terms-of-service)。
 
 ## 接入数据库
 

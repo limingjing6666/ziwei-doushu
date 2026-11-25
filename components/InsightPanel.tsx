@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Palace, Star, ZiweiChart } from "@/lib/ziwei/types";
 import type { AiView, ChatMessage } from "@/lib/ai/input";
 import type { TimeView } from "./TimeNav";
-import { requestAi, classifyAiError, type AiClientError } from "@/lib/ai/client";
+import { requestAi, createAiSessionId, classifyAiError, type AiClientError } from "@/lib/ai/client";
 import { scheduleAutoOverview } from "@/lib/ai/auto-overview";
 import { loadTopics, saveTopics } from "@/lib/ai/topic-store";
 import { termDescription } from "@/lib/glossary";
@@ -55,6 +55,7 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
   const error = topicErrors[activeTopic] ?? null;
   const currentView = view ?? { type: 'natal', year: new Date().getFullYear() };
   const overviewSent = useRef(new WeakSet<object>());
+  const topicSessions = useRef(new WeakMap<ZiweiChart, Map<TopicKey, string | undefined>>());
   const request = useRef(new Map<TopicKey, AbortController>());
   const lastByTopic = useRef(new Map<TopicKey, { payload: Record<string, unknown>; index: number; fresh: boolean }>());
   const last = { current: lastByTopic.current.get(activeTopic) };
@@ -65,8 +66,11 @@ export default function InsightPanel({ chart, selectedPalace, selectedStar, sele
     request.current.set(topic, controller);
     lastByTopic.current.set(topic, { payload, index, fresh });
     setTopicLoading(prev => ({ ...prev, [topic]: true })); setTopicErrors(prev => ({ ...prev, [topic]: null }));
+    let sessions = topicSessions.current.get(chart);
+    if (!sessions) topicSessions.current.set(chart, sessions = new Map());
+    if (!sessions.has(topic)) sessions.set(topic, createAiSessionId());
     try {
-      await requestAi('/api/interpret', payload, text => setTopics(prev => ({ ...prev, [topic]: prev[topic].map((m, i) => i === index ? { ...m, content: text } : m) })), controller.signal, fresh);
+      await requestAi('/api/interpret', payload, text => setTopics(prev => ({ ...prev, [topic]: prev[topic].map((m, i) => i === index ? { ...m, content: text } : m) })), controller.signal, fresh, sessions.get(topic));
     } catch (e) { if (!controller.signal.aborted) setTopicErrors(prev => ({ ...prev, [topic]: classifyAiError(e) })); }
     finally { if (request.current.get(topic) === controller) { request.current.delete(topic); if (!controller.signal.aborted) setTopicLoading(prev => ({ ...prev, [topic]: false })); } }
   };

@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Spinner } from '@/components/ui/Skeleton';
-import { requestAi, classifyAiError, type AiClientError } from '@/lib/ai/client';
+import { requestAi, createAiSessionId, classifyAiError, type AiClientError } from '@/lib/ai/client';
 import { AiErrorNotice, AiLoading } from '@/components/AiStatus';
 import { isFormReady } from '@/lib/birth-form';
 import { buildAiView } from '@/components/TimeNav';
@@ -88,6 +88,7 @@ export default function HemingPage() {
 
   const analysisRef = useRef<HTMLElement>(null);
   const requestRef = useRef<AbortController | null>(null);
+  const aiSession = useRef<string | undefined>(undefined);
   const startingRef = useRef(false);
   useEffect(() => () => requestRef.current?.abort(), []);
 
@@ -99,7 +100,7 @@ export default function HemingPage() {
       await requestAi('/api/heming', payload, text => {
         if (index === -1) setAnalysis(text);
         else setTurns(prev => prev.map((turn, i) => i === index ? { ...turn, answer: text } : turn));
-      }, controller.signal);
+      }, controller.signal, false, aiSession.current);
     } catch (e) { if (!controller.signal.aborted) setError(classifyAiError(e)); }
     finally { if (requestRef.current === controller) { requestRef.current = null; if (!controller.signal.aborted) setAnalyzing(false); } }
   };
@@ -130,6 +131,7 @@ export default function HemingPage() {
     await new Promise(resolve => setTimeout(resolve, 32));
     try {
       const pair = { chartA: buildChart(formToBirthInfo(formA!)), chartB: buildChart(formToBirthInfo(formB!)) };
+      aiSession.current = createAiSessionId();
       setCharts(pair); setAnalysis(''); setTurns([]);
       const year = new Date().getFullYear();
       await execute({ ...pair, viewA: buildAiView(pair.chartA, 'mingpan', year), viewB: buildAiView(pair.chartB, 'mingpan', year), mode: 'overview', question: '【合盘总览】首句直答两人合不合，再分节说明相处特点、双方依据、互飞与摩擦、3条建议。' }, -1);
