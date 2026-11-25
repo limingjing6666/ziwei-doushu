@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { startTransition, useActionState, useState, type FormEvent } from 'react';
 import type { ModelSelection, ReasoningEffort } from '../shared/model-config';
 import { login, saveSettings } from './actions';
 
@@ -63,6 +63,13 @@ export function ModelForm({ active, models, goStatus, canSave }: {
     setDraft({ ...draft, model: id, effort: model?.efforts.includes(draft.effort) ? draft.effort : 'default' });
   }
 
+  function submitSettings(event: FormEvent<HTMLFormElement>) {
+    // Dispatch directly so React does not reset the selects to their initial form values.
+    event.preventDefault();
+    const fields = new FormData(event.currentTarget);
+    startTransition(() => action(fields));
+  }
+
   return (
     <>
       <section className="panel active-panel" aria-labelledby="active-title">
@@ -75,7 +82,7 @@ export function ModelForm({ active, models, goStatus, canSave }: {
       </section>
       <section className="panel settings" aria-labelledby="settings-title">
         <h2 id="settings-title">切换配置</h2>
-        <form action={action}>
+        <form action={action} onSubmit={submitSettings}>
           <div className="fields">
             <div className="field">
               <label htmlFor="provider">供应商</label>
