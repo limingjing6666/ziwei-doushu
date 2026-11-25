@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { saveModelSelection, saveProviderCredential, type ModelSelection, type ReasoningEffort } from '../shared/model-config';
+import { addProviderCredential, saveModelSelection, updateProviderCredential, type ModelSelection, type ReasoningEffort } from '../shared/model-config';
 import { adminSignedIn, endAdminSession, startAdminSession } from '../lib/session';
 
 export type AdminActionState = { error?: string; notice?: string; selection?: ModelSelection };
@@ -37,20 +37,41 @@ export async function saveSettings(state: AdminActionState, form: FormData): Pro
   }
 }
 
-export async function saveCredential(_state: CredentialActionState, form: FormData): Promise<CredentialActionState> {
+export async function addCredential(_state: CredentialActionState, form: FormData): Promise<CredentialActionState> {
   if (!await adminSignedIn()) return { error: '登录已过期，请刷新页面重新登录。' };
 
   const provider = form.get('provider');
   const key = form.get('key');
+  const label = form.get('label');
   if ((provider !== 'deepseek' && provider !== 'opencode-go') || typeof key !== 'string' || !key.trim() || key.length > 512) {
     return { error: '请选择供应商并输入有效的 API 密钥。' };
   }
+  if (label !== null && (typeof label !== 'string' || label.trim().length > 48)) return { error: '备注最多可输入 48 个字符。' };
 
   try {
-    await saveProviderCredential(provider, key.trim());
+    await addProviderCredential(provider, key.trim(), label?.trim() ?? '');
   } catch (error) {
     return { error: error instanceof Error ? error.message : '密钥保存失败，请稍后重试。' };
   }
   revalidatePath('/');
-  return { notice: `${provider === 'deepseek' ? 'DeepSeek 官方' : 'OpenCode Go'}的密钥已保存。` };
+  return { notice: '密钥已添加。' };
+}
+
+export async function changeCredential(_state: CredentialActionState, form: FormData): Promise<CredentialActionState> {
+  if (!await adminSignedIn()) return { error: '登录已过期，请刷新页面重新登录。' };
+  const provider = form.get('provider');
+  const id = form.get('id');
+  const operation = form.get('operation');
+  if ((provider !== 'deepseek' && provider !== 'opencode-go') || typeof id !== 'string' || !id ||
+      (operation !== 'primary' && operation !== 'enable' && operation !== 'disable')) {
+    return { error: '请重新选择要管理的密钥。' };
+  }
+
+  try {
+    await updateProviderCredential(provider, id, operation);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : '密钥更新失败，请稍后重试。' };
+  }
+  revalidatePath('/');
+  return {};
 }

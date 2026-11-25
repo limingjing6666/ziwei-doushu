@@ -8,7 +8,7 @@
 
 正式主站和后台使用相同的随机 `MODEL_SETTINGS_SECRET`，各自设为 Vercel Sensitive 类型。后台设置 `MODEL_CATALOG_URL=https://tianjipan.tech/api/admin/model-catalog`，用于通过已有 Vercel 密钥从主站读取目录。生产与预览使用各自的密钥及地址。变更加密密钥前需准备重新录入后台保存的供应商密钥，旧加密记录依赖原来的值。
 
-在后台「供应商密钥」保存或更换 API 密钥。服务器先通过官方模型列表验证，再加密保存，新解读优先使用后台保存的密钥。已有的 `DEEPSEEK_API_KEY`、`OPENCODE_GO_API_KEY` 环境变量仍可作为默认凭据。两家的模型及思考档位来自官方接口，OpenCode Go 按密钥权限返回支持原生 Chat Completions 的文本模型。列表短暂缓存，保存新密钥时即刻刷新。
+在后台对应的供应商卡片中添加 API 密钥，可设为主用或停用。服务器先通过官方模型列表验证，再加密保存。解读优先使用主用密钥，遇到认证、额度或暂时性服务错误时，在开始输出前依次尝试该供应商的备用密钥。原有单密钥记录和 `DEEPSEEK_API_KEY`、`OPENCODE_GO_API_KEY` 环境变量仍可作为后备来源。两家的模型和思考档位来自官方接口，OpenCode Go 按密钥权限返回支持原生 Chat Completions 的文本模型。
 
 ## 接入数据库
 

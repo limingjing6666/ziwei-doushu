@@ -1,4 +1,4 @@
-import { listProviderModels, modelSettingsAvailable, providerAvailable, providerCredentialStatuses, providerKeySettingsAvailable, readActiveModelSelection } from '../shared/model-config';
+import { listProviderModels, modelSettingsAvailable, providerAvailable, providerCredentialEntries, providerCredentialStatuses, providerKeySettingsAvailable, readActiveModelSelection } from '../shared/model-config';
 import { adminLoginConfigured, adminSignedIn } from '../lib/session';
 import { logout } from './actions';
 import { CredentialForm, LoginForm, ModelForm } from './model-form';
@@ -22,10 +22,11 @@ export default async function AdminPage() {
   const localGoAvailable = providerAvailable('opencode-go');
   const credentialStatuses = providerCredentialStatuses().catch(() => null);
   const goAvailable = localGoAvailable ? Promise.resolve(true) : credentialStatuses.then(credentials => Boolean(credentials?.['opencode-go']));
-  const [active, deepseek, credentials, go, hasGoCredential] = await Promise.all([
+  const [active, deepseek, credentials, entries, go, hasGoCredential] = await Promise.all([
     readActiveModelSelection().catch(() => null),
     listProviderModels('deepseek').catch(() => null),
     credentialStatuses,
+    providerCredentialEntries().catch(() => null),
     goAvailable.then(available => available ? listProviderModels('opencode-go').catch(() => null) : null),
     goAvailable,
   ]);
@@ -46,7 +47,7 @@ export default async function AdminPage() {
         {active
           ? <ModelForm active={active} models={{ deepseek: deepseek ?? [], 'opencode-go': go ?? [] }} goStatus={hasGoCredential ? (go?.length ? 'ready' : 'unreachable') : 'unconfigured'} canSave={canSave} />
           : <p className="panel error" role="alert">暂时无法读取模型配置，请刷新重试。</p>}
-        <CredentialForm activeProvider={active?.provider ?? 'deepseek'} configured={{
+        <CredentialForm entries={entries} configured={{
           deepseek: deepseek?.length ? true : credentials?.deepseek ?? null,
           'opencode-go': go?.length ? true : credentials?.['opencode-go'] ?? null,
         }} canSave={providerKeySettingsAvailable()} />

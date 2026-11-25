@@ -1,18 +1,30 @@
 import assert from 'node:assert/strict';
+import { createCipheriv, createHmac, randomBytes } from 'node:crypto';
 import { PGlite } from '@electric-sql/pglite';
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
-import { listProviderModels, modelCatalogAccessToken, providerCredentialStatuses, readActiveModelSelection, readRuntimeModelConfiguration, saveModelSelection, saveProviderCredential } from '../../admin/shared/model-config';
+import { addProviderCredential, listProviderModels, modelCatalogAccessToken, providerCredentialEntries, providerCredentialStatuses, readActiveModelSelection, readRuntimeModelConfiguration, saveModelSelection, updateProviderCredential } from '../../admin/shared/model-config';
 
 const deepseekKey = 'test-deepseek-environment-credential';
 const goKey = 'test-opencode-go-initial-credential';
 const nextGoKey = 'test-opencode-go-rotated-credential';
 const invalidKey = 'test-invalid-credential';
+const legacyKey = 'test-previous-encrypted-legacy-credential';
+const goEnvironmentKey = 'test-opencode-go-environment-credential';
 const deepseekModel = 'deepseek-test-future-v1';
 const goModel = 'go-test-future-v1';
 
 function goItem(id: string, name: string) {
   return { id, name, type: 'chat', modalities: { input: ['text'], output: ['text'] },
     api: { 'chat-completions': {} }, capabilities: { reasoning: { effort: ['max', 'low', 'unknown'] } } };
+}
+
+function legacyCiphertext(secret: string, key: string) {
+  const iv = randomBytes(12);
+  const encryptionKey = createHmac('sha256', secret).update('tianjipan/provider-credentials/v1').digest();
+  const cipher = createCipheriv('aes-256-gcm', encryptionKey, iv);
+  cipher.setAAD(Buffer.from('preview:opencode-go'));
+  const encrypted = Buffer.concat([cipher.update(key), cipher.final()]);
+  return [iv, cipher.getAuthTag(), encrypted].map(part => part.toString('base64url')).join('.');
 }
 
 async function main() {
@@ -40,7 +52,7 @@ async function main() {
       ] });
     }
     if (url === 'https://opencode.ai/inference/go/v1/models') {
-      assert.ok(authorization === `Bearer ${goKey}` || authorization === `Bearer ${nextGoKey}`);
+      assert.ok([goKey, nextGoKey, legacyKey, goEnvironmentKey].some(key => authorization === `Bearer ${key}`));
       return Response.json({ data: [
         goItem(goModel, 'Future OpenCode Model'),
         { id: 'responses-only', type: 'chat', modalities: { input: ['text'], output: ['text'] }, api: { responses: {} } },
@@ -59,41 +71,63 @@ async function main() {
     assert.deepEqual(await listProviderModels('deepseek'), [{ id: deepseekModel, name: 'Future DeepSeek', efforts: ['default', 'none', 'low', 'max'] }]);
     const deepseek = { provider: 'deepseek', model: deepseekModel, effort: 'low' } as const;
     assert.deepEqual(await saveModelSelection(deepseek), deepseek);
-    assert.deepEqual(await readRuntimeModelConfiguration(), { selection: deepseek, key: deepseekKey });
+    assert.deepEqual(await readRuntimeModelConfiguration(), { selection: deepseek, keys: [deepseekKey] });
     process.env.VERCEL_ENV = 'preview';
     assert.deepEqual(await readActiveModelSelection(), defaultModel);
 
     const go = { provider: 'opencode-go', model: goModel, effort: 'max' } as const;
     await assert.rejects(saveModelSelection(go), /凭据/);
-    await saveProviderCredential('opencode-go', goKey);
+    await addProviderCredential('opencode-go', goKey, '主账户');
     assert.deepEqual(await listProviderModels('opencode-go'), [{ id: goModel, name: 'Future OpenCode Model', efforts: ['default', 'max', 'low'] }]);
     await assert.rejects(saveModelSelection({ ...go, effort: 'medium' }), /不支持/);
     assert.deepEqual(await saveModelSelection(go), go);
     assert.deepEqual(await readActiveModelSelection(), go);
-    assert.deepEqual(await readRuntimeModelConfiguration(), { selection: go, key: goKey });
-    const encryptedRows = () => db.query<{ environment: string; provider: string; encrypted_key: string }>(
-      'SELECT environment, provider, encrypted_key FROM tianjipan_provider_credentials');
-    const first = (await encryptedRows()).rows[0];
-    assert.equal(first.environment, 'preview');
-    assert.equal(first.provider, 'opencode-go');
-    assert.ok(!first.encrypted_key.includes(goKey));
-    await assert.rejects(saveProviderCredential('opencode-go', invalidKey), (error: Error) => /验证/.test(error.message) && !error.message.includes(invalidKey));
-    assert.deepEqual(await readRuntimeModelConfiguration(), { selection: go, key: goKey });
-    await saveProviderCredential('opencode-go', nextGoKey);
-    assert.deepEqual(await readRuntimeModelConfiguration(), { selection: go, key: nextGoKey });
-    const rotated = (await encryptedRows()).rows;
-    assert.equal(rotated.length, 1);
-    assert.notEqual(rotated[0].encrypted_key, first.encrypted_key);
-    assert.ok(!rotated[0].encrypted_key.includes(nextGoKey));
+    assert.deepEqual(await readRuntimeModelConfiguration(), { selection: go, keys: [goKey] });
+    await assert.rejects(addProviderCredential('opencode-go', invalidKey, '无效'), (error: Error) => /验证/.test(error.message) && !error.message.includes(invalidKey));
+    await addProviderCredential('opencode-go', nextGoKey, '备用账户');
+    const managed = (await providerCredentialEntries())['opencode-go'];
+    assert.deepEqual(managed.map(entry => [entry.label, entry.enabled]), [['主账户', true], ['备用账户', true]]);
+    assert.ok(!JSON.stringify(managed).includes(goKey) && !JSON.stringify(managed).includes(nextGoKey));
+    assert.deepEqual(await readRuntimeModelConfiguration(), { selection: go, keys: [goKey, nextGoKey] });
+    await assert.rejects(addProviderCredential('opencode-go', nextGoKey, '重复账户'));
+    const encryptedRows = await db.query<{ environment: string; provider: string; encrypted_key: string }>(
+      'SELECT environment, provider, encrypted_key FROM tianjipan_provider_keys');
+    assert.equal(encryptedRows.rows.length, 2);
+    assert.ok(encryptedRows.rows.every(row => row.environment === 'preview' && row.provider === 'opencode-go' &&
+      !row.encrypted_key.includes(goKey) && !row.encrypted_key.includes(nextGoKey)));
+
+    await updateProviderCredential('opencode-go', managed[1].id, 'primary');
+    assert.deepEqual(await readRuntimeModelConfiguration(), { selection: go, keys: [nextGoKey, goKey] });
     assert.ok((await listProviderModels('opencode-go')).some(model => model.id === 'go-rotated-catalog-model'));
+    await updateProviderCredential('opencode-go', managed[1].id, 'disable');
+    assert.deepEqual(await readRuntimeModelConfiguration(), { selection: go, keys: [goKey] });
+    await updateProviderCredential('opencode-go', managed[0].id, 'disable');
+    process.env.OPENCODE_GO_API_KEY = goKey;
+    assert.deepEqual(await readRuntimeModelConfiguration(), { selection: go, keys: [] });
+    delete process.env.OPENCODE_GO_API_KEY;
+    await updateProviderCredential('opencode-go', managed[0].id, 'enable');
+    await updateProviderCredential('opencode-go', managed[1].id, 'enable');
+    assert.deepEqual(await readRuntimeModelConfiguration(), { selection: go, keys: [nextGoKey, goKey] });
+
+    await db.exec(`CREATE TABLE tianjipan_provider_credentials (
+      environment text NOT NULL, provider text NOT NULL, encrypted_key text NOT NULL, PRIMARY KEY(environment, provider)
+    )`);
+    await db.query('INSERT INTO tianjipan_provider_credentials VALUES ($1, $2, $3)',
+      ['preview', 'opencode-go', legacyCiphertext(process.env.MODEL_SETTINGS_SECRET!, legacyKey)]);
+    process.env.OPENCODE_GO_API_KEY = goEnvironmentKey;
+    assert.deepEqual(await readRuntimeModelConfiguration(), { selection: go, keys: [nextGoKey, goKey, legacyKey, goEnvironmentKey] });
+    process.env.OPENCODE_GO_API_KEY = legacyKey;
+    assert.deepEqual(await readRuntimeModelConfiguration(), { selection: go, keys: [nextGoKey, goKey, legacyKey] });
+    delete process.env.OPENCODE_GO_API_KEY;
 
     process.env.VERCEL_ENV = 'production';
     assert.deepEqual(await providerCredentialStatuses(), { deepseek: true, 'opencode-go': false });
-    assert.deepEqual(await readRuntimeModelConfiguration(), { selection: deepseek, key: deepseekKey });
+    assert.deepEqual(await readRuntimeModelConfiguration(), { selection: deepseek, keys: [deepseekKey] });
+    assert.equal((await providerCredentialEntries())['opencode-go'].length, 0);
     delete process.env.DEEPSEEK_API_KEY;
     process.env.MODEL_CATALOG_URL = 'https://catalog.test.local/model-catalog';
     assert.deepEqual(await listProviderModels('deepseek'), [{ id: 'relay-test-model', name: 'Relay model', efforts: ['default'] }]);
-    console.log('Provider model lists, authenticated relay, encrypted key rotation and deployment isolation passed.');
+    console.log('Provider catalogs, encrypted key pools, priority, disable/enable, legacy fallback and environment isolation passed.');
   } finally {
     globalThis.fetch = originalFetch;
     await server.stop();
