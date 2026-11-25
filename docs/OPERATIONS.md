@@ -6,7 +6,9 @@
 
 后台保存供应商、模型和思考程度后，主站下一次发到解读接口的请求会读取新设置，已生成的内容继续以原答案展示。首次保存会建立 `tianjipan_model_settings` 表，默认设置来自主站的 `DEEPSEEK_MODEL`（默认 `deepseek-flash`）。如果覆盖了该默认值，后台初次部署也应使用相同的值。
 
-OpenCode Go 的 `OPENCODE_GO_API_KEY` 仅配置在主站服务端。确认该账号获准处理此公开站点的请求后，在后台项目设置 `OPENCODE_GO_CONFIGURED=1`，使模型下拉框可用于保存。后台从 Go 的官方目录读取原生 Chat Completions 文本模型，并按模型提供思考档位。普通 Go 订阅面向内部使用，具体见 [OpenCode Go 使用范围](https://opencode.ai/docs/console/go/#where-can-i-use-it)和 [OpenCode 服务条款](https://opencode.ai/legal/terms-of-service)。
+正式主站和后台使用相同的随机 `MODEL_SETTINGS_SECRET`，各自设为 Vercel Sensitive 类型。后台设置 `MODEL_CATALOG_URL=https://tianjipan.tech/api/admin/model-catalog`，用于通过已有 Vercel 密钥从主站读取目录。生产与预览使用各自的密钥及地址。变更加密密钥前需准备重新录入后台保存的供应商密钥，旧加密记录依赖原来的值。
+
+在后台「供应商密钥」保存或更换 API 密钥。服务器先通过官方模型列表验证，再加密保存，新解读优先使用后台保存的密钥。已有的 `DEEPSEEK_API_KEY`、`OPENCODE_GO_API_KEY` 环境变量仍可作为默认凭据。两家的模型及思考档位来自官方接口，OpenCode Go 按密钥权限返回支持原生 Chat Completions 的文本模型。列表短暂缓存，保存新密钥时即刻刷新。
 
 ## 接入数据库
 

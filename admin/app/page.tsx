@@ -1,7 +1,7 @@
-import { listProviderModels, modelSettingsAvailable, providerAvailable, readActiveModelSelection } from '../shared/model-config';
+import { listProviderModels, modelSettingsAvailable, providerAvailable, providerCredentialStatuses, providerKeySettingsAvailable, readActiveModelSelection } from '../shared/model-config';
 import { adminLoginConfigured, adminSignedIn } from '../lib/session';
 import { logout } from './actions';
-import { LoginForm, ModelForm } from './model-form';
+import { CredentialForm, LoginForm, ModelForm } from './model-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,12 +18,16 @@ export default async function AdminPage() {
     );
   }
 
-  const goAvailable = providerAvailable('opencode-go');
   const canSave = modelSettingsAvailable();
-  const [active, deepseek, go] = await Promise.all([
+  const localGoAvailable = providerAvailable('opencode-go');
+  const credentialStatuses = providerCredentialStatuses().catch(() => null);
+  const goAvailable = localGoAvailable ? Promise.resolve(true) : credentialStatuses.then(credentials => Boolean(credentials?.['opencode-go']));
+  const [active, deepseek, credentials, go, hasGoCredential] = await Promise.all([
     readActiveModelSelection().catch(() => null),
-    listProviderModels('deepseek'),
-    goAvailable ? listProviderModels('opencode-go').catch(() => null) : null,
+    listProviderModels('deepseek').catch(() => null),
+    credentialStatuses,
+    goAvailable.then(available => available ? listProviderModels('opencode-go').catch(() => null) : null),
+    goAvailable,
   ]);
 
   return (
@@ -40,8 +44,12 @@ export default async function AdminPage() {
           <p>管理单盘解读和合盘共用的 AI 设置。</p>
         </header>
         {active
-          ? <ModelForm active={active} models={{ deepseek, 'opencode-go': go ?? [] }} goStatus={goAvailable ? (go ? 'ready' : 'unreachable') : 'unconfigured'} canSave={canSave} />
+          ? <ModelForm active={active} models={{ deepseek: deepseek ?? [], 'opencode-go': go ?? [] }} goStatus={hasGoCredential ? (go?.length ? 'ready' : 'unreachable') : 'unconfigured'} canSave={canSave} />
           : <p className="panel error" role="alert">暂时无法读取模型配置，请刷新重试。</p>}
+        <CredentialForm activeProvider={active?.provider ?? 'deepseek'} configured={{
+          deepseek: deepseek?.length ? true : credentials?.deepseek ?? null,
+          'opencode-go': go?.length ? true : credentials?.['opencode-go'] ?? null,
+        }} canSave={providerKeySettingsAvailable()} />
       </main>
     </>
   );
