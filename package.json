@@ -20,7 +20,7 @@
     "html2canvas": "^1.4.1",
     "iztro": "^2.6.3",
     "lunar-javascript": "^1.7.3",
-    "next": "16.4.1",
+    "next": "16.4.6",
     "pg": "^8.20.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
