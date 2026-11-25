@@ -3,6 +3,7 @@ import { createCipheriv, createHmac, randomBytes } from 'node:crypto';
 import { PGlite } from '@electric-sql/pglite';
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
 import { addProviderCredential, listProviderModels, modelCatalogAccessToken, providerCredentialEntries, providerCredentialStatuses, readActiveModelSelection, readRuntimeModelConfiguration, saveModelSelection, updateProviderCredential } from '../../admin/shared/model-config';
+import { fetchProviderCatalog } from '../../admin/shared/provider-catalog';
 import { GET as readModelCatalog } from '../../app/api/admin/model-catalog/route';
 
 const deepseekKey = 'test-deepseek-environment-credential';
@@ -13,11 +14,12 @@ const legacyKey = 'test-previous-encrypted-legacy-credential';
 const goEnvironmentKey = 'test-opencode-go-environment-credential';
 const deepseekModel = 'deepseek-test-future-v1';
 const goModel = 'go-test-future-v1';
+const goFlash = 'deepseek-v4.1-flash';
 const remoteCredential = { id: 'environment', label: '环境变量密钥', suffix: 'V3R1', enabled: true, source: 'environment' } as const;
 
-function goItem(id: string, name: string) {
+function goItem(id: string, name: string, toggle?: boolean) {
   return { id, name, type: 'chat', modalities: { input: ['text'], output: ['text'] },
-    api: { 'chat-completions': {} }, capabilities: { reasoning: { effort: ['max', 'low', 'unknown'] } } };
+    api: { 'chat-completions': {} }, capabilities: { reasoning: { effort: ['max', 'low', 'unknown'], toggle } } };
 }
 
 function legacyCiphertext(secret: string, key: string) {
@@ -57,6 +59,8 @@ async function main() {
       assert.ok([goKey, nextGoKey, legacyKey, goEnvironmentKey].some(key => authorization === `Bearer ${key}`));
       return Response.json({ data: [
         goItem(goModel, 'Future OpenCode Model'),
+        goItem(goFlash, 'DeepSeek V4.1 Flash', authorization === `Bearer ${nextGoKey}` ? false : undefined),
+        goItem('go-explicit-toggle', 'OpenCode Model with Toggle', true),
         { id: 'responses-only', type: 'chat', modalities: { input: ['text'], output: ['text'] }, api: { responses: {} } },
         ...(authorization === `Bearer ${nextGoKey}` ? [goItem('go-rotated-catalog-model', 'New model after rotation')] : []),
       ] });
@@ -83,7 +87,15 @@ async function main() {
     const go = { provider: 'opencode-go', model: goModel, effort: 'max' } as const;
     await assert.rejects(saveModelSelection(go), /凭据/);
     await addProviderCredential('opencode-go', goKey, '主账户');
-    assert.deepEqual(await listProviderModels('opencode-go'), [{ id: goModel, name: 'Future OpenCode Model', efforts: ['default', 'max', 'low'] }]);
+    assert.deepEqual(await listProviderModels('opencode-go'), [
+      { id: goModel, name: 'Future OpenCode Model', efforts: ['default', 'max', 'low'] },
+      { id: goFlash, name: 'DeepSeek V4.1 Flash', efforts: ['default', 'none', 'max', 'low'] },
+      { id: 'go-explicit-toggle', name: 'OpenCode Model with Toggle', efforts: ['default', 'none', 'max', 'low'] },
+    ]);
+    const noToggleFlash = (await fetchProviderCatalog('opencode-go', nextGoKey)).find(model => model.id === goFlash);
+    assert.deepEqual(noToggleFlash?.efforts, ['default', 'max', 'low']);
+    const flashWithoutThinking = { ...go, model: goFlash, effort: 'none' } as const;
+    assert.deepEqual(await saveModelSelection(flashWithoutThinking), flashWithoutThinking);
     await assert.rejects(saveModelSelection({ ...go, effort: 'medium' }), /不支持/);
     assert.deepEqual(await saveModelSelection(go), go);
     assert.deepEqual(await readActiveModelSelection(), go);
