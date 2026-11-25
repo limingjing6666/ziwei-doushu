@@ -6,6 +6,7 @@ import { STAR_DB, TOPIC_LABEL } from '../../lib/ziwei/db-analysis';
 import { ALL_STARS, getKnowledge } from '../../lib/seo/knowledge';
 import { safeReference, retrieveKnowledge } from '../../lib/ai/knowledge';
 import { normalizeChart } from '../../lib/ai/input';
+import { resolveAiProvider } from '../../lib/ai/deepseek';
 
 for (const prompt of [INTERPRET_SYSTEM, HEMING_SYSTEM]) {
   assert.match(prompt, /【分层解盘流程】/);
@@ -42,6 +43,10 @@ assert.match(panel, /容易遇到对象、结婚或感情变动的大限\/流年
 assert.match(panel, /send\(question, 'overview', true, true\)/);
 assert.match(panel, /placeholder=\{TOPICS\.find\(\(\[key\]\) => key === activeTopic\)!\[3\]\}/);
 for (const hint of ['今年运势的重点是什么？', '我的正缘大概什么时候出现？', '今年适合换工作吗？', '我适合投资，还是稳健存钱？', '为什么我总是很累、睡不好？', '我的性格有哪些优点和短板？']) assert.ok(panel.includes(`'继续追问，如：${hint}']`), hint);
-assert.match(readFileSync('lib/ai/handler.ts', 'utf8'), /Date\.now\(\) \+ 57000/);
-for (const route of ['interpret', 'heming']) assert.match(readFileSync(`app/api/${route}/route.ts`, 'utf8'), /maxDuration = 60/);
+assert.match(readFileSync('lib/ai/handler.ts', 'utf8'), /startedAt \+ provider\.requestTimeoutMs/);
+const maxProvider = resolveAiProvider({ provider: 'opencode-go', model: 'deepseek-v4.1-flash', effort: 'max' }, new Request('http://localhost'), 'fixture-key');
+for (const route of ['interpret', 'heming']) {
+  const duration = Number(readFileSync(`app/api/${route}/route.ts`, 'utf8').match(/maxDuration = (\d+)/)?.[1]);
+  assert.equal(duration * 1000 - maxProvider.requestTimeoutMs, 3000);
+}
 console.log('✓ Prompt rules: 首句/术语/无免责收尾、健康婚期策略、恢复篇幅、知识检索及引文过滤、话题路由与时限');

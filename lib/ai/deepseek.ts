@@ -43,7 +43,10 @@ export function resolveAiProvider(selection: ModelSelection, request: Request, c
     thinkingOptions.reasoning_effort = effort;
   }
 
-  return { url, headers, model, thinkingOptions, reasoningTokens: effort !== 'default' && effort !== 'none' ? 2048 : 0 };
+  // Reasoning tokens count against max_tokens. Give the highest setting room for the visible reading.
+  const reasoningTokens = effort === 'max' ? 12288 : effort !== 'default' && effort !== 'none' ? 2048 : 0;
+  const requestTimeoutMs = effort === 'max' ? 177000 : 57000;
+  return { url, headers, model, thinkingOptions, reasoningTokens, requestTimeoutMs };
 }
 
 export async function streamDeepSeek(request: Request, system: string, messages: ChatMessage[], timeoutMs = 55000, maxTokens = 2400, telemetry?: AiTelemetry): Promise<Response> {
