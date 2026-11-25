@@ -20,7 +20,7 @@ type CatalogItem = {
   effort?: { supported_levels?: unknown };
   modalities?: { input?: unknown; output?: unknown };
   api?: Record<string, unknown>;
-  capabilities?: { reasoning?: { effort?: unknown } };
+  capabilities?: { reasoning?: { effort?: unknown; toggle?: unknown } };
   efforts?: unknown;
 };
 
@@ -69,7 +69,12 @@ function deepseekEfforts(item: CatalogItem): ReasoningEffort[] | undefined {
 function openCodeEfforts(item: CatalogItem): ReasoningEffort[] | undefined {
   if (item.type !== 'chat' || !item.api?.['chat-completions'] ||
       !isText(item.modalities?.input) || !isText(item.modalities?.output)) return undefined;
-  return options(item.capabilities?.reasoning?.effort);
+  const reasoning = item.capabilities?.reasoning;
+  const efforts = options(reasoning?.effort);
+  // The Go catalog can omit the toggle advertised for this model in OpenCode's model catalog.
+  const canDisable = reasoning?.toggle === true || (reasoning?.toggle === undefined && item.id === 'deepseek-v4.1-flash');
+  if (canDisable && !efforts.includes('none')) efforts.splice(1, 0, 'none');
+  return efforts;
 }
 
 export async function fetchProviderCatalog(provider: ModelProvider, key?: string): Promise<ProviderModel[]> {

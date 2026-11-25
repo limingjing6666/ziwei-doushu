@@ -73,6 +73,17 @@ async function main() {
     assert.match(maxOutput, /reading after reasoning/);
     assert.doesNotMatch(maxOutput, /internal reasoning/);
 
+    const noThinkingGo = resolveAiProvider({ ...goSelection, model: 'deepseek-v4.1-flash', effort: 'none' }, request);
+    assert.equal(noThinkingGo.requestTimeoutMs, 57000);
+    globalThis.fetch = async (_url, options) => {
+      const sent = JSON.parse(String(options?.body));
+      assert.equal(sent.reasoning_effort, 'none');
+      assert.equal(sent.max_tokens, 2400);
+      return new Response('data: {"choices":[{"delta":{"content":"reading without reasoning"}}]}\n\ndata: [DONE]\n\n');
+    };
+    const noThinkingReading = await streamAi(noThinkingGo, request, 'test', [], 1000, 2400);
+    assert.match(await noThinkingReading.text(), /reading without reasoning/);
+
     const noSession = new Request('http://localhost');
     const primary = resolveAiProvider(goSelection, noSession);
     const seen: string[] = [];
