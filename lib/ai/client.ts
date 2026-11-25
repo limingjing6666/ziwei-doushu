@@ -45,14 +45,20 @@ export async function consumeAiResponse(response: Response, onText: (text: strin
 
 // Session-memory cache; InsightPanel also saves AI answers in localStorage.
 const cache = new Map<string, string>();
-export async function requestAi(endpoint: string, body: Record<string, unknown>, onText: (text: string) => void, signal: AbortSignal, fresh = false): Promise<void> {
+export function createAiSessionId() {
+  return globalThis.crypto?.randomUUID?.();
+}
+
+export async function requestAi(endpoint: string, body: Record<string, unknown>, onText: (text: string) => void, signal: AbortSignal, fresh = false, sessionId?: string): Promise<void> {
   // Follow-ups depend on the complete conversation, not just the final question.
   // Explicit topics/details send a standalone message, so repeated topics still hit.
   const key = JSON.stringify({ endpoint, ...body });
   if (!fresh && cache.has(key)) { onText(cache.get(key)!); return; }
   let result = '';
   try {
-    const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal });
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (sessionId) headers['X-OpenCode-Session'] = sessionId;
+    const response = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(body), signal });
     await consumeAiResponse(response, text => { result = text; onText(text); });
     cache.set(key, result);
     if (cache.size > 40) cache.delete(cache.keys().next().value!);

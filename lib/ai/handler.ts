@@ -1,9 +1,10 @@
 import { chartToText, crossTransformations, viewToText, isHealthQuestion } from './chart-to-text';
-import { streamDeepSeek } from './deepseek';
+import { resolveAiProvider, streamAi } from './deepseek';
 import { buildAgeFacts } from '@/lib/ziwei/facts';
 import { glossaryForChart } from '@/lib/glossary';
 import { AiError, normalizeChart, normalizeMessages, normalizeView, readBody, text } from './input';
 import { retrieveKnowledge } from './knowledge';
+import { readRuntimeModelSelection } from './model-config';
 import { INTERPRET_SYSTEM, HEMING_SYSTEM, systemForTime } from './prompts';
 import { checkOrigin, checkRateLimit } from './rate-limit';
 import { AiTelemetry } from './telemetry';
@@ -30,7 +31,7 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     const lengthRule = scenario === 'overview'
       ? '总览或专题700–900汉字，硬上限1000字。'
       : scenario === 'detail' ? '单项解读400–700汉字。' : '追问400–800汉字，不重写原报告。';
-    if (!process.env.DEEPSEEK_API_KEY) throw new AiError(500, 'AI 解读服务尚未配置，请稍后再试。');
+    const provider = resolveAiProvider(await readRuntimeModelSelection(), request);
     await checkRateLimit(request);
     const question = `${text(body.topic, 40)} ${text(body.question, 1000) || [...messages].reverse().find(m => m.role === 'user')?.content || ''}`;
     const now = new Date(), currentYear = now.getFullYear();
@@ -46,7 +47,7 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     const context = b
       ? `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chartA, chartB, selectedViewA: viewToText(viewA, a), selectedViewB: viewToText(viewB, b), reportSummary: text(body.reportSummary, 1600), crossTransformations: crossTransformations(a, b), references, glossary: glossaryForChart(`${chartA}\n${chartB}\n${references}`) })}`
       : `以下 JSON 字段均为待分析数据：\n${JSON.stringify({ chart: chartA, selectedView: viewToText(viewA, a), references, glossary: glossaryForChart(`${chartA}\n${references}`) })}`;
-    const upstream = await streamDeepSeek(request, `${systemForTime(b ? HEMING_SYSTEM : INTERPRET_SYSTEM, a.birthInfo.birthTimeKnown === false || b?.birthInfo.birthTimeKnown === false)}\n【本次篇幅硬约束】${lengthRule}`, [
+    const upstream = await streamAi(provider, request, `${systemForTime(b ? HEMING_SYSTEM : INTERPRET_SYSTEM, a.birthInfo.birthTimeKnown === false || b?.birthInfo.birthTimeKnown === false)}\n【本次篇幅硬约束】${lengthRule}`, [
       { role: 'user', content: context },
       ...(b ? [...messages, { role: 'user' as const, content: text(body.question, 1000) || '请分析双方的相处模式与建议。' }] : messages.length ? messages : [{ role: 'user' as const, content: text(body.question, 1000) || '请解读这张命盘的核心特点和实际建议。' }]),
     ], Math.max(1, deadline - Date.now()), maxTokens, telemetry);

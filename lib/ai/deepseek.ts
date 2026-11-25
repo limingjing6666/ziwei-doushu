@@ -1,10 +1,44 @@
+import { randomUUID } from 'node:crypto';
 import { AiError, type ChatMessage } from './input';
+import type { ModelSelection } from './model-config';
 import { encodeDelta, readSseData } from './sse';
 import type { AiTelemetry } from './telemetry';
 
-export async function streamDeepSeek(request: Request, system: string, messages: ChatMessage[], timeoutMs = 55000, maxTokens = 2400, telemetry?: AiTelemetry): Promise<Response> {
-  const key = process.env.DEEPSEEK_API_KEY;
+const SESSION_ID = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i;
+
+export function resolveAiProvider(selection: ModelSelection, request: Request) {
+  const useOpenCodeGo = selection.provider === 'opencode-go';
+  const key = useOpenCodeGo ? process.env.OPENCODE_GO_API_KEY : process.env.DEEPSEEK_API_KEY;
   if (!key) throw new AiError(500, 'AI 解读服务尚未配置，请稍后再试。');
+
+  const headers: Record<string, string> = { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' };
+  const { model, effort } = selection;
+  const thinkingOptions: { thinking?: { type: 'enabled' | 'disabled' }; reasoning_effort?: string } = {};
+  let url = 'https://api.deepseek.com/chat/completions';
+
+  if (useOpenCodeGo) {
+    url = 'https://opencode.ai/inference/go/openai/v1/chat/completions';
+    const clientSession = request.headers.get('x-opencode-session');
+    headers['User-Agent'] = 'Tianjipan/1.0';
+    headers['X-OpenCode-Session'] = clientSession && SESSION_ID.test(clientSession) ? clientSession : randomUUID();
+    if (effort !== 'default') thinkingOptions.reasoning_effort = effort;
+  } else if (effort === 'none' || (effort === 'default' && model === 'deepseek-flash')) {
+    // Keep the default Flash budget available for the visible reading.
+    thinkingOptions.thinking = { type: 'disabled' };
+  } else if (effort !== 'default') {
+    thinkingOptions.thinking = { type: 'enabled' };
+    thinkingOptions.reasoning_effort = effort;
+  }
+
+  return { url, headers, model, thinkingOptions, reasoningTokens: effort !== 'default' && effort !== 'none' ? 2048 : 0 };
+}
+
+export async function streamDeepSeek(request: Request, system: string, messages: ChatMessage[], timeoutMs = 55000, maxTokens = 2400, telemetry?: AiTelemetry): Promise<Response> {
+  const provider = resolveAiProvider({ provider: 'deepseek', model: process.env.DEEPSEEK_MODEL || 'deepseek-flash', effort: 'default' }, request);
+  return streamAi(provider, request, system, messages, timeoutMs, maxTokens, telemetry);
+}
+
+export async function streamAi(provider: ReturnType<typeof resolveAiProvider>, request: Request, system: string, messages: ChatMessage[], timeoutMs: number, maxTokens: number, telemetry?: AiTelemetry): Promise<Response> {
   const abort = new AbortController();
   const onAbort = () => abort.abort();
   request.signal.addEventListener('abort', onAbort, { once: true });
@@ -14,13 +48,16 @@ export async function streamDeepSeek(request: Request, system: string, messages:
   let upstream: Response;
   telemetry?.begin();
   try {
-    upstream = await fetch('https://api.deepseek.com/chat/completions', {
-      method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: process.env.DEEPSEEK_MODEL || 'deepseek-flash', stream: true, stream_options: { include_usage: true },
-        // Keep the bounded budget for the visible reading, not hidden reasoning.
-        // Other explicitly configured models retain their own default behavior.
-        ...((process.env.DEEPSEEK_MODEL || 'deepseek-flash') === 'deepseek-flash' ? { thinking: { type: 'disabled' } } : {}),
-        messages: [{ role: 'system', content: system }, ...messages], max_tokens: maxTokens }),
+    upstream = await fetch(provider.url, {
+      method: 'POST', headers: provider.headers,
+      body: JSON.stringify({
+        model: provider.model,
+        stream: true,
+        stream_options: { include_usage: true },
+        ...provider.thinkingOptions,
+        messages: [{ role: 'system', content: system }, ...messages],
+        max_tokens: maxTokens + provider.reasoningTokens,
+      }),
       signal: abort.signal, cache: 'no-store',
     });
     if (!upstream.ok || !upstream.body) {
