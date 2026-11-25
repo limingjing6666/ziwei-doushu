@@ -10,8 +10,7 @@ import { checkOrigin, checkRateLimit } from './rate-limit';
 import { AiTelemetry } from './telemetry';
 
 export async function handleAi(request: Request, mode: 'interpret' | 'heming'): Promise<Response> {
-  // Leave 3 seconds before the routes' 60-second limit for stream cleanup/errors.
-  const deadline = Date.now() + 57000;
+  const startedAt = Date.now();
   const telemetry = new AiTelemetry(mode);
   try {
     checkOrigin(request);
@@ -34,6 +33,7 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     const { selection, keys: [key, ...backupKeys] } = await readRuntimeModelConfiguration();
     if (!key) throw new AiError(500, 'AI 解读服务尚未配置，请稍后再试。');
     const provider = resolveAiProvider(selection, request, key);
+    const deadline = startedAt + provider.requestTimeoutMs;
     await checkRateLimit(request);
     const question = `${text(body.topic, 40)} ${text(body.question, 1000) || [...messages].reverse().find(m => m.role === 'user')?.content || ''}`;
     const now = new Date(), currentYear = now.getFullYear();

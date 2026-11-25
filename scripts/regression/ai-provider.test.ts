@@ -55,6 +55,24 @@ async function main() {
     });
     assert.deepEqual(resolveAiProvider({ ...goSelection, effort: 'default' }, request).thinkingOptions, {});
 
+    const maxGo = resolveAiProvider({ ...goSelection, model: 'deepseek-v4.1-flash', effort: 'max' }, request);
+    assert.equal(go.requestTimeoutMs, 57000);
+    assert.equal(maxGo.requestTimeoutMs, 177000);
+    globalThis.fetch = async (_url, options) => {
+      const sent = JSON.parse(String(options?.body));
+      assert.equal(sent.reasoning_effort, 'max');
+      assert.equal(sent.max_tokens, 14088);
+      return new Response([
+        'data: {"choices":[{"delta":{"reasoning_content":"internal reasoning"}}]}',
+        'data: {"choices":[{"delta":{"content":"reading after reasoning"},"finish_reason":"stop"}]}',
+        'data: [DONE]',
+      ].join('\n\n') + '\n\n');
+    };
+    const maxReading = await streamAi(maxGo, request, 'test', [], 1000, 1800);
+    const maxOutput = await maxReading.text();
+    assert.match(maxOutput, /reading after reasoning/);
+    assert.doesNotMatch(maxOutput, /internal reasoning/);
+
     const noSession = new Request('http://localhost');
     const primary = resolveAiProvider(goSelection, noSession);
     const seen: string[] = [];
