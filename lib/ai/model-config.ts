@@ -1,1 +1,1 @@
-export { listProviderModels, modelCatalogAccessToken, readRuntimeModelConfiguration, type ModelSelection } from '../../admin/shared/model-config';
+export { listProviderModels, modelCatalogAccessToken, providerCredentialEntries, readRuntimeModelConfiguration, type ModelSelection } from '../../admin/shared/model-config';

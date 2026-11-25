@@ -4,9 +4,14 @@ import { decodeProviderCatalog, EFFORTS, fetchProviderCatalog, MODEL_ID, type Mo
 
 export type { ModelProvider, ReasoningEffort } from './provider-catalog';
 export type ModelSelection = { provider: ModelProvider; model: string; effort: ReasoningEffort };
-export type ProviderCredentialEntry = { id: string; label: string; suffix: string; enabled: boolean };
+type FallbackCredentialSource = 'legacy' | 'environment';
+export type ProviderCredentialEntry = { id: string; label: string; suffix: string; enabled: boolean; source?: FallbackCredentialSource };
 type ProviderCredentialRow = ProviderCredentialEntry & { encrypted_key: string; provider: ModelProvider };
 type CredentialOperation = 'primary' | 'enable' | 'disable';
+
+const managedCredentialId = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i;
+const credentialProviders = ['deepseek', 'opencode-go'] as const;
+const fallbackCredentialLabels = { legacy: '旧版后台密钥', environment: '环境变量密钥' } as const;
 
 function isEffort(value: unknown): value is ReasoningEffort {
   return typeof value === 'string' && EFFORTS.includes(value as ReasoningEffort);
@@ -142,6 +147,21 @@ async function readLegacyCredential(db: Pool, provider: ModelProvider, encryptio
   } catch { return undefined; }
 }
 
+function fallbackCredentials(legacy: string | undefined, environment: string | undefined, managedKeys: Iterable<string | undefined>) {
+  const seen = new Set(managedKeys);
+  const fallback: { source: FallbackCredentialSource; key: string }[] = [];
+  for (const [source, key] of [['legacy', legacy], ['environment', environment]] as const) {
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    fallback.push({ source, key });
+  }
+  return fallback;
+}
+
+function credentialSuffix(key: string) {
+  return key.length >= 12 ? key.slice(-4) : '';
+}
+
 async function readProviderCredentials(provider: ModelProvider): Promise<string[]> {
   const encryptionKey = deriveSettingsKey('tianjipan/provider-credentials/v1');
   const db = encryptionKey && database();
@@ -152,17 +172,68 @@ async function readProviderCredentials(provider: ModelProvider): Promise<string[
   ]);
   const decrypted = managed.map(row => ({ enabled: row.enabled, key: decryptCredential(row.encrypted_key, encryptionKey, credentialContext(provider, row.id)) }));
   const enabled = decrypted.filter(row => row.enabled).map(row => row.key);
-  const disabled = new Set(decrypted.filter(row => !row.enabled).map(row => row.key));
-  const fallback = [legacy, environmentKey].filter(key => !disabled.has(key));
+  const fallback = fallbackCredentials(legacy, environmentKey, decrypted.map(row => row.key)).map(row => row.key);
   return [...new Set([...enabled, ...fallback].filter((key): key is string => Boolean(key)))];
 }
 
-export async function providerCredentialEntries(): Promise<Record<ModelProvider, ProviderCredentialEntry[]>> {
+function decodeCredentialEntries(value: unknown): Record<ModelProvider, ProviderCredentialEntry[]> | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const encoded = value as Partial<Record<ModelProvider, unknown>>;
+  const result: Record<ModelProvider, ProviderCredentialEntry[]> = { deepseek: [], 'opencode-go': [] };
+  for (const provider of credentialProviders) {
+    const rows = encoded[provider];
+    if (!Array.isArray(rows)) return undefined;
+    const seen = new Set<string>();
+    for (const row of rows) {
+      if (!row || typeof row !== 'object') return undefined;
+      const { id, label, suffix, enabled, source } = row as Partial<ProviderCredentialEntry>;
+      if (typeof id !== 'string' || seen.has(id) || typeof suffix !== 'string' || suffix.length > 4 || typeof enabled !== 'boolean') return undefined;
+      if (source === 'legacy' || source === 'environment') {
+        if (id !== source || !enabled) return undefined;
+        result[provider].push({ id, label: fallbackCredentialLabels[source], suffix, enabled, source });
+      } else {
+        if (source !== undefined || !managedCredentialId.test(id) || typeof label !== 'string' || label.length > 48) return undefined;
+        result[provider].push({ id, label, suffix, enabled });
+      }
+      seen.add(id);
+    }
+  }
+  return result;
+}
+
+export async function providerCredentialEntries(allowRelay = true): Promise<Record<ModelProvider, ProviderCredentialEntry[]>> {
+  const relay = allowRelay && process.env.MODEL_CATALOG_URL;
+  const token = relay && modelCatalogAccessToken();
+  if (relay && token) {
+    try {
+      const url = new URL(relay);
+      url.searchParams.set('view', 'credentials');
+      const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(8000) });
+      if (response.ok) {
+        const entries = decodeCredentialEntries((await response.json()).credentials);
+        if (entries) return entries;
+      }
+    } catch { /* The admin can still display credentials available in its own environment. */ }
+  }
+
   const result: Record<ModelProvider, ProviderCredentialEntry[]> = { deepseek: [], 'opencode-go': [] };
   const db = database();
-  if (!db) return result;
-  for (const { provider, id, label, suffix, enabled } of await readManagedCredentials(db)) {
-    result[provider].push({ id, label, suffix, enabled });
+  const encryptionKey = deriveSettingsKey('tianjipan/provider-credentials/v1');
+  const [managed, legacy] = await Promise.all([
+    db ? readManagedCredentials(db) : [],
+    Promise.all(credentialProviders.map(provider => db && encryptionKey ? readLegacyCredential(db, provider, encryptionKey) : undefined)),
+  ]);
+  for (const [index, provider] of credentialProviders.entries()) {
+    const managedKeys: (string | undefined)[] = [];
+    for (const row of managed.filter(item => item.provider === provider)) {
+      const { id, label, suffix, enabled, encrypted_key } = row;
+      const key = encryptionKey && decryptCredential(encrypted_key, encryptionKey, credentialContext(provider, id));
+      managedKeys.push(key);
+      result[provider].push({ id, label, suffix, enabled: enabled && Boolean(key) });
+    }
+    for (const { source, key } of fallbackCredentials(legacy[index], providerEnvKey(provider), managedKeys)) {
+      result[provider].push({ id: source, label: fallbackCredentialLabels[source], suffix: credentialSuffix(key), enabled: true, source });
+    }
   }
   return result;
 }
@@ -257,7 +328,7 @@ export async function addProviderCredential(provider: ModelProvider, value: stri
       if (postgresCode(error) !== '23505') throw error;
     });
     await db.query(`INSERT INTO tianjipan_provider_keys (id, environment, provider, label, suffix, encrypted_key, fingerprint)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)`, [id, deploymentScope(), provider, name, key.length >= 12 ? key.slice(-4) : '', encrypted, fingerprint]);
+      VALUES ($1, $2, $3, $4, $5, $6, $7)`, [id, deploymentScope(), provider, name, credentialSuffix(key), encrypted, fingerprint]);
   } catch (error) {
     if (postgresCode(error) === '23505') throw new Error('这把密钥已配置。');
     throw new Error('密钥保存失败，请稍后重试。');
@@ -272,7 +343,7 @@ const credentialUpdates = {
 } satisfies Record<CredentialOperation, string>;
 
 export async function updateProviderCredential(provider: ModelProvider, id: string, operation: CredentialOperation): Promise<void> {
-  if (!/^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i.test(id)) throw new Error('找不到这把密钥。');
+  if (!managedCredentialId.test(id)) throw new Error('找不到这把密钥。');
   const db = database();
   if (!db || !providerKeySettingsAvailable()) throw new Error('密钥存储尚未配置。');
   const update = credentialUpdates[operation];
