@@ -4,7 +4,12 @@ import type { AiClientError } from '@/lib/ai/client';
 export function AiLoading() {
   const [seconds, setSeconds] = useState(0);
   useEffect(() => { const timer = setInterval(() => setSeconds(s => s + 1), 1000); return () => clearInterval(timer); }, []);
-  return <p role="status" className="ux-notice animate-pulse">正在读取命盘… 已等待 {seconds} 秒</p>;
+  return (
+    <p className="ux-notice animate-pulse">
+      <span role="status">正在生成 AI 解读…</span>{' '}
+      <span>已等待 {seconds} 秒</span>
+    </p>
+  );
 }
 export function AiErrorNotice({ error, retry, loading }: { error: AiClientError | null; retry: () => void; loading: boolean }) {
   const [, tick] = useState(0);
