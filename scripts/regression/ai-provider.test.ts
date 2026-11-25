@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { resolveAiProvider, streamAi } from '../../lib/ai/deepseek';
+import { resolveAiProvider, streamAi, streamAiWithFallback } from '../../lib/ai/deepseek';
 
 async function main() {
   const originalFetch = globalThis.fetch;
@@ -54,7 +54,37 @@ async function main() {
       thinking: { type: 'disabled' },
     });
     assert.deepEqual(resolveAiProvider({ ...goSelection, effort: 'default' }, request).thinkingOptions, {});
-    console.log('✓ AI providers: OpenCode Go configuration, session and SSE; DeepSeek thinking controls');
+
+    const noSession = new Request('http://localhost');
+    const primary = resolveAiProvider(goSelection, noSession);
+    const seen: string[] = [];
+    globalThis.fetch = async (url, init) => {
+      assert.equal(url, go.url);
+      const headers = new Headers(init?.headers);
+      assert.equal(headers.get('x-opencode-session'), primary.headers['X-OpenCode-Session']);
+      assert.equal(JSON.parse(String(init?.body)).model, goSelection.model);
+      seen.push(headers.get('authorization')!);
+      if (seen.length === 1) return new Response(null, { status: 402 });
+      return new Response('data: {"choices":[{"delta":{"content":"backup output"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n');
+    };
+    const fallback = await streamAiWithFallback(primary, ['go-backup-fixture'], noSession, 'test', [], 1500, 2400);
+    assert.match(await fallback.text(), /backup output/);
+    assert.deepEqual(seen, ['Bearer go-fixture', 'Bearer go-backup-fixture']);
+
+    let attempts = 0;
+    globalThis.fetch = async () => { attempts++; return new Response(null, { status: 400 }); };
+    await assert.rejects(streamAiWithFallback(primary, ['go-backup-fixture'], noSession, 'test', [], 1500, 2400));
+    assert.equal(attempts, 1);
+
+    attempts = 0;
+    globalThis.fetch = async () => {
+      attempts++;
+      return new Response('data: {"choices":[{"delta":{"content":"partial output"}}]}\n\n');
+    };
+    const interrupted = await streamAiWithFallback(primary, ['go-backup-fixture'], noSession, 'test', [], 1500, 2400);
+    assert.match(await interrupted.text(), /partial output[\s\S]*error/);
+    assert.equal(attempts, 1);
+    console.log('✓ AI providers: configuration, session, SSE and same-provider credential fallback');
   } finally {
     globalThis.fetch = originalFetch;
     if (originalDeepSeekKey === undefined) delete process.env.DEEPSEEK_API_KEY;

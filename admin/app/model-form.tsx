@@ -1,8 +1,8 @@
 'use client';
 
 import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent } from 'react';
-import type { ModelSelection, ReasoningEffort } from '../shared/model-config';
-import { login, saveCredential, saveSettings } from './actions';
+import type { ModelSelection, ProviderCredentialEntry, ReasoningEffort } from '../shared/model-config';
+import { addCredential, changeCredential, login, saveSettings } from './actions';
 
 type Provider = ModelSelection['provider'];
 type ProviderModel = { id: string; name: string; efforts: ReasoningEffort[] };
@@ -25,6 +25,8 @@ function submitWithoutReset(event: FormEvent<HTMLFormElement>, action: (fields: 
   // Dispatch directly so React does not reset the selects to their initial form values.
   event.preventDefault();
   const fields = new FormData(event.currentTarget);
+  const submitter = (event.nativeEvent as SubmitEvent).submitter;
+  if (submitter instanceof HTMLButtonElement && submitter.name) fields.append(submitter.name, submitter.value);
   startTransition(() => action(fields));
 }
 
@@ -124,54 +126,97 @@ export function ModelForm({ active, models, goStatus, canSave }: {
   );
 }
 
-export function CredentialForm({ activeProvider, configured, canSave }: {
-  activeProvider: Provider;
-  configured: Record<Provider, boolean | null>;
-  canSave: boolean;
+function CredentialRow({ provider, entry, primary, canSave }: {
+  provider: Provider; entry: ProviderCredentialEntry; primary: boolean; canSave: boolean;
 }) {
-  const [result, action, busy] = useActionState(saveCredential, {});
-  const keyInput = useRef<HTMLInputElement>(null);
+  const [result, action, busy] = useActionState(changeCredential, {});
+  const role = !entry.enabled ? '已停用' : primary ? '主用' : '备用';
+  return (
+    <li className="credential-row">
+      <div className="credential-item">
+        <div>
+          <span className="credential-label">{entry.label || '密钥'}</span>
+          {entry.suffix && <code className="credential-mask">••••{entry.suffix}</code>}
+        </div>
+        <span className={primary ? 'credential-role credential-primary' : 'credential-role'}>{role}</span>
+      </div>
+      <form className="credential-actions" action={action} onSubmit={event => submitWithoutReset(event, action)}>
+        <input type="hidden" name="provider" value={provider} />
+        <input type="hidden" name="id" value={entry.id} />
+        {entry.enabled && !primary && (
+          <button className="secondary" name="operation" value="primary" disabled={busy || !canSave}>设为主用</button>
+        )}
+        <button className="secondary" name="operation" value={entry.enabled ? 'disable' : 'enable'} disabled={busy || !canSave}>
+          {entry.enabled ? '停用' : '启用'}
+        </button>
+      </form>
+      {result.error && <p className="error" role="alert">{result.error}</p>}
+    </li>
+  );
+}
+
+function ProviderCredentialCard({ provider, entries, configured, canSave }: {
+  provider: Provider; entries: ProviderCredentialEntry[] | null; configured: boolean | null; canSave: boolean;
+}) {
+  const [result, action, busy] = useActionState(addCredential, {});
+  const fieldsRef = useRef<HTMLFormElement>(null);
+  const primary = entries?.find(entry => entry.enabled)?.id;
 
   useEffect(() => {
-    if (result.notice && keyInput.current) keyInput.current.value = '';
+    if (result.notice) fieldsRef.current?.reset();
   }, [result]);
 
   return (
-    <section className="panel credential-panel" aria-labelledby="credentials-title">
-      <h2 id="credentials-title">供应商密钥</h2>
-      <dl className="credential-statuses">
-        {(['deepseek', 'opencode-go'] as const).map(provider => (
-          <div key={provider}>
-            <dt>{providerNames[provider]}</dt>
-            <dd>{configured[provider] === null ? '状态暂不可用' : configured[provider] ? '已配置' : '未配置'}</dd>
-          </div>
-        ))}
-      </dl>
-      <form action={action} onSubmit={event => submitWithoutReset(event, action)} autoComplete="off">
-        <div className="fields credential-fields">
-          <div className="field">
-            <label htmlFor="credential-provider">密钥供应商</label>
-            <select id="credential-provider" name="provider" defaultValue={activeProvider} disabled={busy || !canSave}>
-              <option value="deepseek">{providerNames.deepseek}</option>
-              <option value="opencode-go">{providerNames['opencode-go']}</option>
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="credential-key">API 密钥</label>
-            <input ref={keyInput} id="credential-key" name="key" type="password" autoComplete="off" placeholder="输入新密钥" maxLength={512} disabled={busy || !canSave} required />
-          </div>
+    <article className="credential-card" aria-labelledby={`credentials-${provider}`}>
+      <h3 id={`credentials-${provider}`}>{providerNames[provider]}</h3>
+      {entries?.length ? (
+        <ul className="credential-list">
+          {entries.map(entry => <CredentialRow key={entry.id} provider={provider} entry={entry} primary={entry.id === primary} canSave={canSave} />)}
+        </ul>
+      ) : null}
+      {!primary && (
+        <p className="note credential-current">
+          {entries === null || configured === null ? '暂时无法读取密钥状态' : configured ? '已有密钥 · 主用' : '暂无可用密钥'}
+        </p>
+      )}
+      <form ref={fieldsRef} action={action} onSubmit={event => submitWithoutReset(event, action)} autoComplete="off">
+        <input type="hidden" name="provider" value={provider} />
+        <div className="field credential-field">
+          <label htmlFor={`credential-label-${provider}`}>备注（选填）</label>
+          <input id={`credential-label-${provider}`} name="label" placeholder="例如备用账号" maxLength={48} disabled={busy || !canSave} />
         </div>
-        {!canSave && <p className="note">密钥存储尚未配置。</p>}
-        <div className="form-footer">
+        <div className="field credential-field">
+          <label htmlFor={`credential-key-${provider}`}>API 密钥</label>
+          <input id={`credential-key-${provider}`} name="key" type="password" autoComplete="off" placeholder="输入新密钥" maxLength={512} disabled={busy || !canSave} required />
+        </div>
+        <div className="credential-footer">
           <div aria-live="polite">
             {result.error && <p className="error">{result.error}</p>}
             {result.notice && <p className="success">{result.notice}</p>}
           </div>
           <button className="primary" type="submit" disabled={busy || !canSave}>
-            {busy ? '正在验证…' : '保存密钥'}
+            {busy ? '正在验证…' : '添加密钥'}
           </button>
         </div>
       </form>
+    </article>
+  );
+}
+
+export function CredentialForm({ entries, configured, canSave }: {
+  entries: Record<Provider, ProviderCredentialEntry[]> | null;
+  configured: Record<Provider, boolean | null>;
+  canSave: boolean;
+}) {
+  return (
+    <section className="panel credential-panel" aria-labelledby="credentials-title">
+      <h2 id="credentials-title">供应商密钥</h2>
+      <p className="note">优先使用主用密钥，暂时不可用时尝试同一家供应商的备用密钥。</p>
+      {!canSave && <p className="note">密钥存储尚未配置。</p>}
+      <div className="credential-grid">
+        <ProviderCredentialCard provider="deepseek" entries={entries?.deepseek ?? null} configured={configured.deepseek} canSave={canSave} />
+        <ProviderCredentialCard provider="opencode-go" entries={entries?.['opencode-go'] ?? null} configured={configured['opencode-go']} canSave={canSave} />
+      </div>
     </section>
   );
 }

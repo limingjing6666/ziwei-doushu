@@ -5,6 +5,19 @@ import { encodeDelta, readSseData } from './sse';
 import type { AiTelemetry } from './telemetry';
 
 const SESSION_ID = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i;
+const CONNECTION_ERROR = 'AI 服务连接超时或中断，请稍后重试。';
+
+class UpstreamResponseError extends AiError {
+  constructor(readonly upstreamStatus: number) {
+    super(upstreamStatus === 429 ? 503 : 502, upstreamStatus === 429
+      ? 'AI 服务繁忙，请稍后再试。'
+      : 'AI 服务暂时无法响应，请稍后重试。');
+  }
+}
+
+function canTryBackup(status: number) {
+  return [401, 402, 403, 404, 429].includes(status) || (status >= 500 && status < 600);
+}
 
 export function resolveAiProvider(selection: ModelSelection, request: Request, configuredKey?: string) {
   const useOpenCodeGo = selection.provider === 'opencode-go';
@@ -38,11 +51,30 @@ export async function streamDeepSeek(request: Request, system: string, messages:
   return streamAi(provider, request, system, messages, timeoutMs, maxTokens, telemetry);
 }
 
+export async function streamAiWithFallback(provider: ReturnType<typeof resolveAiProvider>, backupKeys: readonly string[], request: Request, system: string, messages: ChatMessage[], timeoutMs: number, maxTokens: number, telemetry?: AiTelemetry): Promise<Response> {
+  const deadline = Date.now() + timeoutMs;
+  for (let attempt = 0; ; attempt++) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) throw new AiError(504, CONNECTION_ERROR);
+    const candidate = attempt === 0 ? provider : {
+      ...provider,
+      headers: { ...provider.headers, Authorization: `Bearer ${backupKeys[attempt - 1]}` },
+    };
+    try {
+      return await streamAi(candidate, request, system, messages, remaining, maxTokens, telemetry);
+    } catch (error) {
+      // An ambiguous transport failure or an accepted stream can already incur usage.
+      if (attempt >= backupKeys.length || request.signal.aborted || Date.now() >= deadline ||
+          !(error instanceof UpstreamResponseError) || !canTryBackup(error.upstreamStatus)) throw error;
+    }
+  }
+}
+
 export async function streamAi(provider: ReturnType<typeof resolveAiProvider>, request: Request, system: string, messages: ChatMessage[], timeoutMs: number, maxTokens: number, telemetry?: AiTelemetry): Promise<Response> {
+  if (request.signal.aborted) throw new AiError(504, CONNECTION_ERROR);
   const abort = new AbortController();
   const onAbort = () => abort.abort();
   request.signal.addEventListener('abort', onAbort, { once: true });
-  if (request.signal.aborted) abort.abort();
   const timer = setTimeout(() => abort.abort(), timeoutMs);
   const cleanup = () => { clearTimeout(timer); request.signal.removeEventListener('abort', onAbort); };
   let upstream: Response;
@@ -62,16 +94,15 @@ export async function streamAi(provider: ReturnType<typeof resolveAiProvider>, r
     });
     if (!upstream.ok || !upstream.body) {
       telemetry?.upstreamError(upstream.status);
-      await upstream.body?.cancel();
-      const status = upstream.status === 429 ? 503 : 502;
-      throw new AiError(status, upstream.status === 429 ? 'AI 服务繁忙，请稍后再试。' : 'AI 服务暂时无法响应，请稍后重试。');
+      void upstream.body?.cancel().catch(() => {});
+      throw new UpstreamResponseError(upstream.status);
     }
   } catch (error) {
     cleanup();
     abort.abort();
     if (error instanceof AiError) throw error;
     telemetry?.upstreamError();
-    throw new AiError(504, 'AI 服务连接超时或中断，请稍后重试。');
+    throw new AiError(504, CONNECTION_ERROR);
   }
   const source = readSseData(upstream.body!, abort.signal);
   const encoder = new TextEncoder();
