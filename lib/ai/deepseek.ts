@@ -6,9 +6,9 @@ import type { AiTelemetry } from './telemetry';
 
 const SESSION_ID = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i;
 
-export function resolveAiProvider(selection: ModelSelection, request: Request) {
+export function resolveAiProvider(selection: ModelSelection, request: Request, configuredKey?: string) {
   const useOpenCodeGo = selection.provider === 'opencode-go';
-  const key = useOpenCodeGo ? process.env.OPENCODE_GO_API_KEY : process.env.DEEPSEEK_API_KEY;
+  const key = configuredKey ?? (useOpenCodeGo ? process.env.OPENCODE_GO_API_KEY : process.env.DEEPSEEK_API_KEY);
   if (!key) throw new AiError(500, 'AI 解读服务尚未配置，请稍后再试。');
 
   const headers: Record<string, string> = { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' };

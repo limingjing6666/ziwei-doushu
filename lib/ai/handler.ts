@@ -4,7 +4,7 @@ import { buildAgeFacts } from '@/lib/ziwei/facts';
 import { glossaryForChart } from '@/lib/glossary';
 import { AiError, normalizeChart, normalizeMessages, normalizeView, readBody, text } from './input';
 import { retrieveKnowledge } from './knowledge';
-import { readRuntimeModelSelection } from './model-config';
+import { readRuntimeModelConfiguration } from './model-config';
 import { INTERPRET_SYSTEM, HEMING_SYSTEM, systemForTime } from './prompts';
 import { checkOrigin, checkRateLimit } from './rate-limit';
 import { AiTelemetry } from './telemetry';
@@ -31,7 +31,8 @@ export async function handleAi(request: Request, mode: 'interpret' | 'heming'): 
     const lengthRule = scenario === 'overview'
       ? '总览或专题700–900汉字，硬上限1000字。'
       : scenario === 'detail' ? '单项解读400–700汉字。' : '追问400–800汉字，不重写原报告。';
-    const provider = resolveAiProvider(await readRuntimeModelSelection(), request);
+    const { selection, key } = await readRuntimeModelConfiguration();
+    const provider = resolveAiProvider(selection, request, key);
     await checkRateLimit(request);
     const question = `${text(body.topic, 40)} ${text(body.question, 1000) || [...messages].reverse().find(m => m.role === 'user')?.content || ''}`;
     const now = new Date(), currentYear = now.getFullYear();

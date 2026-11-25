@@ -1,18 +1,9 @@
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from 'node:crypto';
 import { Pool } from 'pg';
+import { decodeProviderCatalog, EFFORTS, fetchProviderCatalog, MODEL_ID, type ModelProvider, type ProviderModel, type ReasoningEffort } from './provider-catalog';
 
-export type ModelProvider = 'deepseek' | 'opencode-go';
-const EFFORTS = ['default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
-export type ReasoningEffort = typeof EFFORTS[number];
+export type { ModelProvider, ReasoningEffort } from './provider-catalog';
 export type ModelSelection = { provider: ModelProvider; model: string; effort: ReasoningEffort };
-type ProviderModel = { id: string; name: string; efforts: ReasoningEffort[] };
-
-const MODEL_ID = /^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,127}$/;
-const GO_MODELS_URL = 'https://opencode.ai/inference/go/v1/models';
-const DEEPSEEK_EFFORTS: ReasoningEffort[] = ['default', 'none', 'low', 'high', 'max'];
-const DEEPSEEK_MODELS: ProviderModel[] = [
-  { id: 'deepseek-flash', name: 'DeepSeek V4.1 Flash', efforts: DEEPSEEK_EFFORTS },
-  { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', efforts: DEEPSEEK_EFFORTS },
-];
 
 function isEffort(value: unknown): value is ReasoningEffort {
   return typeof value === 'string' && EFFORTS.includes(value as ReasoningEffort);
@@ -63,6 +54,10 @@ export function providerAvailable(provider: ModelProvider) {
   return provider === 'deepseek' || Boolean(process.env.OPENCODE_GO_API_KEY || process.env.OPENCODE_GO_CONFIGURED === '1');
 }
 
+export function providerKeySettingsAvailable() {
+  return modelSettingsAvailable() && Boolean(process.env.MODEL_SETTINGS_SECRET);
+}
+
 function postgresCode(error: unknown) {
   return error && typeof error === 'object' && 'code' in error ? error.code : undefined;
 }
@@ -81,7 +76,7 @@ export async function readActiveModelSelection(): Promise<ModelSelection> {
   throw new Error('暂时无法读取模型设置，请稍后重试。');
 }
 
-export async function readRuntimeModelSelection(): Promise<ModelSelection> {
+async function readRuntimeSelection(): Promise<ModelSelection> {
   const url = databaseUrl();
   if (!url) return defaultSelection();
   const scope = deploymentScope();
@@ -92,51 +87,129 @@ export async function readRuntimeModelSelection(): Promise<ModelSelection> {
   } catch {
     selection = lastRead?.url === url && lastRead.scope === scope ? lastRead.selection : defaultSelection();
   }
-  return selection.provider === 'opencode-go' && !process.env.OPENCODE_GO_API_KEY ? defaultSelection() : selection;
+  return selection;
 }
 
-type GoModel = {
-  id?: unknown; name?: unknown; type?: unknown;
-  modalities?: { input?: string[]; output?: string[] };
-  api?: Record<string, unknown>;
-  capabilities?: { reasoning?: { effort?: unknown } };
-};
+function deriveSettingsKey(purpose: string) {
+  const secret = process.env.MODEL_SETTINGS_SECRET;
+  return secret ? createHmac('sha256', secret).update(purpose).digest() : undefined;
+}
 
-let goCatalog: { models: ProviderModel[]; expires: number } | undefined;
+export function modelCatalogAccessToken() {
+  return deriveSettingsKey('tianjipan/model-catalog/v1')?.toString('base64url');
+}
 
-export async function listProviderModels(provider: ModelProvider): Promise<ProviderModel[]> {
-  if (provider === 'deepseek') {
-    const { model } = defaultSelection();
-    return DEEPSEEK_MODELS.some(item => item.id === model) ? DEEPSEEK_MODELS :
-      [...DEEPSEEK_MODELS, { id: model, name: model, efforts: ['default'] }];
+function providerEnvKey(provider: ModelProvider) {
+  return provider === 'deepseek' ? process.env.DEEPSEEK_API_KEY : process.env.OPENCODE_GO_API_KEY;
+}
+
+function credentialContext(provider: ModelProvider) {
+  return Buffer.from(`${deploymentScope()}:${provider}`);
+}
+
+async function readProviderCredential(provider: ModelProvider) {
+  const encryptionKey = deriveSettingsKey('tianjipan/provider-credentials/v1');
+  const db = encryptionKey && database();
+  if (db && encryptionKey) {
+    try {
+      const { rows } = await db.query<{ encrypted_key: string }>(
+        'SELECT encrypted_key FROM tianjipan_provider_credentials WHERE environment = $1 AND provider = $2',
+        [deploymentScope(), provider]);
+      const encrypted = rows[0]?.encrypted_key;
+      if (encrypted) {
+        const [iv, tag, data] = encrypted.split('.').map(part => Buffer.from(part, 'base64url'));
+        const decipher = createDecipheriv('aes-256-gcm', encryptionKey, iv);
+        decipher.setAAD(credentialContext(provider));
+        decipher.setAuthTag(tag);
+        return Buffer.concat([decipher.update(data), decipher.final()]).toString('utf8');
+      }
+    } catch { /* Fall back to the deployment credential if the settings store is unavailable. */ }
   }
-  if (goCatalog && goCatalog.expires > Date.now()) return goCatalog.models;
+  return providerEnvKey(provider);
+}
+
+export async function providerCredentialStatuses(): Promise<Record<ModelProvider, boolean>> {
+  const [deepseek, go] = await Promise.all([readProviderCredential('deepseek'), readProviderCredential('opencode-go')]);
+  return { deepseek: Boolean(deepseek), 'opencode-go': Boolean(go) };
+}
+
+export async function readRuntimeModelConfiguration() {
+  const selection = await readRuntimeSelection();
+  const key = await readProviderCredential(selection.provider);
+  if (selection.provider === 'opencode-go' && !key) {
+    return { selection: defaultSelection(), key: await readProviderCredential('deepseek') };
+  }
+  return { selection, key };
+}
+
+export async function readRuntimeModelSelection(): Promise<ModelSelection> {
+  return (await readRuntimeModelConfiguration()).selection;
+}
+
+const catalogs = new Map<ModelProvider, { identity: string; models: ProviderModel[]; fetchedAt: number }>();
+
+export async function listProviderModels(provider: ModelProvider, allowRelay = true): Promise<ProviderModel[]> {
+  const key = await readProviderCredential(provider);
+  const relay = !key && allowRelay ? process.env.MODEL_CATALOG_URL : undefined;
+  const token = relay && modelCatalogAccessToken();
+  if ((!allowRelay && !key) || (relay && !token)) throw new Error('尚未配置供应商密钥。');
+  const identity = createHash('sha256').update(key ?? `${relay ?? ''}\n${token ?? ''}`).digest('hex');
+  const cached = catalogs.get(provider);
+  const matching = cached?.identity === identity ? cached : undefined;
+  if (matching && Date.now() - matching.fetchedAt < 5 * 60 * 1000) return matching.models;
   try {
-    const response = await fetch(GO_MODELS_URL, { cache: 'no-store', signal: AbortSignal.timeout(5000) });
-    if (!response.ok) throw new Error();
-    const { data } = await response.json() as { data?: GoModel[] };
-    if (!Array.isArray(data)) throw new Error();
-    const models = data.flatMap((item): ProviderModel[] => {
-      if (item?.type !== 'chat' || typeof item.id !== 'string' || !MODEL_ID.test(item.id) ||
-          !item.api?.['chat-completions'] || !item.modalities?.input?.includes('text') ||
-          !item.modalities?.output?.includes('text')) return [];
-      const choices = item.capabilities?.reasoning?.effort;
-      const efforts: ReasoningEffort[] = ['default'];
-      if (Array.isArray(choices)) efforts.push(...EFFORTS.filter(choice => choice !== 'default' && choices.includes(choice)));
-      return [{ id: item.id, name: typeof item.name === 'string' ? item.name : item.id, efforts }];
-    });
+    let models: ProviderModel[];
+    if (relay && token) {
+      const url = new URL(relay);
+      url.searchParams.set('provider', provider);
+      const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(8000) });
+      if (!response.ok) throw new Error();
+      models = decodeProviderCatalog((await response.json()).models);
+    } else {
+      models = await fetchProviderCatalog(provider, key);
+    }
     if (!models.length) throw new Error();
-    goCatalog = { models, expires: Date.now() + 5 * 60 * 1000 };
+    catalogs.set(provider, { identity, models, fetchedAt: Date.now() });
     return models;
   } catch {
-    if (goCatalog) return goCatalog.models;
-    throw new Error('暂时无法读取 OpenCode Go 模型列表，请稍后重试。');
+    if (matching && Date.now() - matching.fetchedAt < 30 * 60 * 1000) return matching.models;
+    throw new Error('暂时无法读取官方模型列表，请稍后重试。');
   }
+}
+
+export async function saveProviderCredential(provider: ModelProvider, value: string): Promise<void> {
+  const key = value.trim();
+  if (!key || key.length > 512 || /[\u0000-\u0020\u007f]/.test(key)) throw new Error('请输入有效的 API 密钥。');
+  const encryptionKey = deriveSettingsKey('tianjipan/provider-credentials/v1');
+  const db = database();
+  if (!encryptionKey || !db) throw new Error('密钥存储尚未配置。');
+  const models = await fetchProviderCatalog(provider, key);
+  if (!models.length) throw new Error('这把密钥没有可用的文本解读模型。');
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', encryptionKey, iv);
+  cipher.setAAD(credentialContext(provider));
+  const ciphertext = Buffer.concat([cipher.update(key, 'utf8'), cipher.final()]);
+  const encrypted = [iv, cipher.getAuthTag(), ciphertext].map(part => part.toString('base64url')).join('.');
+  try {
+    await db.query(`CREATE TABLE IF NOT EXISTS tianjipan_provider_credentials (
+      environment text NOT NULL, provider text NOT NULL, encrypted_key text NOT NULL,
+      PRIMARY KEY(environment, provider)
+    )`).catch(error => {
+      if (postgresCode(error) !== '23505') throw error;
+    });
+    await db.query(`INSERT INTO tianjipan_provider_credentials (environment, provider, encrypted_key)
+      VALUES ($1, $2, $3) ON CONFLICT (environment, provider) DO UPDATE SET encrypted_key = EXCLUDED.encrypted_key`,
+      [deploymentScope(), provider, encrypted]);
+  } catch {
+    throw new Error('密钥保存失败，请稍后重试。');
+  }
+  const identity = createHash('sha256').update(key).digest('hex');
+  catalogs.set(provider, { identity, models, fetchedAt: Date.now() });
 }
 
 export async function saveModelSelection(selection: ModelSelection): Promise<ModelSelection> {
   if (!isSelection(selection)) throw new Error('请选择有效的供应商、模型和思考程度。');
-  if (!providerAvailable(selection.provider)) throw new Error('请先配置 OpenCode Go 凭据。');
+  if (!providerAvailable(selection.provider) && !(await readProviderCredential(selection.provider))) throw new Error('请先配置 OpenCode Go 凭据。');
   const db = database();
   if (!db) throw new Error('模型设置数据库尚未连接。');
   const models = await listProviderModels(selection.provider);
