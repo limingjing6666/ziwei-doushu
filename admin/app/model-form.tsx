@@ -140,16 +140,18 @@ function CredentialRow({ provider, entry, primary, canSave }: {
         </div>
         <span className={primary ? 'credential-role credential-primary' : 'credential-role'}>{role}</span>
       </div>
-      <form className="credential-actions" action={action} onSubmit={event => submitWithoutReset(event, action)}>
-        <input type="hidden" name="provider" value={provider} />
-        <input type="hidden" name="id" value={entry.id} />
-        {entry.enabled && !primary && (
-          <button className="secondary" name="operation" value="primary" disabled={busy || !canSave}>设为主用</button>
-        )}
-        <button className="secondary" name="operation" value={entry.enabled ? 'disable' : 'enable'} disabled={busy || !canSave}>
-          {entry.enabled ? '停用' : '启用'}
-        </button>
-      </form>
+      {!entry.source && (
+        <form className="credential-actions" action={action} onSubmit={event => submitWithoutReset(event, action)}>
+          <input type="hidden" name="provider" value={provider} />
+          <input type="hidden" name="id" value={entry.id} />
+          {entry.enabled && !primary && (
+            <button className="secondary" name="operation" value="primary" disabled={busy || !canSave}>设为主用</button>
+          )}
+          <button className="secondary" name="operation" value={entry.enabled ? 'disable' : 'enable'} disabled={busy || !canSave}>
+            {entry.enabled ? '停用' : '启用'}
+          </button>
+        </form>
+      )}
       {result.error && <p className="error" role="alert">{result.error}</p>}
     </li>
   );

@@ -3,6 +3,7 @@ import { createCipheriv, createHmac, randomBytes } from 'node:crypto';
 import { PGlite } from '@electric-sql/pglite';
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
 import { addProviderCredential, listProviderModels, modelCatalogAccessToken, providerCredentialEntries, providerCredentialStatuses, readActiveModelSelection, readRuntimeModelConfiguration, saveModelSelection, updateProviderCredential } from '../../admin/shared/model-config';
+import { GET as readModelCatalog } from '../../app/api/admin/model-catalog/route';
 
 const deepseekKey = 'test-deepseek-environment-credential';
 const goKey = 'test-opencode-go-initial-credential';
@@ -12,6 +13,7 @@ const legacyKey = 'test-previous-encrypted-legacy-credential';
 const goEnvironmentKey = 'test-opencode-go-environment-credential';
 const deepseekModel = 'deepseek-test-future-v1';
 const goModel = 'go-test-future-v1';
+const remoteCredential = { id: 'environment', label: '环境变量密钥', suffix: 'V3R1', enabled: true, source: 'environment' } as const;
 
 function goItem(id: string, name: string) {
   return { id, name, type: 'chat', modalities: { input: ['text'], output: ['text'] },
@@ -59,10 +61,13 @@ async function main() {
         ...(authorization === `Bearer ${nextGoKey}` ? [goItem('go-rotated-catalog-model', 'New model after rotation')] : []),
       ] });
     }
-    assert.equal(url, 'https://catalog.test.local/model-catalog?provider=deepseek');
     const relayToken = modelCatalogAccessToken();
     assert.ok(relayToken);
     assert.equal(authorization, `Bearer ${relayToken}`);
+    if (url === 'https://catalog.test.local/model-catalog?view=credentials') {
+      return Response.json({ credentials: { deepseek: [{ ...remoteCredential, key: 'ignored-raw-field' }], 'opencode-go': [] } });
+    }
+    assert.equal(url, 'https://catalog.test.local/model-catalog?provider=deepseek');
     return Response.json({ models: [{ id: 'relay-test-model', name: 'Relay model', efforts: ['default'] }] });
   };
   try {
@@ -116,8 +121,21 @@ async function main() {
       ['preview', 'opencode-go', legacyCiphertext(process.env.MODEL_SETTINGS_SECRET!, legacyKey)]);
     process.env.OPENCODE_GO_API_KEY = goEnvironmentKey;
     assert.deepEqual(await readRuntimeModelConfiguration(), { selection: go, keys: [nextGoKey, goKey, legacyKey, goEnvironmentKey] });
+    const listed = await providerCredentialEntries(false);
+    assert.deepEqual(listed['opencode-go'].map(entry => [entry.label, entry.source]), [
+      ['备用账户', undefined], ['主账户', undefined], ['旧版后台密钥', 'legacy'], ['环境变量密钥', 'environment'],
+    ]);
+    assert.deepEqual(listed['opencode-go'].slice(2).map(entry => entry.suffix), [legacyKey.slice(-4), goEnvironmentKey.slice(-4)]);
+    assert.ok([nextGoKey, goKey, legacyKey, goEnvironmentKey].every(key => !JSON.stringify(listed).includes(key)));
+    const credentialUrl = 'https://site.test/api/admin/model-catalog?view=credentials';
+    assert.equal((await readModelCatalog(new Request(credentialUrl))).status, 401);
+    const authorizedList = await readModelCatalog(new Request(credentialUrl, { headers: { Authorization: `Bearer ${modelCatalogAccessToken()}` } }));
+    assert.equal(authorizedList.status, 200);
+    assert.equal(authorizedList.headers.get('cache-control'), 'no-store');
+    assert.deepEqual(await authorizedList.json(), { credentials: listed });
     process.env.OPENCODE_GO_API_KEY = legacyKey;
     assert.deepEqual(await readRuntimeModelConfiguration(), { selection: go, keys: [nextGoKey, goKey, legacyKey] });
+    assert.ok(!(await providerCredentialEntries(false))['opencode-go'].some(entry => entry.source === 'environment'));
     delete process.env.OPENCODE_GO_API_KEY;
 
     process.env.VERCEL_ENV = 'production';
@@ -126,6 +144,7 @@ async function main() {
     assert.equal((await providerCredentialEntries())['opencode-go'].length, 0);
     delete process.env.DEEPSEEK_API_KEY;
     process.env.MODEL_CATALOG_URL = 'https://catalog.test.local/model-catalog';
+    assert.deepEqual(await providerCredentialEntries(), { deepseek: [remoteCredential], 'opencode-go': [] });
     assert.deepEqual(await listProviderModels('deepseek'), [{ id: 'relay-test-model', name: 'Relay model', efforts: ['default'] }]);
     console.log('Provider catalogs, encrypted key pools, priority, disable/enable, legacy fallback and environment isolation passed.');
   } finally {
